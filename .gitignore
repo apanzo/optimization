@@ -1,4 +1,10 @@
+# Own ignores
+README.rst
 logs/
+data/
+docs/
+misc/
+tests/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
