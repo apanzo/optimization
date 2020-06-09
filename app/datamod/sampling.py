@@ -15,7 +15,7 @@ def sample(name,points,n_dim):
 
     Arguments:
         name: sampling strategy
-        points: coordinates of new sample points
+        points: number of requested samples
         n_dim: number of input dimensions
 
     Raises:

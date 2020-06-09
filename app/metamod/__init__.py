@@ -36,7 +36,6 @@ def train_surrogates(data,setting,template):
     split = set_validation(validation,validation_param)
     
     for train, test in split.split(data.input):
-##        breakpoint()
         if template.name == "ANN":
             interp = copy(template)
         else:
@@ -50,15 +49,39 @@ def train_surrogates(data,setting,template):
 
         interp.train()
         interp.ranges = [data.range_in,data.range_out]
-##        breakpoint()
         interp.metric = MAE(interp.test_out,interp.predict_values(interp.test_in))  ###  tune surrogate selection logic
         surrogates.append(interp)
+
+    # Separate adaptive from training
+    
+    best, variance = select_best_surrogate(surrogates)
+
+    proposed = select_points_adaptive(surrogates,setting,data)
+
+    return best, variance
+        
+def select_best_surrogate(surrogates):
 
     best = surrogates[np.array([sur.metric for sur in surrogates]).argmin()]
     variance = np.var(np.array([sur.metric for sur in surrogates]))
     
     return best, variance
-        
+    
+
+def select_points_adaptive(surrogates,setting,data):
+    from datamod.sampling import sample
+    test_sample = sample(setting.sampling,setting.adaptive_sample,data.dim_in)
+    test_pred = [sur.predict_values(test_sample) for sur in surrogates]
+    test_np = np.array(test_pred)
+    test_variances = np.var(test_np,axis=0)
+    worst = test_sample[np.argmax(test_variances)]
+    worst_new = test_sample[np.argpartition(test_variances, -setting.resampling_param,axis=0)[-setting.resampling_param:]]
+
+    nnd = [np.linalg.norm(data.input-sample,axis=1).min() for sample in test_sample]
+##    breakpoint()
+
+    return worst
+
 def set_surrogate(name,dim_in,dim_out,no_points):
     """
     Select the desired surrogate model.

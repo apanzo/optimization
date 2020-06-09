@@ -50,6 +50,11 @@ def set_optimization(setting):
     Raises:
         alg: optimization algorithm
         term: termination method
+
+    Note:
+        there is also a single objective one
+        termination_val = [0.0025*1000,5,5,None,None]
+
     """
     # Unpack optimization settings
     optimization = setting.optimization
@@ -79,7 +84,7 @@ def set_optimization(setting):
     eliminate_duplicates=True
 )
     # Get termination criterion
-    term = get_termination(termination, termination_val)
+    term = get_termination(termination, *termination_val)
     
     return alg, term
 
