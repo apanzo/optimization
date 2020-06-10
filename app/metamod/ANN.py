@@ -23,20 +23,23 @@ class ANN(SurrogateModel):
         Tensorflow documentation
     """
 
+    def __getitem__(self,a):
+        return self.options[a]
+
     def __init__(self,**kwargs):
         super().__init__(**kwargs)
         # Initialize model
-        in_dim, out_dim = self.options["dims"]
-        no_layers, no_neurons = self.options["no_layers"], self.options["no_neurons"]
-        self.options.declare("architecture", [in_dim]+[no_neurons]*no_layers+[out_dim], types=list, desc="default rchitecture")
-        architecture = self.options["architecture"]
-        activation = self.options["activation"]
-        init = self.options["init"]
-        bias_init = self.options["bias_init"]
-        optimizer = self.options["optimizer"]
-        loss = self.options["loss"]
+        in_dim, out_dim = self["dims"]
+        no_layers, no_neurons = self["no_layers"], self["no_neurons"]
+        self.options.declare("architecture", [in_dim]+[no_neurons]*no_layers+[out_dim], types=list, desc="default architecture")
+        architecture = self["architecture"]
+        activation = self["activation"]
+        init = self["init"]
+        bias_init = self["bias_init"]
+        optimizer = self["optimizer"]
+        loss = self["loss"]
         self.model = tf.keras.Sequential()
-        kernel_regularizer = tf.keras.regularizers.l2(self.options["kernel_regularizer"])
+        kernel_regularizer = tf.keras.regularizers.l2(self["kernel_regularizer"])
         
         # Add layers        
         self.model.add(tf.keras.layers.Dense(architecture[1], activation=activation,
@@ -52,13 +55,13 @@ class ANN(SurrogateModel):
         self.model.add(tf.keras.layers.Dense(architecture[-1]))
 
         # Calculate for pruning
-        batch_size = self.options["batch_size"]
-        no_epochs = self.options["no_epochs"]
-        no_points = self.options["no_points"]
-        final_sparsity = self.options["sparsity"]
-        pruning_frequency = self.options["pruning_frequency"]
+        batch_size = self["batch_size"]
+        no_epochs = self["no_epochs"]
+        no_points = self["no_points"]
+        final_sparsity = self["sparsity"]
+        pruning_frequency = self["pruning_frequency"]
 
-        if self.options["prune"]:
+        if self["prune"]:
             num_train_samples = no_points
             end_step = np.ceil(1.0 * num_train_samples / batch_size).astype(np.int32) * no_epochs
             print('End step: ' + str(end_step))
@@ -106,28 +109,34 @@ class ANN(SurrogateModel):
             plot_history: whether to plot the training history
         """
 
+        import json
+        import os
+        cwd = os.getcwd()
+        with open(cwd + "\\config\\meta\\ann.json") as f:
+            setup = json.load(f)
+            
         # Set default values
         declare = self.options.declare
-        declare("no_layers", 10, types=int, desc="number of layers")
-        declare("no_neurons", 100, types=int, desc="neurons per layer")
-        declare("activation", "swish", types=str, desc="activation function")
-        declare("batch_size", 32, types=int, desc="batch size")
-        declare("no_epochs", 30, types=int, desc="no epochs")
-        declare("init", 'he_normal', types=str, desc="weight initialization")
-        declare("bias_init", 'ones', types=str, desc="bias initialization")
-        declare("optimizer", 'adam', types=str, desc="optimizer")
-        declare("loss", 'mse', types=str, desc="loss function")
-        declare("kernel_regularizer", 0.0001*1, types=float, desc="regularization") # 000
-        declare("dims", (None,None), types=tuple, desc="in and out dimensions")
-        declare("no_points", None, types=int, desc="in and out dimensions")
-        declare("prune", False, types=bool, desc="pruning")
-        declare("sparsity", 0.50, types=float, desc="target sparsity")
-        declare("pruning_frequency", 5, types=int, desc="pruning frequency")
-        declare("tensorboard", False, types=bool, desc="tensorboard") ## not tested
-        declare("stopping", False, types=bool, desc="early stopping")
-        declare("stopping_delta", 0.001, types=float, desc="stopping delta")
-        declare("stopping_patience", 5, types=int, desc="stopping patience")
-        declare("plot_history", False, types=bool, desc="plot training history")
+        declare("no_layers", setup["no_layers"], types=int, desc="number of layers")
+        declare("no_neurons", setup["no_neurons"], types=int, desc="neurons per layer")
+        declare("activation", setup["activation"], types=str, desc="activation function")
+        declare("batch_size", setup["batch_size"], types=int, desc="batch size")
+        declare("no_epochs", setup["no_epochs"], types=int, desc="no epochs")
+        declare("init", setup["init"], types=str, desc="weight initialization")
+        declare("bias_init", setup["bias_init"], types=str, desc="bias initialization")
+        declare("optimizer", setup["optimizer"], types=str, desc="optimizer")
+        declare("loss", setup["loss"], types=str, desc="loss function")
+        declare("kernel_regularizer", setup["kernel_regularizer"], types=float, desc="regularization") # 000
+        declare("dims", tuple(setup["dims"]), types=tuple, desc="in and out dimensions")
+        declare("no_points", setup["no_points"], types=int, desc="in and out dimensions")
+        declare("prune", setup["prune"], types=bool, desc="pruning")
+        declare("sparsity", setup["sparsity"], types=float, desc="target sparsity")
+        declare("pruning_frequency", setup["pruning_frequency"], types=int, desc="pruning frequency")
+        declare("tensorboard", setup["tensorboard"], types=bool, desc="tensorboard") ## not tested
+        declare("stopping", setup["stopping"], types=bool, desc="early stopping")
+        declare("stopping_delta", setup["stopping_delta"], types=float, desc="stopping delta")
+        declare("stopping_patience", setup["stopping_patience"], types=int, desc="stopping patience")
+        declare("plot_history", setup["plot_history"], types=bool, desc="plot training history")
 
 ##        self.supports["derivatives"] = True
         self.name = "ANN"

@@ -67,8 +67,7 @@ class Model:
         # Determine number of new samples
         if self.no_samples == 0: ################
             sample_points = self.setting.default_sample_coef*self.dim_in
-            self.samples = resample(sample_points,self.no_samples,self.setting.sampling,self.dim_in,self.range_in)
-        elif not self.setting.adaptive:
+        else:
             if self.setting.resampling == "linear":
                 sample_points = self.setting.resampling_param
             elif self.setting.resampling == "geometric":
@@ -76,6 +75,7 @@ class Model:
             else:
                 raise ValueError("Resampling method not suppported, choose 'linear' or 'geometric'")
 
+        if self.no_samples == 0 or not self.setting.adaptive:
             # Obtain new samples
             self.samples = resample(sample_points,self.no_samples,self.setting.sampling,self.dim_in,self.range_in)
         else:

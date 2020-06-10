@@ -3,13 +3,17 @@ initialize
 while metric_not_met:
     generate new samples
     evaluate new samples
-    retrain surrofate
+    retrain surrogate
     check metric
+
+assumption - one problem is run at a time
 """
 
 from datamod.visual import ss_convergence
 from model_class import Model
 from settings import First, Second
+
+##from settings import settings
 
 # Initialize the model
 setting = Second()
@@ -23,11 +27,10 @@ while not model.optimization_converged:
         model.load_results()
         model.train()
 ##        breakpoint()
-
         
         model.sampling_iterations += 1
 
-        if model.sampling_iterations == 1:
+        if model.sampling_iterations == 2:
             print("Surrogate converged")
             model.trained = True
 

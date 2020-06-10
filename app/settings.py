@@ -51,7 +51,7 @@ class First(make_settings):
         self.resampling_param = 10
         
         # Surrogate settings
-        self.surrogate = "kriging"
+        self.surrogate = "ann"
         self.validation = "kfold"
         self.validation_param = 5
 
@@ -92,7 +92,7 @@ class Second(make_settings):
         self.default_sample_coef = 60
         self.resampling_param = 10
         self.adaptive_sample = 500
-        self.adaptive = None
+        self.adaptive = "eason"
         
         # Surrogate settings
         self.surrogate = "kriging"

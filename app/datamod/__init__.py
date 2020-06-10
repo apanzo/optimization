@@ -3,6 +3,7 @@ Data handling module.
 
 The aim of the datamod package is to handle the data
 """
+import json
 import os
 from pathlib import Path
 
@@ -12,6 +13,10 @@ from pymoo.factory import get_problem
 from datamod.problems import problems
 from datamod.sampling import sample
 
+cwd = os.getcwd()
+with open(cwd + "\\config\\data\\adaptive.json") as f:
+    adaptive_methods = json.load(f)
+    
 class get_data:
     """
     Import data from an external file.
@@ -67,18 +72,32 @@ def resample(points_new,points_now,sampling,dim_in,range_in):
     return coordinates
 
 def resample_adaptive(surrogates,setting,data):
+    """
+    STUFF
+    """
+
+    exploration, exploitation = adaptive_methods[setting.adaptive]
 
     test_sample = sample(setting.sampling,setting.adaptive_sample,data.dim_in)
     test_pred = [sur.predict_values(test_sample) for sur in surrogates]
     test_np = np.array(test_pred)
-    test_variances = np.var(test_np,axis=0)
-    worst = test_sample[np.argmax(test_variances)]
-    worst_new = test_sample[np.argpartition(test_variances, -setting.resampling_param,axis=0)[-setting.resampling_param:]]
 
-    nnd = [np.linalg.norm(data.input-sample,axis=1).min() for sample in test_sample]
-##    breakpoint()
+    if exploration == "nnd":
+        nnd = [np.linalg.norm(data.input-sample,axis=1).min() for sample in test_sample]
+    else:
+        raise ValueError
 
-    return worst
+    if exploitation == "variance":
+        test_variances = np.var(test_np,axis=0)
+##        worst = test_sample[np.argmax(test_variances)]
+        worst_new = test_sample[np.argpartition(test_variances, -setting.resampling_param,axis=0)[-setting.resampling_param:]]
+        worst_new = worst_new.reshape((setting.resampling_param,-1))
+    else:
+        raise ValueError
+    
+    ### Make a unit test to check that worst_new is 2D
+
+    return worst_new
 
 def load_problem(name):
     """

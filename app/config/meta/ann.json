@@ -1,0 +1,22 @@
+{
+ "no_layers": 2,
+ "no_neurons": 3,
+ "activation": "swish",
+ "batch_size": 32,
+ "no_epochs": 30,
+ "init": "he_normal",
+ "bias_init": "ones",
+ "optimizer": "adam",
+ "loss": "mse",
+ "kernel_regularizer": 0.0001,
+ "dims": [null,null],
+ "no_points": null,
+ "prune": false,
+ "sparsity": 0.50,
+ "pruning_frequency": 5,
+ "tensorboard": false,
+ "stopping": false,
+ "stopping_delta": 0.001,
+ "stopping_patience": 5,
+ "plot_history": false
+}
