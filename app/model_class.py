@@ -2,7 +2,7 @@ import numpy as np
 import os
 from pathlib import Path
 
-from datamod import get_data, load_problem, resample, make_results_file
+from datamod import get_data, load_problem, resample, make_results_file, resample_adaptive
 from datamod.evaluator import evaluate_benchmark
 from datamod.visual import plot_raw, show_problem, vis_design_space, vis_objective_space
 from metamod import set_surrogate, train_surrogates, select_best_surrogate
@@ -65,9 +65,10 @@ class Model:
         Note: be careful with geometric, grows fast
         """
         # Determine number of new samples
-        if self.no_samples == 0:
+        if self.no_samples == 0: ################
             sample_points = self.setting.default_sample_coef*self.dim_in
-        else:
+            self.samples = resample(sample_points,self.no_samples,self.setting.sampling,self.dim_in,self.range_in)
+        elif not self.setting.adaptive:
             if self.setting.resampling == "linear":
                 sample_points = self.setting.resampling_param
             elif self.setting.resampling == "geometric":
@@ -75,14 +76,11 @@ class Model:
             else:
                 raise ValueError("Resampling method not suppported, choose 'linear' or 'geometric'")
 
-        # Obtain new samples
-        self.samples = resample(sample_points,self.no_samples,self.setting.sampling,self.dim_in,self.range_in)
-
-##        # adaptive
-##        if self.setting.adaptive is not None:
-##            proposed = select_points_adaptive(self.surrogates,self.setting,self.data)
-##        else:
-##            proposed = None
+            # Obtain new samples
+            self.samples = resample(sample_points,self.no_samples,self.setting.sampling,self.dim_in,self.range_in)
+        else:
+            # adaptive
+            self.samples = resample_adaptive(self.surrogates,self.setting,self.data)
 
         # Update sample count
         self.no_samples += sample_points
