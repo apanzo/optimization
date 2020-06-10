@@ -2,7 +2,9 @@
 README.rst
 logs/
 data/
-docs/
+docs/build
+docs/my
+
 misc/
 tests/
 
