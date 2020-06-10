@@ -108,8 +108,8 @@ class ANN(SurrogateModel):
 
         # Set default values
         declare = self.options.declare
-        declare("no_layers", 3, types=int, desc="number of layers")
-        declare("no_neurons", 30, types=int, desc="neurons per layer")
+        declare("no_layers", 10, types=int, desc="number of layers")
+        declare("no_neurons", 100, types=int, desc="neurons per layer")
         declare("activation", "swish", types=str, desc="activation function")
         declare("batch_size", 32, types=int, desc="batch size")
         declare("no_epochs", 30, types=int, desc="no epochs")
@@ -117,7 +117,7 @@ class ANN(SurrogateModel):
         declare("bias_init", 'ones', types=str, desc="bias initialization")
         declare("optimizer", 'adam', types=str, desc="optimizer")
         declare("loss", 'mse', types=str, desc="loss function")
-        declare("kernel_regularizer", 0.000, types=float, desc="regularization") # 000
+        declare("kernel_regularizer", 0.0001*1, types=float, desc="regularization") # 000
         declare("dims", (None,None), types=tuple, desc="in and out dimensions")
         declare("no_points", None, types=int, desc="in and out dimensions")
         declare("prune", False, types=bool, desc="pruning")

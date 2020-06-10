@@ -89,9 +89,10 @@ class Second(make_settings):
         self.evaluator = "benchmark"
         self.sampling = "halton"
         self.resampling = "linear"
-        self.default_sample_coef = 10
+        self.default_sample_coef = 60
         self.resampling_param = 10
         self.adaptive_sample = 500
+        self.adaptive = None
         
         # Surrogate settings
         self.surrogate = "kriging"
@@ -99,6 +100,7 @@ class Second(make_settings):
         self.validation_param = 5
 
         # Optimization settings
+        self.optimize = False
         self.optimization = "nsga2"
         self.pop_size = 40
         self.n_offsprings = 10
@@ -120,5 +122,5 @@ class Second(make_settings):
         # Visual
         self.show_raw = 0
         self.show_surrogate = 0
-        self.show_result_des = 1
-        self.show_result_obj = 1
+        self.show_result_des = 0
+        self.show_result_obj = 0

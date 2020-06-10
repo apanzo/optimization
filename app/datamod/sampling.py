@@ -30,6 +30,20 @@ def sample(name,points,n_dim):
 
     return sampling(points)
 
+def select_points_adaptive(surrogates,setting,data):
+
+    test_sample = sample(setting.sampling,setting.adaptive_sample,data.dim_in)
+    test_pred = [sur.predict_values(test_sample) for sur in surrogates]
+    test_np = np.array(test_pred)
+    test_variances = np.var(test_np,axis=0)
+    worst = test_sample[np.argmax(test_variances)]
+    worst_new = test_sample[np.argpartition(test_variances, -setting.resampling_param,axis=0)[-setting.resampling_param:]]
+
+    nnd = [np.linalg.norm(data.input-sample,axis=1).min() for sample in test_sample]
+##    breakpoint()
+
+    return worst
+
 class Halton(SamplingMethod):
     """
     Halton sampling.

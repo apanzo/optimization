@@ -27,18 +27,21 @@ while not model.optimization_converged:
         
         model.sampling_iterations += 1
 
-        if model.sampling_iterations == 10:
+        if model.sampling_iterations == 1:
             print("Surrogate converged")
             model.trained = True
 
     ##breakpoint()
 
     # Plot the sample size convergence
-    ss_convergence(model)
+    ##ss_convergence(model)
     ##compare()
 
-    # Solve the optimiaztion problem
-    model.optimize()
+    if model.setting.optimize:
+        # Solve the optimiaztion problem
+        model.optimize()
 
-    # Verify whether the optimization result agrees with original model
-    model.verify()
+        # Verify whether the optimization result agrees with original model
+        model.verify()
+    else:
+        break

@@ -5,7 +5,7 @@ from pathlib import Path
 from datamod import get_data, load_problem, resample, make_results_file
 from datamod.evaluator import evaluate_benchmark
 from datamod.visual import plot_raw, show_problem, vis_design_space, vis_objective_space
-from metamod import set_surrogate, train_surrogates
+from metamod import set_surrogate, train_surrogates, select_best_surrogate
 from optimod import set_optimization, set_problem, solve_problem
 
 class Model:
@@ -78,6 +78,12 @@ class Model:
         # Obtain new samples
         self.samples = resample(sample_points,self.no_samples,self.setting.sampling,self.dim_in,self.range_in)
 
+##        # adaptive
+##        if self.setting.adaptive is not None:
+##            proposed = select_points_adaptive(self.surrogates,self.setting,self.data)
+##        else:
+##            proposed = None
+
         # Update sample count
         self.no_samples += sample_points
             
@@ -115,10 +121,13 @@ class Model:
 
         STUFF
         """
-        # Train the surrogate
-        self.surrogate, metric = train_surrogates(self.data,self.setting,self.surrogate_template)
+        # Train the surrogates
+        self.surrogates = train_surrogates(self.data,self.setting,self.surrogate_template)
 
-        # Store the metriv for sample size determination
+        # Select the best model
+        self.surrogate, metric = select_best_surrogate(self.surrogates)
+
+        # Store the metric for sample size determination
         self.surrogate_metrics.append(metric)
         
         # Define the problem using the surogate
