@@ -27,6 +27,8 @@ class Model:
         """
         # Copy settings
         self.setting = setting
+##        print(root_path)
+##        breakpoint()
 
         # Obtain problem information
         if self.setting.evaluator == "benchmark":

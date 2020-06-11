@@ -95,12 +95,12 @@ class Second(make_settings):
         self.adaptive = "eason"
         
         # Surrogate settings
-        self.surrogate = "kriging"
+        self.surrogate = "ann"
         self.validation = "kfold"
         self.validation_param = 5
 
         # Optimization settings
-        self.optimize = False
+        self.optimize = True
         self.optimization = "nsga2"
         self.pop_size = 40
         self.n_offsprings = 10

@@ -9,11 +9,15 @@ while metric_not_met:
 assumption - one problem is run at a time
 """
 
+import os
+
 from datamod.visual import ss_convergence
 from model_class import Model
 from settings import First, Second
 
 ##from settings import settings
+
+##root_path = os.path.split(os.getcwd())[0]
 
 # Initialize the model
 setting = Second()

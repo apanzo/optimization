@@ -1,0 +1,5 @@
+numpy==1.18.5
+pymoo==0.4.1
+smt==0.5.3
+tensorflow==2.2.0
+tensorflow-model-optimization==0.3.0
