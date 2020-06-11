@@ -95,7 +95,7 @@ class Second(make_settings):
         self.adaptive = "eason"
         
         # Surrogate settings
-        self.surrogate = "ann"
+        self.surrogate = "kriging"
         self.validation = "kfold"
         self.validation_param = 5
 

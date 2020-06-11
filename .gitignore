@@ -1,10 +1,9 @@
 # Own ignores
-README.rst
 logs/
 data/
 docs/build
 docs/my
-backups
+backups/
 misc/
 tests/
 venv/

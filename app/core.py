@@ -17,8 +17,8 @@ from settings import First, Second
 
 ##from settings import settings
 
-##root_path = os.path.split(os.getcwd())[0]
-
+root_path = os.path.split(os.getcwd())[0]
+breakpoint()
 # Initialize the model
 setting = Second()
 model = Model(setting)
