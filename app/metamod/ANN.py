@@ -7,13 +7,15 @@ with the SMT Toolbox
 from collections import defaultdict
 ##import datetime
 ##import tempfile
-
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 from smt.surrogate_models.surrogate_model import SurrogateModel
 from smt.utils.checks import check_2d_array
 import tensorflow as tf
 from tensorflow_model_optimization.sparsity import keras as sparsity
+
+from settings import settings, load_json
         
 class ANN(SurrogateModel):
     """
@@ -109,12 +111,8 @@ class ANN(SurrogateModel):
             plot_history: whether to plot the training history
         """
 
-        import json
-        import os
-        cwd = os.getcwd()
-        with open(cwd + "\\config\\meta\\ann.json") as f:
-            setup = json.load(f)
-            
+        setup = load_json(os.path.join(settings["root"],"app","config","meta","ann"))
+        
         # Set default values
         declare = self.options.declare
         declare("no_layers", setup["no_layers"], types=int, desc="number of layers")
@@ -157,8 +155,9 @@ class ANN(SurrogateModel):
         if self.options["prune"]:
             callbacks.append(sparsity.UpdatePruningStep())
         if self.options["tensorboard"]:
-            log_dir = "logs\\fit\\"#+ datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-            callbacks.append(tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=20))
+            raise ValueError("Not implemented yet")
+##            log_dir = "logs\\fit\\"#+ datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+##            callbacks.append(tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=20))
         if self.options["stopping"]:
             callbacks.append(tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=stopping_delta, patience=stopping_patience, verbose=1))
 ##            callback = tf.keras.callbacks.MyStopping(monitor='val_loss', target=5, patience=3, verbose=1)

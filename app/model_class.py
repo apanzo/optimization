@@ -1,6 +1,5 @@
 import numpy as np
 import os
-from pathlib import Path
 
 from datamod import get_data, load_problem, resample, make_results_file, resample_adaptive
 from datamod.evaluator import evaluate_benchmark
@@ -38,8 +37,8 @@ class Model:
             self.n_const = 0
 
         # Make response file
-        self.folder = str(Path(os.getcwd()).parent)+"\\data\\temp"
-        self.file = self.folder+"\\results.txt"
+        self.folder = os.path.join(settings["root"],"data","temp")
+        self.file = os.path.join(self.folder,"results.txt")
         make_results_file(self.file,self.dim_in)
 
         # Initialize sampling
@@ -140,7 +139,7 @@ class Model:
         Todo - optimization error logic
         """
         # Verify back the result
-        self.file = self.folder+"\\verify.txt"
+        self.file = os.path.join(self.folder,"verify.txt")
         make_results_file(self.file,self.dim_in)
 
         # Set the optimal solutions as new sample

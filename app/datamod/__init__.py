@@ -5,18 +5,15 @@ The aim of the datamod package is to handle the data
 """
 import json
 import os
-from pathlib import Path
 
 import numpy as np
 from pymoo.factory import get_problem
 
 from datamod.problems import problems
 from datamod.sampling import sample
-from settings import settings
+from settings import settings, load_json
 
-cwd = os.getcwd()
-with open(cwd + "\\config\\data\\adaptive.json") as f:
-    adaptive_methods = json.load(f)
+adaptive_methods = load_json(os.path.join(settings["root"],"app","config","data","adaptive"))
     
 class get_data:
     """

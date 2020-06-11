@@ -27,7 +27,6 @@ def solve_problem(problem,algorithm,termination):
     """
     opt_seed = settings["optimization"]["opt_seed"]
     verbose = settings["optimization"]["opt_verbose"]
-    breakpoint()
     res_nor = minimize(problem,
                    algorithm,
                    termination,

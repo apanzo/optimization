@@ -33,8 +33,6 @@ while not model.optimization_converged:
             print("Surrogate converged")
             model.trained = True
 
-    breakpoint()
-
     # Plot the sample size convergence
     ##ss_convergence(model)
     ##compare()
