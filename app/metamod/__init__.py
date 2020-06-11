@@ -10,10 +10,11 @@ from sklearn.model_selection import KFold, ShuffleSplit
 from smt.surrogate_models import RBF, KRG, GENN
 
 from metamod import preproc ### not used now
+from settings import settings
 # ANN is imported in set_surrogate only if it is need
 
 
-def train_surrogates(data,setting,template):
+def train_surrogates(data,template):
     """
     Train the defined surrogate on the provided data.
 
@@ -28,9 +29,9 @@ def train_surrogates(data,setting,template):
     
     """
     # Unpack settings
-    name = setting.surrogate
-    validation = setting.validation
-    validation_param = setting.validation_param 
+    name = settings["surrogate"]["surrogate"]
+    validation = settings["surrogate"]["validation"]
+    validation_param = settings["surrogate"]["validation_param"]
     
     surrogates = []
     split = set_validation(validation,validation_param)

@@ -13,15 +13,10 @@ import os
 
 from datamod.visual import ss_convergence
 from model_class import Model
-from settings import First, Second
+from settings import settings
 
-##from settings import settings
-
-root_path = os.path.split(os.getcwd())[0]
-breakpoint()
 # Initialize the model
-setting = Second()
-model = Model(setting)
+model = Model()
 
 while not model.optimization_converged:
     # Surrogate training loop
@@ -38,13 +33,13 @@ while not model.optimization_converged:
             print("Surrogate converged")
             model.trained = True
 
-    ##breakpoint()
+    breakpoint()
 
     # Plot the sample size convergence
     ##ss_convergence(model)
     ##compare()
 
-    if model.setting.optimize:
+    if settings["optimization"]["optimize"]:
         # Solve the optimiaztion problem
         model.optimize()
 

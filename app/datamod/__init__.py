@@ -12,6 +12,7 @@ from pymoo.factory import get_problem
 
 from datamod.problems import problems
 from datamod.sampling import sample
+from settings import settings
 
 cwd = os.getcwd()
 with open(cwd + "\\config\\data\\adaptive.json") as f:
@@ -71,14 +72,16 @@ def resample(points_new,points_now,sampling,dim_in,range_in):
 
     return coordinates
 
-def resample_adaptive(surrogates,setting,data):
+def resample_adaptive(surrogates,data):
     """
     STUFF
+
+    not working for multiple dimensions
     """
 
-    exploration, exploitation = adaptive_methods[setting.adaptive]
+    exploration, exploitation = adaptive_methods[settings["data"]["adaptive"]]
 
-    test_sample = sample(setting.sampling,setting.adaptive_sample,data.dim_in)
+    test_sample = sample(settings["data"]["sampling"],settings["data"]["adaptive_sample"],data.dim_in)
     test_pred = [sur.predict_values(test_sample) for sur in surrogates]
     test_np = np.array(test_pred)
 
@@ -90,8 +93,10 @@ def resample_adaptive(surrogates,setting,data):
     if exploitation == "variance":
         test_variances = np.var(test_np,axis=0)
 ##        worst = test_sample[np.argmax(test_variances)]
-        worst_new = test_sample[np.argpartition(test_variances, -setting.resampling_param,axis=0)[-setting.resampling_param:]]
-        worst_new = worst_new.reshape((setting.resampling_param,-1))
+        reorder = np.argpartition(test_variances, -settings["data"]["resampling_param"],axis=0)
+        few_best = reorder[-settings["data"]["resampling_param"]:]
+        worst_new = test_sample[few_best]
+        worst_new = worst_new.reshape((settings["data"]["resampling_param"],-1))
     else:
         raise ValueError
     

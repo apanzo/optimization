@@ -1,8 +1,7 @@
 {
- "data setting": {
+ "data": {
  "evaluator": "ansys",
  "problem": "matlab_peaks",
- "problem": "carside",
  "evaluator": "benchmark",
  "sampling": "halton",
  "resampling": "linear",
@@ -12,14 +11,14 @@
  "adaptive": "eason"
  },
 
- "surrogate setting": {
+ "surrogate": {
  "surrogate": "kriging",
  "validation": "kfold",
  "validation_param": 5
  },
 
- "optimization setting": {
- "optimize": false,
+ "optimization": {
+ "optimize": true,
  "optimization": "nsga2",
  "pop_size": 40,
  "n_offsprings": 10,
@@ -39,7 +38,7 @@
  "cons_min": 0.5
  },
 
- "visual setting": {
+ "visual": {
  "show_raw": 0,
  "show_surrogate": 0,
  "show_result_des": 0,

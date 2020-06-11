@@ -7,38 +7,34 @@ from datamod.evaluator import evaluate_benchmark
 from datamod.visual import plot_raw, show_problem, vis_design_space, vis_objective_space
 from metamod import set_surrogate, train_surrogates, select_best_surrogate
 from optimod import set_optimization, set_problem, solve_problem
+from settings import settings
 
 class Model:
     """
     This is the core class of the framework
     """
 
-    def __init__(self,setting):
+    def __init__(self):
         """
         Constructor.
 
         Arguments:
-            setting: the setting class
 
         Todo:
             * real problem information
             * constraint handling
             * target file ID
         """
-        # Copy settings
-        self.setting = setting
-##        print(root_path)
-##        breakpoint()
 
         # Obtain problem information
-        if self.setting.evaluator == "benchmark":
-             self.system, self.range_in, self.dim_in, self.dim_out, self.n_const = load_problem(self.setting.problem)
+        if settings["data"]["evaluator"] == "benchmark":
+             self.system, self.range_in, self.dim_in, self.dim_out, self.n_const = load_problem(settings["data"]["problem"])
         else:
             raise ValueError("Evaluator not suppported, choose 'benchmark' or '...'")
 
         # Deactivate constrains if not set otherwise
         ### Constraints handling not yet tested
-        if not self.setting.constrained:
+        if not settings["optimization"]["constrained"]:
             self.n_const = 0
 
         # Make response file
@@ -54,10 +50,10 @@ class Model:
         self.surrogate_metrics = []
 
         # Load surrogate
-        self.surrogate_template = set_surrogate(self.setting.surrogate,self.dim_in,self.dim_out,self.tracking[0])
+        self.surrogate_template = set_surrogate(settings["surrogate"]["surrogate"],self.dim_in,self.dim_out,self.tracking[0])
         
         # Obtain optimization setup
-        self.algorithm, self.termination = set_optimization(self.setting)
+        self.algorithm, self.termination = set_optimization()
         self.optimization_converged = False
 
     def sample(self):
@@ -68,21 +64,21 @@ class Model:
         """
         # Determine number of new samples
         if self.no_samples == 0: ################
-            sample_points = self.setting.default_sample_coef*self.dim_in
+            sample_points = settings["data"]["default_sample_coef"]*self.dim_in
         else:
-            if self.setting.resampling == "linear":
-                sample_points = self.setting.resampling_param
-            elif self.setting.resampling == "geometric":
-                sample_points = int(self.setting.resampling_param*self.no_samples)
+            if settings["data"]["resampling"] == "linear":
+                sample_points = settings["data"]["resampling_param"]
+            elif settings["data"]["resampling"] == "geometric":
+                sample_points = int(settings["data"]["resampling_param*self.no_samples"])
             else:
                 raise ValueError("Resampling method not suppported, choose 'linear' or 'geometric'")
 
-        if self.no_samples == 0 or not self.setting.adaptive:
+        if self.no_samples == 0 or not settings["data"]["adaptive"]:
             # Obtain new samples
-            self.samples = resample(sample_points,self.no_samples,self.setting.sampling,self.dim_in,self.range_in)
+            self.samples = resample(sample_points,self.no_samples,settings["data"]["sampling"],self.dim_in,self.range_in)
         else:
             # adaptive
-            self.samples = resample_adaptive(self.surrogates,self.setting,self.data)
+            self.samples = resample_adaptive(self.surrogates,self.data)
 
         # Update sample count
         self.no_samples += sample_points
@@ -93,7 +89,7 @@ class Model:
 
         STUFF
         """
-        if self.setting.evaluator == "benchmark":
+        if settings["data"]["evaluator"] == "benchmark":
             evaluate_benchmark(self.system,self.samples,self.file,self.n_const)
         else:
             raise ValueError("Evaluator not suppported, choose 'benchmark' or '...'")
@@ -112,7 +108,7 @@ class Model:
         else:
             self.data = get_data(self.file)
             # Plot the input data
-            if self.setting.show_raw:
+            if settings["visual"]["show_raw"]:
                 plot_raw(self.data,"scatter")
 
     def train(self):
@@ -122,7 +118,7 @@ class Model:
         STUFF
         """
         # Train the surrogates
-        self.surrogates = train_surrogates(self.data,self.setting,self.surrogate_template)
+        self.surrogates = train_surrogates(self.data,self.surrogate_template)
 
         # Select the best model
         self.surrogate, metric = select_best_surrogate(self.surrogates)
@@ -134,7 +130,7 @@ class Model:
         self.problem = set_problem(self.surrogate,self.surrogate.ranges,self.n_const)
 
         # Plot the surrogate response
-        if self.setting.show_surrogate:
+        if settings["visual"]["show_surrogate"]:
             show_problem(self.problem)
             
     def verify(self):
@@ -167,13 +163,13 @@ class Model:
 
         STUFF
         """
-        self.res = solve_problem(self.problem,self.algorithm,self.termination,self.setting)
+        self.res = solve_problem(self.problem,self.algorithm,self.termination)
 
         # Plot the optimization result in design space
-        if self.setting.show_result_des:
+        if settings["visual"]["show_result_des"]:
             vis_design_space(self.res)
             
         # Plot the optimization result in objective space
-        if self.setting.show_result_obj:
+        if settings["visual"]["show_result_obj"]:
             vis_objective_space(self.res)
 

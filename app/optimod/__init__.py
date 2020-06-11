@@ -9,9 +9,10 @@ from pymoo.factory import get_algorithm
 from pymoo.optimize import minimize
 
 from datamod.problems import Custom
+from settings import settings
 
 
-def solve_problem(problem,algorithm,termination,setting):
+def solve_problem(problem,algorithm,termination):
     """
     Solve the defined problem.
 
@@ -24,9 +25,9 @@ def solve_problem(problem,algorithm,termination,setting):
     Returns:
         res: results object
     """
-    opt_seed = setting.opt_seed
-    verbose = setting.opt_verbose
-
+    opt_seed = settings["optimization"]["opt_seed"]
+    verbose = settings["optimization"]["opt_verbose"]
+    breakpoint()
     res_nor = minimize(problem,
                    algorithm,
                    termination,
@@ -40,7 +41,7 @@ def solve_problem(problem,algorithm,termination,setting):
 
     return res
 
-def set_optimization(setting):
+def set_optimization():
     """
     Set the selected optimization technique.
 
@@ -56,35 +57,24 @@ def set_optimization(setting):
         termination_val = [0.0025*1000,5,5,None,None]
 
     """
-    # Unpack optimization settings
-    optimization = setting.optimization
-    pop_size = setting.pop_size
-    n_offsprings = setting.n_offsprings
-    opt_sampling = setting.opt_sampling
-    crossover = setting.crossover
-    crossover_prob = setting.crossover_prob
-    crossover_eta = setting.crossover_eta
-    mutation = setting.mutation
-    mutation_eta = setting.mutation_eta
-    termination = setting.termination
-    termination_val = setting.termination_val
-
+    setup = settings["optimization"]
+    
     # Get optimization settings objects
-    sampling = get_sampling(opt_sampling)
-    mutation = get_mutation(mutation, eta=mutation_eta)
-    crossover = get_crossover(crossover, prob=crossover_prob, eta=crossover_eta)
+    sampling = get_sampling(setup["opt_sampling"])
+    mutation = get_mutation(setup["mutation"], eta=setup["mutation_eta"])
+    crossover = get_crossover(setup["crossover"], prob=setup["crossover_prob"], eta=setup["crossover_eta"])
 
     # Get optimization algorithm
-    alg = get_algorithm(optimization,
-    pop_size=pop_size,
-    n_offsprings=n_offsprings,
+    alg = get_algorithm(setup["optimization"],
+    pop_size=setup["pop_size"],
+    n_offsprings=setup["n_offsprings"],
     sampling=sampling,
     crossover=crossover,
     mutation=mutation,
     eliminate_duplicates=True
 )
     # Get termination criterion
-    term = get_termination(termination, *termination_val)
+    term = get_termination(setup["termination"], *setup["termination_val"])
     
     return alg, term
 
