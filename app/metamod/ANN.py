@@ -16,6 +16,8 @@ import tensorflow as tf
 from tensorflow_model_optimization.sparsity import keras as sparsity
 
 from settings import settings, load_json
+
+setup = load_json(os.path.join(settings["root"],"app","config","metaconf","ann"))
         
 class ANN(SurrogateModel):
     """
@@ -111,7 +113,6 @@ class ANN(SurrogateModel):
             plot_history: whether to plot the training history
         """
 
-        setup = load_json(os.path.join(settings["root"],"app","config","meta","ann"))
         
         # Set default values
         declare = self.options.declare

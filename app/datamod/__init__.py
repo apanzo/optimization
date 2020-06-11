@@ -13,7 +13,7 @@ from datamod.problems import problems
 from datamod.sampling import sample
 from settings import settings, load_json
 
-adaptive_methods = load_json(os.path.join(settings["root"],"app","config","data","adaptive"))
+adaptive_methods = load_json(os.path.join(settings["root"],"app","config","dataconf","adaptive"))
     
 class get_data:
     """
