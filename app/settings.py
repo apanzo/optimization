@@ -8,5 +8,6 @@ def load_json(file):
 
     return data
 
-settings = load_json("settings")
-settings["root"] = root_path = os.path.split(os.getcwd())[0]
+root_path = os.path.split(os.path.split(__file__)[0])[0]
+settings = load_json(os.path.join(root_path,"app","settings"))
+settings["root"] = root_path
