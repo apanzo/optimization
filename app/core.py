@@ -27,7 +27,7 @@ while not model.optimization_converged:
         model.surrogate_convergence()
 
     # Plot the sample size convergence
-    ##ss_convergence(model)
+    ss_convergence(model)
     ##compare()
 
     if settings["optimization"]["optimize"]:

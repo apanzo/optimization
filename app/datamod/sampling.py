@@ -11,6 +11,9 @@ from smt.sampling_methods.sampling_method import SamplingMethod
 # Import 3rd party packages
 from .external.halton import halton
 
+# Import custom packages
+from settings import settings
+
 def sample(name,points,n_dim):
     """
     Sampling on a unit hypercube [0,1] using a selected DOE.
@@ -31,6 +34,26 @@ def sample(name,points,n_dim):
         raise NameError('Sampling not defined')
 
     return sampling(points)
+
+def sample_adaptive(data,sample,test_sample,exploration,exploitation,test_np):
+    if exploration == "nnd":
+        nnd = [np.linalg.norm(data.input-sample,axis=1).min() for sample in test_sample]
+    else:
+        raise ValueError
+
+    if exploitation == "variance":
+        test_variances = np.var(test_np,axis=0)
+##        worst = test_sample[np.argmax(test_variances)]
+        reorder = np.argpartition(test_variances, -settings["data"]["resampling_param"],axis=0)
+        few_best = reorder[-settings["data"]["resampling_param"]:]
+        worst_new = test_sample[few_best]
+        worst_new = worst_new.reshape((settings["data"]["resampling_param"],-1))
+    else:
+        raise ValueError
+
+    return worst_new
+    
+    ### Make a unit test to check that worst_new is 2D
 
 class Halton(SamplingMethod):
     """

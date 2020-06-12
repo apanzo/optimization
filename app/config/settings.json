@@ -5,16 +5,17 @@
  "sampling": "halton",
  "resampling": "linear",
  "default_sample_coef": 10,
- "resampling_param": 5,
- "adaptive": null
+ "resampling_param": 10,
+ "adaptive_sample": 500,
+ "adaptive": "eason"
  },
 
  "surrogate": {
- "surrogate": "ann",
+ "surrogate": "kriging",
  "validation": "kfold",
  "validation_param": 5,
  "convergence": "max_iterations",
- "convergence_limit": 15
+ "convergence_limit": 2
  },
 
  "optimization": {
@@ -34,7 +35,8 @@
  "termination_val": [0.0025,5,5,null,null],
  "opt_seed": null,
  "opt_verbose": true,
- "constrained": false
+ "constrained": false,
+ "cons_min": 0.5
  },
 
  "visual": {

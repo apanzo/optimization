@@ -13,7 +13,7 @@ from pymoo.factory import get_problem
 
 # Import custom packages
 from datamod.problems import problems
-from datamod.sampling import sample
+from datamod.sampling import sample, sample_adaptive
 from settings import settings, load_json
 
 adaptive_methods = load_json(os.path.join(settings["root"],"app","config","dataconf","adaptive"))
@@ -85,22 +85,7 @@ def resample_adaptive(surrogates,data):
     test_pred = [sur.predict_values(test_sample) for sur in surrogates]
     test_np = np.array(test_pred)
 
-    if exploration == "nnd":
-        nnd = [np.linalg.norm(data.input-sample,axis=1).min() for sample in test_sample]
-    else:
-        raise ValueError
-
-    if exploitation == "variance":
-        test_variances = np.var(test_np,axis=0)
-##        worst = test_sample[np.argmax(test_variances)]
-        reorder = np.argpartition(test_variances, -settings["data"]["resampling_param"],axis=0)
-        few_best = reorder[-settings["data"]["resampling_param"]:]
-        worst_new = test_sample[few_best]
-        worst_new = worst_new.reshape((settings["data"]["resampling_param"],-1))
-    else:
-        raise ValueError
-    
-    ### Make a unit test to check that worst_new is 2D
+    worst_new = sample_adaptive(data,sample,test_sample,exploration,exploitation,test_np)
 
     return worst_new
 
