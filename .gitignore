@@ -1,8 +1,10 @@
 # Own ignores
 backups/
-data/
+data/*
+!data/test_data.txt
 docs/build
 misc/
+temp_code/
 tests/
 
 # Byte-compiled / optimized / DLL files

@@ -1,5 +1,6 @@
 # Import native packages
 import os
+from pathlib import Path
 
 # Import pypi packages
 import numpy as np
@@ -42,6 +43,7 @@ class Model:
 
         # Make response file
         self.folder = os.path.join(settings["root"],"data","temp")
+        Path(self.folder).mkdir(parents=True,exist_ok=True) # parents in fact not needed
         self.file = os.path.join(self.folder,"results.txt")
         make_results_file(self.file,self.dim_in)
 
