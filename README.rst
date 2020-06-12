@@ -1,3 +1,10 @@
+installation using command line:
+
+- *navigate to desired path*
+- **git clone https://github.com/mrozx0/optimization** # get the project
+- **setup.bat** # install dependencies
+- **optimization/app/core.py** # run the framework
+
 virtual environment setup guide in cmd:
 
 - **cd .../optimization**              # navigate to project
