@@ -10,7 +10,7 @@
  },
 
  "surrogate": {
- "surrogate": "ann",
+ "surrogate": "kriging",
  "validation": "kfold",
  "validation_param": 5,
  "convergence": "max_iterations",

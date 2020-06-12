@@ -28,8 +28,8 @@ class Model:
             * constraint handling
             * target file ID
         """
-
-        # Obtain problem information
+        print(settings["data"]["evaluator"])
+        # Obtain problem information 
         if settings["data"]["evaluator"] == "benchmark":
              self.system, self.range_in, self.dim_in, self.dim_out, self.n_const = load_problem(settings["data"]["problem"])
         else:
@@ -54,10 +54,11 @@ class Model:
 
         # Load surrogate
         self.surrogate_template = set_surrogate(settings["surrogate"]["surrogate"],self.dim_in,self.dim_out,self.tracking[0])
-        
+
         # Obtain optimization setup
-        self.algorithm, self.termination = set_optimization()
-        self.optimization_converged = False
+        if settings["optimization"]["optimize"]:
+            self.algorithm, self.termination = set_optimization()
+            self.optimization_converged = False
 
     def sample(self):
         """
