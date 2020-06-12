@@ -1,6 +1,10 @@
-import numpy as np
+# Import native packages
 import os
 
+# Import pypi packages
+import numpy as np
+
+# Import custom packages
 from datamod import get_data, load_problem, resample, make_results_file, resample_adaptive
 from datamod.evaluator import evaluate_benchmark
 from datamod.visual import plot_raw, show_problem, vis_design_space, vis_objective_space
@@ -125,12 +129,9 @@ class Model:
         # Store the metric for sample size determination
         self.surrogate_metrics.append(metric)
         
-        # Define the problem using the surogate
-        self.problem = set_problem(self.surrogate,self.surrogate.ranges,self.n_const)
-
-        # Plot the surrogate response
-        if settings["visual"]["show_surrogate"]:
-            show_problem(self.problem)
+##        # Plot the surrogate response
+##        if settings["visual"]["show_surrogate"]:
+##            show_problem(self.problem)
             
     def verify(self):
         """
@@ -145,7 +146,7 @@ class Model:
         # Set the optimal solutions as new sample
         self.samples = np.reshape(self.res.X, (-1, self.dim_in))
 
-        # Evaluate the samples andn load the results
+        # Evaluate the samples and load the results
         self.evaluate()
         self.load_results(verify=True)
 
@@ -162,6 +163,9 @@ class Model:
 
         STUFF
         """
+        # Define the problem using the surogate
+        self.problem = set_problem(self.surrogate,self.surrogate.ranges,self.n_const)
+
         self.res = solve_problem(self.problem,self.algorithm,self.termination)
 
         # Plot the optimization result in design space
@@ -172,3 +176,10 @@ class Model:
         if settings["visual"]["show_result_obj"]:
             vis_objective_space(self.res)
 
+    def surrogate_convergence(self):
+        if settings["surrogate"]["convergence"] == "max_iterations":
+            if self.sampling_iterations == settings["surrogate"]["convergence_limit"]:
+                self.trained = True
+                print("Surrogate converged")
+        else:
+            raise Exception("Convergence not defined")

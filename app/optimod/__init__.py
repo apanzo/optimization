@@ -3,11 +3,13 @@ Optimization package.
 
 The aim of the optimod package is to perform optimization
 """
+# Import pypi packages
 from pymoo.factory import get_sampling, get_crossover, get_mutation
 from pymoo.factory import get_termination
 from pymoo.factory import get_algorithm
 from pymoo.optimize import minimize
 
+# Import custom packages
 from datamod.problems import Custom
 from settings import settings
 

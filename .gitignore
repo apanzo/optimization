@@ -1,12 +1,9 @@
 # Own ignores
-logs/
+backups/
 data/
 docs/build
-docs/my
-backups/
 misc/
 tests/
-venv/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

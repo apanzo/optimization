@@ -14,7 +14,9 @@
  "surrogate": {
  "surrogate": "kriging",
  "validation": "kfold",
- "validation_param": 5
+ "validation_param": 5,
+ "convergence": "max_iterations",
+ "convergence_limit": 2
  },
 
  "optimization": {

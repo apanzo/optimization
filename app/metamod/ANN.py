@@ -4,10 +4,11 @@ Custom ANN definition using TensorFlow.
 This module contains the definition of an ANN comptable
 with the SMT Toolbox
 """
+# Import native packages
 from collections import defaultdict
-##import datetime
-##import tempfile
 import os
+
+# Import pypi packages
 import matplotlib.pyplot as plt
 import numpy as np
 from smt.surrogate_models.surrogate_model import SurrogateModel
@@ -15,6 +16,7 @@ from smt.utils.checks import check_2d_array
 import tensorflow as tf
 from tensorflow_model_optimization.sparsity import keras as sparsity
 
+# Import custom packages
 from settings import settings, load_json
 
 setup = load_json(os.path.join(settings["root"],"app","config","metaconf","ann"))

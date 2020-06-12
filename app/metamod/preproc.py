@@ -3,7 +3,7 @@ This module provides surrogate pre-processing.
 
 preprocessing stuff
 """
-# Imports
+# Import pypi packages
 from sklearn.model_selection import train_test_split
 
 # Functions

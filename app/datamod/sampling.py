@@ -3,10 +3,12 @@ This is the sampling module.
 
 This module provides sampling methods
 """
+# Import pypi packages
 import numpy as np
 from smt.sampling_methods import FullFactorial, LHS, Random
 from smt.sampling_methods.sampling_method import SamplingMethod
 
+# Import 3rd party packages
 from .external.halton import halton
 
 def sample(name,points,n_dim):

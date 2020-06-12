@@ -3,12 +3,16 @@ Surrogate package.
 
 The aim of the metamod package is to produce and run a surrogate modul
 """
+# Import native packages
 from copy import copy,deepcopy
 import numpy as np
+
+# Import pypi packages
 from sklearn.metrics import mean_absolute_error as MAE
 from sklearn.model_selection import KFold, ShuffleSplit
 from smt.surrogate_models import RBF, KRG, GENN
 
+# Import custom packages
 from metamod import preproc ### not used now
 from settings import settings
 # ANN is imported in set_surrogate only if it is need

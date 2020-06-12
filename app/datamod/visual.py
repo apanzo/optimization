@@ -4,12 +4,14 @@ This is the visualization module.
 visual - scatter 2D/3D, curve, surface tri (not quad)
 """
 
+# Import pypi packages
 ##import matplotlib.pyplot as plt
 from matplotlib import cm
 import matplotlib.pyplot as plt
 import numpy as np
 from pymoo.factory import get_visualization
 
+# Import custom packages
 from datamod import scale
 
 def plot_raw(data,name,normalized=False,**kwargs):

@@ -8,9 +8,7 @@ while metric_not_met:
 
 assumption - one problem is run at a time
 """
-
-import os
-
+# Import custom packages
 from datamod.visual import ss_convergence
 from model_class import Model
 from settings import settings
@@ -25,13 +23,8 @@ while not model.optimization_converged:
         model.evaluate()
         model.load_results()
         model.train()
-##        breakpoint()
-        
         model.sampling_iterations += 1
-
-        if model.sampling_iterations == 2:
-            print("Surrogate converged")
-            model.trained = True
+        model.surrogate_convergence()
 
     # Plot the sample size convergence
     ##ss_convergence(model)

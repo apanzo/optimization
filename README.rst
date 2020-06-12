@@ -5,3 +5,6 @@ virtual environment setup guide in cmd:
 > venv/scripts/activate.bat        # activate virtual envirnoment
 > pip install -r requirements.txt  # install required packages
 > app/core.py                      # run the framework
+
+documentation can be built using:
+
