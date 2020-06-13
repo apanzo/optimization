@@ -8,7 +8,7 @@ import numpy as np
 # Import custom packages
 from datamod import get_data, load_problem, resample, make_results_file, resample_adaptive
 from datamod.evaluator import evaluate_benchmark
-from datamod.visual import plot_raw, show_problem, vis_design_space, vis_objective_space
+from datamod.visual import plot_raw, show_problem, vis_design_space, vis_objective_space, ss_convergence
 from metamod import set_surrogate, train_surrogates, select_best_surrogate
 from optimod import set_optimization, set_problem, solve_problem
 from settings import settings
@@ -34,7 +34,7 @@ class Model:
         if settings["data"]["evaluator"] == "benchmark":
              self.system, self.range_in, self.dim_in, self.dim_out, self.n_const = load_problem(settings["data"]["problem"])
         else:
-            raise ValueError("Evaluator not suppported, choose 'benchmark' or '...'")
+            raise Exception("Error should have been caught on initialization")
 
         # Deactivate constrains if not set otherwise
         ### Constraints handling not yet tested
@@ -42,9 +42,10 @@ class Model:
             self.n_const = 0
 
         # Make response file
-        self.folder = os.path.join(settings["root"],"data","temp")
+        folder_name = str(settings["data"]["id"]).zfill(2) + "-" +  settings["data"]["problem"]
+        self.folder = os.path.join(settings["root"],"data",folder_name)
         Path(self.folder).mkdir(parents=True,exist_ok=True) # parents in fact not needed
-        self.file = os.path.join(self.folder,"results.txt")
+        self.file = os.path.join(self.folder,"database.txt")
         make_results_file(self.file,self.dim_in)
 
         # Initialize sampling
@@ -69,21 +70,20 @@ class Model:
         Note: be careful with geometric, grows fast
         """
         # Determine number of new samples
-        if self.no_samples == 0: ################
+        if self.no_samples == 0:
             sample_points = settings["data"]["default_sample_coef"]*self.dim_in
         else:
             if settings["data"]["resampling"] == "linear":
-                sample_points = settings["data"]["resampling_param"]
+                no_new_samples = settings["data"]["resampling_param"]
             elif settings["data"]["resampling"] == "geometric":
-                sample_points = int(settings["data"]["resampling_param*self.no_samples"])
+                no_new_samples  = int(settings["data"]["resampling_param"]*self.no_samples)
             else:
-                raise ValueError("Resampling method not suppported, choose 'linear' or 'geometric'")
+                raise Exception("Error should have been caught on initialization")
 
-        if self.no_samples == 0 or not settings["data"]["adaptive"]:
-            # Obtain new samples
-            self.samples = resample(sample_points,self.no_samples,settings["data"]["sampling"],self.dim_in,self.range_in)
-        else:
-            # adaptive
+        # Obtain new samples
+        if self.no_samples == 0 or not settings["data"]["adaptive"]: ## So if non-adaptive sampling is used, adaptive must be set to None
+            self.samples = resample(no_new_samples,self.no_samples,settings["data"]["sampling"],self.dim_in,self.range_in)
+        else: # if the sampling is adaptive
             self.samples = resample_adaptive(self.surrogates,self.data)
 
         # Update sample count
@@ -98,7 +98,7 @@ class Model:
         if settings["data"]["evaluator"] == "benchmark":
             evaluate_benchmark(self.system,self.samples,self.file,self.n_const)
         else:
-            raise ValueError("Evaluator not suppported, choose 'benchmark' or '...'")
+            raise Exception("Error should have been caught on initialization")
         
     def load_results(self,verify=False):
         """
@@ -132,9 +132,9 @@ class Model:
         # Store the metric for sample size determination
         self.surrogate_metrics.append(metric)
         
-##        # Plot the surrogate response
-##        if settings["visual"]["show_surrogate"]:
-##            show_problem(self.problem)
+        # Plot the surrogate response
+        if settings["visual"]["show_surrogate"]:
+            show_problem(self.problem)
             
     def verify(self):
         """
@@ -143,8 +143,8 @@ class Model:
         Todo - optimization error logic
         """
         # Verify back the result
-        self.file = os.path.join(self.folder,"verify.txt")
-        make_results_file(self.file,self.dim_in)
+        self.verification_file = os.path.join(self.folder,"varification.txt")
+        make_results_file(self.verification_file,self.dim_in)
 
         # Set the optimal solutions as new sample
         self.samples = np.reshape(self.res.X, (-1, self.dim_in))
@@ -184,5 +184,9 @@ class Model:
             if self.sampling_iterations == settings["surrogate"]["convergence_limit"]:
                 self.trained = True
                 print("Surrogate converged")
+                # Plot the sample size convergence
+                ss_convergence(self)
+                ##compare()
         else:
-            raise Exception("Convergence not defined")
+            raise Exception("Error should have been caught on initialization")
+

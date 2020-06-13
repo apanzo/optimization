@@ -36,55 +36,42 @@ class ANN(SurrogateModel):
         super().__init__(**kwargs)
         # Initialize model
         in_dim, out_dim = self["dims"]
-        no_layers, no_neurons = self["no_layers"], self["no_neurons"]
-        self.options.declare("architecture", [in_dim]+[no_neurons]*no_layers+[out_dim], types=list, desc="default architecture")
-        architecture = self["architecture"]
-        activation = self["activation"]
-        init = self["init"]
-        bias_init = self["bias_init"]
-        optimizer = self["optimizer"]
-        loss = self["loss"]
+        self.options.declare("architecture", [in_dim]+[self["no_neurons"]]*self["no_layers"]+[out_dim], types=list, desc="default architecture")
         self.model = tf.keras.Sequential()
         kernel_regularizer = tf.keras.regularizers.l2(self["kernel_regularizer"])
         
         # Add layers        
-        self.model.add(tf.keras.layers.Dense(architecture[1], activation=activation,
-                                             kernel_initializer=init,
-                                             bias_initializer=bias_init,
+        self.model.add(tf.keras.layers.Dense(self["architecture"][1], activation=self["activation"],
+                                             kernel_initializer=self["init"],
+                                             bias_initializer=self["bias_init"],
                                              kernel_regularizer=kernel_regularizer,
                                              input_shape=(architecture[0],)))
-        for neurons in architecture[2:-1]:
-            self.model.add(tf.keras.layers.Dense(neurons, activation=activation,
-                                                 kernel_initializer=init,
-                                                 bias_initializer=bias_init,
+        for neurons in self["architecture"][2:-1]:
+            self.model.add(tf.keras.layers.Dense(neurons, activation=self["activation"],
+                                                 kernel_initializer=self["init"],
+                                                 bias_initializer=self["bias_init"],
                                                  kernel_regularizer=kernel_regularizer))
-        self.model.add(tf.keras.layers.Dense(architecture[-1]))
+        self.model.add(tf.keras.layers.Dense(self["architecture"][-1]))
 
         # Calculate for pruning
-        batch_size = self["batch_size"]
-        no_epochs = self["no_epochs"]
-        no_points = self["no_points"]
-        final_sparsity = self["sparsity"]
-        pruning_frequency = self["pruning_frequency"]
 
         if self["prune"]:
-            num_train_samples = no_points
-            end_step = np.ceil(1.0 * num_train_samples / batch_size).astype(np.int32) * no_epochs
+            num_train_samples = self["no_points"]
+            end_step = np.ceil(1.0 * num_train_samples / self["batch_size"]).astype(np.int32) * ["no_epochs"]
             print('End step: ' + str(end_step))
 
             # Add pruning layers
             new_pruning_params = {
                   'pruning_schedule': sparsity.PolynomialDecay(initial_sparsity=0.0,
-                                                               final_sparsity=final_sparsity,
+                                                               final_sparsity=self["sparsity"],
                                                                begin_step=0,
                                                                end_step=end_step,
-                                                               frequency=pruning_frequency)
+                                                               frequency=self["pruning_frequency"])
             }
 
             self.model = sparsity.prune_low_magnitude(self.model, **new_pruning_params)
 
-##        self.model.summary()
-        self.model.compile(optimizer,loss)
+        self.model.compile(self["optimizer"],self["loss"])
 
         self._is_trained = False
         
@@ -158,7 +145,7 @@ class ANN(SurrogateModel):
         if self.options["prune"]:
             callbacks.append(sparsity.UpdatePruningStep())
         if self.options["tensorboard"]:
-            raise ValueError("Not implemented yet")
+            raise ValueError("Tensorboard implemented yet")
 ##            log_dir = "logs\\fit\\"#+ datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 ##            callbacks.append(tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=20))
         if self.options["stopping"]:

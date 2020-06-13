@@ -10,6 +10,7 @@ from pymoo.factory import get_algorithm
 from pymoo.optimize import minimize
 
 # Import custom packages
+from datamod import scale
 from datamod.problems import Custom
 from settings import settings
 
@@ -96,7 +97,6 @@ def unnormalize_res(res,ranges):
     res.X_val = res.X
     res.F_val = res.F
 
-    from datamod import scale
     res.X = scale(res.X,ranges[0])
     res.F = scale(res.F,ranges[1])
 

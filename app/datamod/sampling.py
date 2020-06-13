@@ -36,10 +36,16 @@ def sample(name,points,n_dim):
     return sampling(points)
 
 def sample_adaptive(data,sample,test_sample,exploration,exploitation,test_np):
+    """
+    Sampling using an adaptive DOE
+    
+    Notes:
+        * Make a unit test to check that worst_new is 2D
+    """
     if exploration == "nnd":
         nnd = [np.linalg.norm(data.input-sample,axis=1).min() for sample in test_sample]
     else:
-        raise ValueError
+        raise Exception("Exploration method not implemented")
 
     if exploitation == "variance":
         test_variances = np.var(test_np,axis=0)
@@ -49,11 +55,9 @@ def sample_adaptive(data,sample,test_sample,exploration,exploitation,test_np):
         worst_new = test_sample[few_best]
         worst_new = worst_new.reshape((settings["data"]["resampling_param"],-1))
     else:
-        raise ValueError
-
-    return worst_new
+        raise Exception("Exploitation method not implemented")
     
-    ### Make a unit test to check that worst_new is 2D
+    return worst_new
 
 class Halton(SamplingMethod):
     """

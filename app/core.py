@@ -9,18 +9,19 @@ while metric_not_met:
 assumption - one problem is run at a time
 """
 # Import custom packages
-from datamod.visual import ss_convergence ####
 from model_class import Model
-from settings import load_settings,settings
+from settings import load_settings,settings,check_valid_settings
 
 # Initialize the settings
 settings.update(load_settings("app","settings"))
+check_valid_settings()
 
 # Initialize the model
 model = Model()
 
+# Surrogate training loop
 while not model.optimization_converged:
-    # Surrogate training loop
+
     while not model.trained:
         model.sample()
         model.evaluate()
@@ -28,10 +29,6 @@ while not model.optimization_converged:
         model.train()
         model.sampling_iterations += 1
         model.surrogate_convergence()
-
-    # Plot the sample size convergence
-    ss_convergence(model)
-    ##compare()
 
     if settings["optimization"]["optimize"]:
         # Solve the optimiaztion problem

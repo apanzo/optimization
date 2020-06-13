@@ -1,5 +1,6 @@
 {
  "data": {
+ "id": 0,
  "problem": "matlab_peaks",
  "evaluator": "benchmark",
  "sampling": "halton",

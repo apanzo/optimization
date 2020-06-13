@@ -44,6 +44,8 @@ class get_data:
         data = np.loadtxt(file,skiprows=2)
         if len(data.shape) < 2:
             data = np.reshape(data,(-1, len(data)))
+        elif len(data.shape) > 2:
+            raise Exception("Too many dimensions")
         self.dim_out = data.shape[1]-self.dim_in
         self.coordinates = data[:,:self.dim_in]
         self.response = data[:,self.dim_in:]
@@ -67,8 +69,9 @@ def resample(points_new,points_now,sampling,dim_in,range_in):
     
     """
     # Sample
-    input_sample = sample(sampling,points_now+points_new,dim_in)[points_now:,:] # unit coordinates, only pick those that are new
-    coordinates = scale(input_sample,range_in) # full coordinates
+    full_sample = sample(sampling,points_now+points_new,dim_in) # unit coordinates
+    new_sample = full_sample[points_now:,:] # only picked those that are new
+    coordinates = scale(new_sample,range_in) # full coordinates
 
     return coordinates
 
@@ -81,13 +84,13 @@ def resample_adaptive(surrogates,data):
 
     exploration, exploitation = adaptive_methods[settings["data"]["adaptive"]]
 
-    test_sample = sample(settings["data"]["sampling"],settings["data"]["adaptive_sample"],data.dim_in)
-    test_pred = [sur.predict_values(test_sample) for sur in surrogates]
-    test_np = np.array(test_pred)
+    proposed_samples = sample(settings["data"]["sampling"],settings["data"]["adaptive_sample"],data.dim_in)
+    predictions_list = [sur.predict_values(proposed_samples) for sur in surrogates]
+    predictions = np.array(predictions_list)
 
-    worst_new = sample_adaptive(data,sample,test_sample,exploration,exploitation,test_np)
+    coordinates = sample_adaptive(data,sample,proposed_samples,exploration,exploitation,predictions)
 
-    return worst_new
+    return coordinates
 
 def load_problem(name):
     """
@@ -132,7 +135,7 @@ def normalize(data):
         ranges: normalization ranges
         s
     """
-##    breakpoint()
+
     data_norm = (data-np.amin(data,0))/np.ptp(data,0)
     ranges = np.stack((np.amin(data,0),np.amax(data,0)),1)
     
@@ -166,4 +169,4 @@ def make_results_file(target,dim_in):
     """
     with open(target, "w") as file:
         file.write(str(dim_in))
-        file.write("\n"+"x,y,z"+"\n")
+        file.write("\n"+",".join(["dim_"+str(i) for i in range(dim_in)])+"\n")

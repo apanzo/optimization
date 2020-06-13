@@ -34,7 +34,7 @@ class Custom(Problem):
         super().__init__(n_var=n_var, n_obj=n_obj, n_constr=n_constr, xl=xl, xu=xu, type_var=np.double)
         self.function = surrogate.predict_values
         self.n_constr = n_constr
-        
+
         
     def _evaluate(self, x, out, *args, **kwargs):
         out["F"] = self.function(x)[:,:-self.n_constr or None]

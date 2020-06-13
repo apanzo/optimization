@@ -144,10 +144,9 @@ def set_validation(validation,param):
 
 def invalid_param():
     """
-    Don't know.
+    Raise error if validation parameter is invalid
 
     Notes:
-        NOT USED
 
     """
     raise ValueError('Invalid validation parameter')
