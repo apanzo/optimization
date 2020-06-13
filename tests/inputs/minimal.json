@@ -1,0 +1,18 @@
+{
+ "data": {
+ "evaluator": "benchmark",
+ "problem": "squared"
+ },
+
+ "surrogate": {
+ "surrogate": "kriging"
+ },
+
+ "optimization": {
+ "optimize": false,
+ "constrained": false
+ },
+
+ "visual": {
+ }
+}

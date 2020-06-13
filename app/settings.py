@@ -8,11 +8,11 @@ def load_json(file):
 
     return data
 
-def load_settings(file):
+def load_settings(folder,file):
     if not len(settings.keys()) == 1:
         raise Exception("Should only apply on empty list")
         
-    update = load_json(os.path.join(settings["root"],"app",file))
+    update = load_json(os.path.join(settings["root"],folder,"inputs",file))
 
     return update
 

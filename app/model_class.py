@@ -29,7 +29,7 @@ class Model:
             * constraint handling
             * target file ID
         """
-        print(settings["data"]["evaluator"])
+
         # Obtain problem information 
         if settings["data"]["evaluator"] == "benchmark":
              self.system, self.range_in, self.dim_in, self.dim_out, self.n_const = load_problem(settings["data"]["problem"])

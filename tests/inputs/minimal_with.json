@@ -1,0 +1,29 @@
+{
+ "data": {
+ "evaluator": "benchmark",
+ "problem": "squared"
+ },
+
+ "surrogate": {
+ "surrogate": "kriging"
+ },
+
+ "optimization": {
+ "optimize": false,
+ "optimization": "nsga2",
+ "pop_size": 40,
+ "n_offsprings": 10,
+ "opt_sampling": "real_random",
+ "crossover": "real_sbx",
+ "crossover_prob": 0.9,
+ "crossover_eta": 15,
+ "mutation": "real_pm",
+ "mutation_eta": 20,
+ "termination": "f_tol",
+ "termination_val": [0.0025,5,5,null,null],
+ "constrained": false
+ },
+
+ "visual": {
+ }
+}

@@ -9,12 +9,12 @@ while metric_not_met:
 assumption - one problem is run at a time
 """
 # Import custom packages
-from datamod.visual import ss_convergence
+from datamod.visual import ss_convergence ####
 from model_class import Model
 from settings import load_settings,settings
 
 # Initialize the settings
-settings.update(load_settings("settings"))
+settings.update(load_settings("app","settings"))
 
 # Initialize the model
 model = Model()
@@ -41,3 +41,5 @@ while not model.optimization_converged:
         model.verify()
     else:
         break
+
+input()
