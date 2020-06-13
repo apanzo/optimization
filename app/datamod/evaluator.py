@@ -1,7 +1,7 @@
 # Import pypi packages
 import numpy as np
 
-def write_result(file,inputs,outputs):
+def write_results(file,inputs,outputs):
     all_data = np.concatenate((inputs,outputs),1)
 
     with open(file, 'a') as f:
@@ -33,4 +33,4 @@ def evaluate_benchmark(problem,samples,file,n_constr):
     response_dir = problem.evaluate(samples,return_values_of=return_values,return_as_dictionary=True) # return values doesn't work - pymoo implementatino problem
     response = np.concatenate([response_dir[column] for column in response_dir if column in return_values], 1)
     
-    write_results(file,samples,outputs)
+    write_results(file,samples,response)

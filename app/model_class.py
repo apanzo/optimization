@@ -71,7 +71,7 @@ class Model:
         """
         # Determine number of new samples
         if self.no_samples == 0:
-            sample_points = settings["data"]["default_sample_coef"]*self.dim_in
+            no_new_samples = settings["data"]["default_sample_coef"]*self.dim_in
         else:
             if settings["data"]["resampling"] == "linear":
                 no_new_samples = settings["data"]["resampling_param"]
@@ -87,7 +87,7 @@ class Model:
             self.samples = resample_adaptive(self.surrogates,self.data)
 
         # Update sample count
-        self.no_samples += sample_points
+        self.no_samples += no_new_samples
             
     def evaluate(self):
         """

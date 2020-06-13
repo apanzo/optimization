@@ -13,7 +13,7 @@ from model_class import Model
 from settings import load_settings,settings,check_valid_settings
 
 # Initialize the settings
-settings.update(load_settings("app","settings"))
+settings.update(load_settings("app","01-squared"))
 check_valid_settings()
 
 # Initialize the model
