@@ -14,7 +14,7 @@ from pymoo.factory import get_problem
 # Import custom packages
 from datamod.problems import problems
 from datamod.sampling import sample, sample_adaptive
-from settings import settings, load_json
+from settings import load_json, settings
 
 adaptive_methods = load_json(os.path.join(settings["root"],"app","config","dataconf","adaptive"))
     

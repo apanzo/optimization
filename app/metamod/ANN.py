@@ -17,7 +17,7 @@ import tensorflow as tf
 from tensorflow_model_optimization.sparsity import keras as sparsity
 
 # Import custom packages
-from settings import settings, load_json
+from settings import load_json, settings
 
 setup = load_json(os.path.join(settings["root"],"app","config","metaconf","ann"))
         

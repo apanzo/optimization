@@ -11,7 +11,10 @@ assumption - one problem is run at a time
 # Import custom packages
 from datamod.visual import ss_convergence
 from model_class import Model
-from settings import settings
+from settings import load_settings,settings
+
+# Initialize the settings
+settings.update(load_settings("settings"))
 
 # Initialize the model
 model = Model()

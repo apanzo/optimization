@@ -8,6 +8,12 @@ def load_json(file):
 
     return data
 
-root_path = os.path.split(os.path.split(__file__)[0])[0]
-settings = load_json(os.path.join(root_path,"app","settings"))
-settings["root"] = root_path
+def load_settings(file):
+    if not len(settings.keys()) == 1:
+        raise Exception("Should only apply on empty list")
+        
+    update = load_json(os.path.join(settings["root"],"app",file))
+
+    return update
+
+settings = {"root": os.path.split(os.path.split(__file__)[0])[0]}
