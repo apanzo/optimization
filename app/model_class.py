@@ -89,14 +89,19 @@ class Model:
         # Update sample count
         self.no_samples += no_new_samples
             
-    def evaluate(self):
+    def evaluate(self,verify=False):
         """
         Wrapper function to call the evaluted problem solver.
 
         STUFF
         """
+        if verify:
+            file = self.verification_file
+        else:
+            file = self.file
+            
         if settings["data"]["evaluator"] == "benchmark":
-            evaluate_benchmark(self.system,self.samples,self.file,self.n_const)
+            evaluate_benchmark(self.system,self.samples,file,self.n_const)
         else:
             raise Exception("Error should have been caught on initialization")
         
@@ -110,7 +115,7 @@ class Model:
         STUFF
         """
         if verify:
-            self.verification = get_data(self.file)
+            self.verification = get_data(self.verification_file)
         else:
             self.data = get_data(self.file)
             # Plot the input data
@@ -143,14 +148,14 @@ class Model:
         Todo - optimization error logic
         """
         # Verify back the result
-        self.verification_file = os.path.join(self.folder,"varification.txt")
+        self.verification_file = os.path.join(self.folder,"verification.txt")
         make_results_file(self.verification_file,self.dim_in)
 
         # Set the optimal solutions as new sample
         self.samples = np.reshape(self.res.X, (-1, self.dim_in))
 
         # Evaluate the samples and load the results
-        self.evaluate()
+        self.evaluate(verify=True)
         self.load_results(verify=True)
 
         # Calculate error

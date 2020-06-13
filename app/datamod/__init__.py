@@ -42,8 +42,10 @@ class get_data:
         self.dim_in = int(np.loadtxt(file,max_rows=1))
         self.col_names = np.loadtxt(file,skiprows=1,max_rows=1,dtype=str,delimiter=",")
         data = np.loadtxt(file,skiprows=2)
-        if len(data.shape) < 2:
+        if len(data.shape) == 1:
             data = np.reshape(data,(-1, len(data)))
+        elif len(data.shape) == 0:
+            raise Exception("0 dimensions data")
         elif len(data.shape) > 2:
             raise Exception("Too many dimensions")
         self.dim_out = data.shape[1]-self.dim_in

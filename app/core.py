@@ -13,7 +13,7 @@ from model_class import Model
 from settings import load_settings,settings,check_valid_settings
 
 # Initialize the settings
-settings.update(load_settings("app","01-squared"))
+settings.update(load_settings("app","02-matlab_peaks"))
 check_valid_settings()
 
 # Initialize the model
@@ -38,5 +38,7 @@ while not model.optimization_converged:
         model.verify()
     else:
         break
+
+print(model.optimization_error)
 
 input()
