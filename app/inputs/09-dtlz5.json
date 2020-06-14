@@ -43,7 +43,7 @@
  "show_raw": 0,
  "show_surrogate": 0,
  "show_convergence": 0,
- "show_result_des": 1,
- "show_result_obj": 1
+ "show_result_des": 0,
+ "show_result_obj": 0
  }
 }

@@ -161,7 +161,7 @@ class Model:
             self.load_results(verify=True)
 
             # Calculate error
-            response_F = self.verification.response[:,:-self.problem.n_constr]
+            response_F = self.verification.response[:,:-self.problem.n_constr or None]
             self.optimization_error = (100*(response_F-self.res.F)/response_F)
 
             self.optimization_error_max = np.max(np.abs(self.optimization_error))
