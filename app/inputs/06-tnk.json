@@ -15,14 +15,14 @@
  "validation": "kfold",
  "validation_param": 5,
  "convergence": "max_iterations",
- "convergence_limit": 15
+ "convergence_limit": 40
  },
 
  "optimization": {
- "optimize": false,
+ "optimize": true,
  "optimization": "nsga2",
- "pop_size": 40,
- "n_offsprings": 10,
+ "pop_size": 400,
+ "n_offsprings": 100,
  "opt_sampling": "real_random",
  "crossover": "real_sbx",
  "crossover_prob": 0.9,

@@ -160,7 +160,8 @@ class Model:
         self.load_results(verify=True)
 
         # Calculate error
-        self.optimization_error = (100*(self.verification.response-self.res.F)/self.verification.response)
+        response_F = self.verification.response[:,:self.problem.n_constr]
+        self.optimization_error = (100*(response_F-self.res.F)/response_F)
         if True:
             self.optimization_converged = True 
 
