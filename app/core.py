@@ -39,6 +39,12 @@ while not model.optimization_converged:
     else:
         break
 
-print(model.optimization_error)
+if settings["optimization"]["optimize"]:
+    print(model.optimization_error)
+    import numpy as np
+    print(np.min(model.optimization_error))
+    print(np.max(model.optimization_error))
+    print(np.mean(model.optimization_error,0))
 
-input()
+
+input("Ended")

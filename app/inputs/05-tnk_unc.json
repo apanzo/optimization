@@ -1,0 +1,47 @@
+{
+ "data": {
+ "id" : 5,
+ "problem": "tnk",
+ "evaluator": "benchmark",
+ "sampling": "halton",
+ "resampling": "linear",
+ "default_sample_coef": 10,
+ "resampling_param": 5,
+ "adaptive": null
+ },
+
+ "surrogate": {
+ "surrogate": "kriging",
+ "validation": "kfold",
+ "validation_param": 5,
+ "convergence": "max_iterations",
+ "convergence_limit": 15
+ },
+
+ "optimization": {
+ "optimize": true,
+ "optimization": "nsga2",
+ "pop_size": 40,
+ "n_offsprings": 10,
+ "opt_sampling": "real_random",
+ "crossover": "real_sbx",
+ "crossover_prob": 0.9,
+ "crossover_eta": 15,
+ "mutation": "real_pm",
+ "mutation_eta": 20,
+ "termination": "n_gen",
+ "termination_val": 40,
+ "termination": "f_tol",
+ "termination_val": [0.001,5,5,null,null],
+ "opt_seed": null,
+ "opt_verbose": true,
+ "constrained": false
+ },
+
+ "visual": {
+ "show_raw": 0,
+ "show_surrogate": 0,
+ "show_result_des": 1,
+ "show_result_obj": 1
+ }
+}

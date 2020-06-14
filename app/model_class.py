@@ -59,9 +59,10 @@ class Model:
         self.surrogate_template = set_surrogate(settings["surrogate"]["surrogate"],self.dim_in,self.dim_out,self.tracking[0])
 
         # Obtain optimization setup
+        self.optimization_converged = False
         if settings["optimization"]["optimize"]:
             self.algorithm, self.termination = set_optimization()
-            self.optimization_converged = False
+            
 
     def sample(self):
         """

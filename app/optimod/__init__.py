@@ -33,11 +33,11 @@ def solve_problem(problem,algorithm,termination):
     res_nor = minimize(problem,
                    algorithm,
                    termination,
-                   seed=opt_seed,
+##                   seed=opt_seed,
 ##                   pf=problem.pareto_front(use_cache=False),
 ##                   save_history=True,
                    verbose=verbose)
-
+    breakpoint()
     # Unnormalize the results
     res = unnormalize_res(res_nor,problem.ranges)
 
@@ -76,6 +76,7 @@ def set_optimization():
     eliminate_duplicates=True
 )
     # Get termination criterion
+    print(list(setup["termination_val"]))
     term = get_termination(setup["termination"], *setup["termination_val"])
     
     return alg, term
@@ -96,7 +97,7 @@ def unnormalize_res(res,ranges):
 
     res.X_val = res.X
     res.F_val = res.F
-
+    
     res.X = scale(res.X,ranges[0])
     res.F = scale(res.F,ranges[1])
 
@@ -109,13 +110,13 @@ def set_problem(surrogate,ranges,n_constr):
     Arguments:
         surrogate: trained surrogate response
         ranges: ranges of the problem
-        n_constr: nu,ber of constrains
+        n_constr: number of constrains
 
     Returns:
         prob: problem object
     """
     n_var = ranges[0].shape[0]
-    
+    breakpoint()
     prob = Custom(surrogate,[0]*n_var,[1]*n_var,n_constr=n_constr)
     
     prob.ranges = ranges
