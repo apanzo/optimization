@@ -75,7 +75,7 @@ class Model:
             no_new_samples = settings["data"]["default_sample_coef"]*self.dim_in
         else:
             if settings["data"]["resampling"] == "linear":
-                no_new_samples = settings["data"]["resampling_param"]
+                no_new_samples = settings["data"]["resampling_param"]*self.dim_in
             elif settings["data"]["resampling"] == "geometric":
                 no_new_samples  = int(settings["data"]["resampling_param"]*self.no_samples)
             else:
@@ -148,22 +148,33 @@ class Model:
 
         Todo - optimization error logic
         """
-        # Verify back the result
-        self.verification_file = os.path.join(self.folder,"verification.txt")
-        make_results_file(self.verification_file,self.dim_in)
+        if self.res is not None:        
+            # Verify back the result
+            self.verification_file = os.path.join(self.folder,"verification.txt")
+            make_results_file(self.verification_file,self.dim_in)
 
-        # Set the optimal solutions as new sample
-        self.samples = np.reshape(self.res.X, (-1, self.dim_in))
+            # Set the optimal solutions as new sample
+            self.samples = np.reshape(self.res.X, (-1, self.dim_in))
 
-        # Evaluate the samples and load the results
-        self.evaluate(verify=True)
-        self.load_results(verify=True)
+            # Evaluate the samples and load the results
+            self.evaluate(verify=True)
+            self.load_results(verify=True)
 
-        # Calculate error
-        response_F = self.verification.response[:,:self.problem.n_constr]
-        self.optimization_error = (100*(response_F-self.res.F)/response_F)
-        if True:
-            self.optimization_converged = True 
+            # Calculate error
+            response_F = self.verification.response[:,:-self.problem.n_constr]
+            self.optimization_error = (100*(response_F-self.res.F)/response_F)
+
+            self.optimization_error_max = np.max(np.abs(self.optimization_error))
+            self.optimization_error_mean = np.mean(self.optimization_error,0)
+
+            print(self.optimization_error_max)
+            
+            if self.optimization_error_max < settings["optimization"]["error_limit"]:
+                self.optimization_converged = True
+            else:
+                self.trained = False
+        else:
+            self.trained = False
 
         ##len([step["delta_f"] for step in model.res.algorithm.display.term.metrics])
 
@@ -178,21 +189,23 @@ class Model:
 
         self.res = solve_problem(self.problem,self.algorithm,self.termination)
 
-        # Plot the optimization result in design space
-        if settings["visual"]["show_result_des"]:
-            vis_design_space(self.res)
-            
-        # Plot the optimization result in objective space
-        if settings["visual"]["show_result_obj"]:
-            vis_objective_space(self.res)
+        if self.res is not None: 
+            # Plot the optimization result in design space
+            if settings["visual"]["show_result_des"]:
+                vis_design_space(self.res)
+                
+            # Plot the optimization result in objective space
+            if settings["visual"]["show_result_obj"]:
+                vis_objective_space(self.res)
 
     def surrogate_convergence(self):
         if settings["surrogate"]["convergence"] == "max_iterations":
-            if self.sampling_iterations == settings["surrogate"]["convergence_limit"]:
+            if self.sampling_iterations >= settings["surrogate"]["convergence_limit"]:
                 self.trained = True
                 print("Surrogate converged")
-                # Plot the sample size convergence
-                ss_convergence(self)
+                if settings["visual"]["show_convergence"]: 
+                    # Plot the sample size convergence
+                    ss_convergence(self)
                 ##compare()
         else:
             raise Exception("Error should have been caught on initialization")

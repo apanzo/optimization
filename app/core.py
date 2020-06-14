@@ -13,7 +13,7 @@ from model_class import Model
 from settings import load_settings,settings,check_valid_settings
 
 # Initialize the settings
-settings.update(load_settings("app","06-tnk"))
+settings.update(load_settings("app","09-dtlz5"))
 check_valid_settings()
 
 # Initialize the model
@@ -29,6 +29,7 @@ while not model.optimization_converged:
         model.train()
         model.sampling_iterations += 1
         model.surrogate_convergence()
+        print(model.sampling_iterations)
 
     if settings["optimization"]["optimize"]:
         # Solve the optimiaztion problem
@@ -38,13 +39,5 @@ while not model.optimization_converged:
         model.verify()
     else:
         break
-
-if settings["optimization"]["optimize"]:
-    print(model.optimization_error)
-    import numpy as np
-    print(np.min(model.optimization_error))
-    print(np.max(model.optimization_error))
-    print(np.mean(model.optimization_error,0))
-
 
 input("Ended")

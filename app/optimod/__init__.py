@@ -37,9 +37,12 @@ def solve_problem(problem,algorithm,termination):
 ##                   pf=problem.pareto_front(use_cache=False),
 ##                   save_history=True,
                    verbose=verbose)
-    
-    # Unnormalize the results
-    res = unnormalize_res(res_nor,problem.ranges)
+
+    if res_nor.F is not None:
+        # Unnormalize the results
+        res = unnormalize_res(res_nor,problem.ranges)
+    else:
+        res = None
 
     return res
 
