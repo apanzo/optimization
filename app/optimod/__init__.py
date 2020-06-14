@@ -37,7 +37,7 @@ def solve_problem(problem,algorithm,termination):
 ##                   pf=problem.pareto_front(use_cache=False),
 ##                   save_history=True,
                    verbose=verbose)
-    breakpoint()
+    
     # Unnormalize the results
     res = unnormalize_res(res_nor,problem.ranges)
 
@@ -76,7 +76,6 @@ def set_optimization():
     eliminate_duplicates=True
 )
     # Get termination criterion
-    print(list(setup["termination_val"]))
     term = get_termination(setup["termination"], *setup["termination_val"])
     
     return alg, term
@@ -99,7 +98,7 @@ def unnormalize_res(res,ranges):
     res.F_val = res.F
     
     res.X = scale(res.X,ranges[0])
-    res.F = scale(res.F,ranges[1])
+    res.F = scale(res.F,ranges[1][:res.F.shape[1],:]) # slicing to exclude constraints
 
     return res
 
@@ -116,7 +115,6 @@ def set_problem(surrogate,ranges,n_constr):
         prob: problem object
     """
     n_var = ranges[0].shape[0]
-    breakpoint()
     prob = Custom(surrogate,[0]*n_var,[1]*n_var,n_constr=n_constr)
     
     prob.ranges = ranges

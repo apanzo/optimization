@@ -21,8 +21,8 @@
  "optimization": {
  "optimize": true,
  "optimization": "nsga2",
- "pop_size": 400,
- "n_offsprings": 100,
+ "pop_size": 40,
+ "n_offsprings": 10,
  "opt_sampling": "real_random",
  "crossover": "real_sbx",
  "crossover_prob": 0.9,

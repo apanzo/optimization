@@ -138,7 +138,7 @@ def normalize(data):
         s
     """
 
-    data_norm = (data-np.amin(data,0))/np.ptp(data,0)
+    data_norm = data/np.max(np.abs(data),0)
     ranges = np.stack((np.amin(data,0),np.amax(data,0)),1)
     
     return data_norm, ranges
@@ -154,7 +154,7 @@ def scale(data,ranges):
     Returns:
         data_scale: scaled data
     """
-    data_scale = data*(ranges[:,1]-ranges[:,0])+ranges[:,0]
+    data_scale = data*np.max(np.abs(ranges),1)
     
     return data_scale
 

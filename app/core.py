@@ -13,7 +13,7 @@ from model_class import Model
 from settings import load_settings,settings,check_valid_settings
 
 # Initialize the settings
-settings.update(load_settings("app","02-matlab_peaks"))
+settings.update(load_settings("app","00-getting_started"))
 check_valid_settings()
 
 # Initialize the model
