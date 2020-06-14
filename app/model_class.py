@@ -8,7 +8,7 @@ import numpy as np
 # Import custom packages
 from datamod import get_data, load_problem, resample, make_results_file, resample_adaptive
 from datamod.evaluator import evaluate_benchmark
-from datamod.visual import plot_raw, show_problem, vis_design_space, vis_objective_space, ss_convergence
+from datamod.visual import plot_raw, show_problem, vis_design_space, vis_objective_space, sample_size_convergence
 from metamod import set_surrogate, train_surrogates, select_best_surrogate
 from optimod import set_optimization, set_problem, solve_problem
 from settings import settings
@@ -133,11 +133,8 @@ class Model:
         self.surrogates = train_surrogates(self.data,self.surrogate_template)
 
         # Select the best model
-        self.surrogate, metric = select_best_surrogate(self.surrogates)
+        self.surrogate = select_best_surrogate(self.surrogates)
 
-        # Store the metric for sample size determination
-        self.surrogate_metrics.append(metric)
-        
         # Plot the surrogate response
         if settings["visual"]["show_surrogate"]:
             show_problem(self.problem)
@@ -199,14 +196,26 @@ class Model:
                 vis_objective_space(self.res)
 
     def surrogate_convergence(self):
-        if settings["surrogate"]["convergence"] == "max_iterations":
-            if self.sampling_iterations >= settings["surrogate"]["convergence_limit"]:
+        if settings["data"]["convergence"] == "max_iterations":
+            if self.sampling_iterations >= settings["data"]["convergence_limit"]:
                 self.trained = True
-                print("Surrogate converged")
-                if settings["visual"]["show_convergence"]: 
-                    # Plot the sample size convergence
-                    ss_convergence(self)
-                ##compare()
+        elif settings["data"]["convergence"] in ["mae","variance"]:
+            if self.surrogate.metric[settings["data"]["convergence"]] <= settings["data"]["convergence_limit"]:
+                self.trained = True
+        elif settings["data"]["convergence"] in ["r2"]:
+            if self.surrogate.metric[settings["data"]["convergence"]] >= settings["data"]["convergence_limit"]:
+                self.trained = True
         else:
             raise Exception("Error should have been caught on initialization")
+
+        print("Metric: "+str(self.surrogate.metric[settings["data"]["convergence"]]))
+        self.surrogate_metrics.append(self.surrogate.metric[settings["data"]["convergence"]])
+
+        if self.trained:
+            print("Surrogate converged")
+            if settings["visual"]["show_convergence"]: 
+                # Plot the sample size convergence
+                sample_size_convergence(self.surrogate.metric[settings["data"]["convergence"]])
+            ##compare()
+            
 

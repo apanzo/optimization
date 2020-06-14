@@ -5,42 +5,43 @@
  "evaluator": "benchmark",
  "sampling": "halton",
  "resampling": "linear",
- "default_sample_coef": 10,
- "resampling_param": 5,
- "adaptive": null
+ "default_sample_coef": 5,
+ "resampling_param": 1,
+ "adaptive": null,
+ "convergence": "r2",
+ "convergence_limit": 0.99
  },
 
  "surrogate": {
- "surrogate": "kriging",
+ "surrogate": "ann",
  "validation": "kfold",
  "validation_param": 5,
- "convergence": "max_iterations",
- "convergence_limit": 5
+ "selection_metric": "r2"
  },
 
  "optimization": {
  "optimize": true,
  "optimization": "nsga2",
- "pop_size": 400,
- "n_offsprings": 100,
+ "pop_size": 40,
+ "n_offsprings": 10,
  "opt_sampling": "real_random",
  "crossover": "real_sbx",
  "crossover_prob": 0.9,
  "crossover_eta": 15,
  "mutation": "real_pm",
  "mutation_eta": 20,
- "termination": "n_gen",
- "termination_val": 40,
  "termination": "f_tol",
- "termination_val": [0.001,5,5,null,null],
+ "termination_val": [0.01,5,5,150,null],
  "opt_seed": null,
  "opt_verbose": true,
- "constrained": true
+ "constrained": true,
+ "error_limit": 5
  },
 
  "visual": {
  "show_raw": 0,
  "show_surrogate": 0,
+ "show_convergence": 1,
  "show_result_des": 1,
  "show_result_obj": 1
  }

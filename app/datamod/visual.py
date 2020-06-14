@@ -109,7 +109,7 @@ def compare():
     plt.plot(model.data.input,model.surrogate.predict_values(model.data.input),"k")
     plt.show()
 
-def ss_convergence(model):
+def sample_size_convergence(metric):
     """
     Plot the sample size convergence.
 
@@ -117,5 +117,5 @@ def ss_convergence(model):
         model: model object
         
     """
-    plt.plot(model.surrogate_metrics)
+    plt.plot(metric)
     plt.show()

@@ -9,6 +9,8 @@ import numpy as np
 
 # Import pypi packages
 from sklearn.metrics import mean_absolute_error as MAE
+from sklearn.metrics import r2_score as R2
+
 from sklearn.model_selection import KFold, ShuffleSplit
 from smt.surrogate_models import RBF, KRG, GENN
 
@@ -54,7 +56,9 @@ def train_surrogates(data,template):
 
         interp.train()
         interp.ranges = [data.range_in,data.range_out]
-        interp.metric = MAE(interp.test_out,interp.predict_values(interp.test_in))  ###  tune surrogate selection logic
+        interp.metric = {}
+        interp.metric["mae"] = MAE(interp.test_out,interp.predict_values(interp.test_in))
+        interp.metric["r2"] = R2(interp.test_out,interp.predict_values(interp.test_in)) 
         surrogates.append(interp)
 
     return surrogates
@@ -62,10 +66,19 @@ def train_surrogates(data,template):
         
 def select_best_surrogate(surrogates):
 
-    best = surrogates[np.array([sur.metric for sur in surrogates]).argmin()]
-    variance = np.var(np.array([sur.metric for sur in surrogates]))
+    metrics = np.array([sur.metric[settings["surrogate"]["selection_metric"]] for sur in surrogates])
+
+    if settings["surrogate"]["selection_metric"] == "mae":
+        best_index = metrics.argmin()
+    elif settings["surrogate"]["selection_metric"] == "r2":
+        best_index = metrics.argmax()
+
+    best_surrogate = surrogates[best_index]
     
-    return best, variance
+    # Store the metric for sample size determination
+    best_surrogate.metric["variance"] = np.var(metrics)
+    
+    return best_surrogate
 
 
 def set_surrogate(name,dim_in,dim_out,no_points):
@@ -94,7 +107,8 @@ def set_surrogate(name,dim_in,dim_out,no_points):
     elif name=="rbf":
         surrogate = RBF(d0=0.55) ### hard-coded
     elif name=="kriging":
-        surrogate = KRG(theta0=[1e2]) ### hard-coded
+##        surrogate = KRG(theta0=[1e2]) ### hard-coded
+        surrogate = KRG() ### hard-coded
     elif name=="genn":
         surrogate = GENN()
     else:

@@ -15,7 +15,8 @@
  "validation": "kfold",
  "validation_param": 5,
  "convergence": "max_iterations",
- "convergence_limit": 5
+ "convergence_limit": 5,
+ "selection_metric": "r2"
  },
 
  "optimization": {
@@ -32,7 +33,7 @@
  "termination": "n_gen",
  "termination_val": 40,
  "termination": "f_tol",
- "termination_val": [0.001,5,5,null,null],
+ "termination_val": [0.01,5,5,null,null],
  "opt_seed": null,
  "opt_verbose": true,
  "constrained": true,
@@ -44,6 +45,6 @@
  "show_surrogate": 0,
  "show_convergence": 0,
  "show_result_des": 0,
- "show_result_obj": 0
+ "show_result_obj": 1
  }
 }

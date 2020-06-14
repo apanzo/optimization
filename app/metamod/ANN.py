@@ -45,7 +45,7 @@ class ANN(SurrogateModel):
                                              kernel_initializer=self["init"],
                                              bias_initializer=self["bias_init"],
                                              kernel_regularizer=kernel_regularizer,
-                                             input_shape=(architecture[0],)))
+                                             input_shape=(self["architecture"][0],)))
         for neurons in self["architecture"][2:-1]:
             self.model.add(tf.keras.layers.Dense(neurons, activation=self["activation"],
                                                  kernel_initializer=self["init"],
@@ -145,11 +145,11 @@ class ANN(SurrogateModel):
         if self.options["prune"]:
             callbacks.append(sparsity.UpdatePruningStep())
         if self.options["tensorboard"]:
-            raise ValueError("Tensorboard implemented yet")
+            raise ValueError("Tensorboard not implemented yet")
 ##            log_dir = "logs\\fit\\"#+ datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 ##            callbacks.append(tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=20))
         if self.options["stopping"]:
-            callbacks.append(tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=stopping_delta, patience=stopping_patience, verbose=1))
+            callbacks.append(tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=stopping_delta, patience=stopping_patience, verbose=1,restore_best_weights=True))
 ##            callback = tf.keras.callbacks.MyStopping(monitor='val_loss', target=5, patience=3, verbose=1)
 
         train_in, train_out = self.training_points[None][0]

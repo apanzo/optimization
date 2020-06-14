@@ -33,12 +33,14 @@
  "termination_val": [40],
  "opt_seed": null,
  "opt_verbose": true,
- "constrained": true
+ "constrained": true,
+ "error_limit": 10
  },
 
  "visual": {
  "show_raw": 0,
  "show_surrogate": 0,
+ "show_convergence": 0,
  "show_result_des": 1,
  "show_result_obj": 1
  }

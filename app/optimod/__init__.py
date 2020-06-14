@@ -101,7 +101,7 @@ def unnormalize_res(res,ranges):
     res.F_val = res.F
     
     res.X = scale(res.X,ranges[0])
-    res.F = scale(res.F,ranges[1][:res.F.shape[1],:]) # slicing to exclude constraints
+    res.F = scale(res.F,ranges[1][:res.F.shape[-1],:]) # slicing to exclude constraints
 
     return res
 
