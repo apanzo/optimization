@@ -20,7 +20,7 @@ from settings import settings
 # ANN is imported in set_surrogate only if it is need
 
 
-def train_surrogates(data,template):
+def train_surrogates(data,dim_in,dim_out,no_points):
     """
     Train the defined surrogate on the provided data.
 
@@ -43,10 +43,11 @@ def train_surrogates(data,template):
     split = set_validation(validation,validation_param)
     
     for train, test in split.split(data.input):
-        if template.name == "ANN":
-            interp = copy(template)
-        else:
-            interp = deepcopy(template)
+##        if template.name == "ANN":
+##            interp = deepcopy(template)
+##        else:
+##            interp = deepcopy(template)
+        interp = set_surrogate(settings["surrogate"]["surrogate"],dim_in,dim_out,no_points)
         ### shuffle it!!!
         interp.train_in, interp.train_out = data.input[train], data.output[train]
         interp.test_in, interp.test_out = data.input[test], data.output[test]
@@ -107,8 +108,8 @@ def set_surrogate(name,dim_in,dim_out,no_points):
     elif name=="rbf":
         surrogate = RBF(d0=0.55) ### hard-coded
     elif name=="kriging":
-##        surrogate = KRG(theta0=[1e2]) ### hard-coded
-        surrogate = KRG() ### hard-coded
+        surrogate = KRG(theta0=[1e2]) ### hard-coded
+##        surrogate = KRG() ### hard-coded
     elif name=="genn":
         surrogate = GENN()
     else:

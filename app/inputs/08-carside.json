@@ -5,7 +5,7 @@
  "evaluator": "benchmark",
  "sampling": "halton",
  "resampling": "linear",
- "default_sample_coef": 5,
+ "default_sample_coef": 7,
  "resampling_param": 1,
  "adaptive": null,
  "convergence": "r2",

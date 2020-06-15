@@ -7,15 +7,16 @@
  "resampling": "linear",
  "default_sample_coef": 10,
  "resampling_param": 5,
- "adaptive": null
+ "adaptive": null,
+ "convergence": "r2",
+ "convergence_limit": 0.99
  },
 
  "surrogate": {
  "surrogate": "kriging",
  "validation": "kfold",
  "validation_param": 5,
- "convergence": "max_iterations",
- "convergence_limit": 15
+ "selection_metric": "r2"
  },
 
  "optimization": {
@@ -29,18 +30,18 @@
  "crossover_eta": 15,
  "mutation": "real_pm",
  "mutation_eta": 20,
- "termination": "n_gen",
- "termination_val": 40,
  "termination": "f_tol",
- "termination_val": [0.001,5,5,null,null],
+ "termination_val": [0.001,5,5,150,null],
  "opt_seed": null,
  "opt_verbose": true,
- "constrained": false
+ "constrained": false,
+ "error_limit": 5
  },
 
  "visual": {
  "show_raw": 0,
  "show_surrogate": 0,
+ "show_convergence": 1,
  "show_result_des": 1,
  "show_result_obj": 1
  }

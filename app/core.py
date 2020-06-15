@@ -13,10 +13,16 @@ from model_class import Model
 from settings import load_settings,settings,check_valid_settings
 
 # Initialize the settings
-##settings.update(load_settings("app","02-matlab_peaks"))
-##settings.update(load_settings("app","09-dtlz5"))
-settings.update(load_settings("app","08-carside"))
+##settings.update(load_settings("app","00-getting_started"))
 ##settings.update(load_settings("app","01-squared"))
+##settings.update(load_settings("app","02-matlab_peaks"))
+##settings.update(load_settings("app","03-kursawe_unc"))
+##settings.update(load_settings("app","04-bnh_unc"))
+##settings.update(load_settings("app","05-tnk_unc"))
+##settings.update(load_settings("app","06-tnk"))
+##settings.update(load_settings("app","07-osy"))
+##settings.update(load_settings("app","08-carside"))
+##settings.update(load_settings("app","09-dtlz5"))
 check_valid_settings()
 
 # Initialize the model
@@ -30,8 +36,6 @@ while not model.optimization_converged:
         model.evaluate()
         model.load_results()
         model.train()
-        model.sampling_iterations += 1
-        print(model.sampling_iterations)
         model.surrogate_convergence()
 
     if settings["optimization"]["optimize"]:

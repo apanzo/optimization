@@ -71,7 +71,7 @@ class ANN(SurrogateModel):
 
             self.model = sparsity.prune_low_magnitude(self.model, **new_pruning_params)
 
-        self.model.compile(self["optimizer"],self["loss"])
+        self.model.compile(self["optimizer"],self["loss"],metrics=[tf.keras.metrics.MeanAbsolutePercentageError()])
 
         self._is_trained = False
         
@@ -239,7 +239,9 @@ class ANN(SurrogateModel):
         """
         test_in, test_out = self.validation_points[None][0]
         
-        error = self.model.evaluate(test_in, test_out, verbose=0)
-        print('MSE: %.3f, RMSE: %.3f' % (error, np.sqrt(error)))
+        error = self.model.evaluate(test_in, test_out, verbose=0, return_dict=True)
+        print('MSE: %.3f, RMSE: %.3f' % (error["loss"], np.sqrt(error["loss"])))
+        if "mean_absolute_percentage_error" in self.model.metrics_names:
+            print("MAPE %.0f:" % (error["mean_absolute_percentage_error"]))
 
         return error

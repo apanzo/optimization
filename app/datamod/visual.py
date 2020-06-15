@@ -109,7 +109,7 @@ def compare():
     plt.plot(model.data.input,model.surrogate.predict_values(model.data.input),"k")
     plt.show()
 
-def sample_size_convergence(metric):
+def sample_size_convergence(metric,name):
     """
     Plot the sample size convergence.
 
@@ -118,4 +118,6 @@ def sample_size_convergence(metric):
         
     """
     plt.plot(metric)
+    plt.title(name)
+##    plt.ylim(ymin=0)
     plt.show()

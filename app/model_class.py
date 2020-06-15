@@ -56,7 +56,7 @@ class Model:
         self.surrogate_metrics = []
 
         # Load surrogate
-        self.surrogate_template = set_surrogate(settings["surrogate"]["surrogate"],self.dim_in,self.dim_out,self.tracking[0])
+##        self.surrogate_template = set_surrogate(settings["surrogate"]["surrogate"],self.dim_in,self.dim_out,self.tracking[0])
 
         # Obtain optimization setup
         self.optimization_converged = False
@@ -70,6 +70,10 @@ class Model:
 
         Note: be careful with geometric, grows fast
         """
+        self.sampling_iterations += 1
+        print("----------------------------------------")
+        print("Iteration "+str(self.sampling_iterations))
+
         # Determine number of new samples
         if self.no_samples == 0:
             no_new_samples = settings["data"]["default_sample_coef"]*self.dim_in
@@ -130,7 +134,7 @@ class Model:
         STUFF
         """
         # Train the surrogates
-        self.surrogates = train_surrogates(self.data,self.surrogate_template)
+        self.surrogates = train_surrogates(self.data,self.dim_in,self.dim_out,self.tracking[0])
 
         # Select the best model
         self.surrogate = select_best_surrogate(self.surrogates)
@@ -164,10 +168,12 @@ class Model:
             self.optimization_error_max = np.max(np.abs(self.optimization_error))
             self.optimization_error_mean = np.mean(self.optimization_error,0)
 
-            print(self.optimization_error_max)
+            print("Maximal percentage optimization error: %.2f " % (self.optimization_error_max))
             
             if self.optimization_error_max < settings["optimization"]["error_limit"]:
                 self.optimization_converged = True
+                print("\n############ Optimization finished ############")
+                print("Total number of samples: %.0f" %(self.no_samples))
             else:
                 self.trained = False
         else:
@@ -181,6 +187,8 @@ class Model:
 
         STUFF
         """
+        print("###### Optimization #######")
+
         # Define the problem using the surogate
         self.problem = set_problem(self.surrogate,self.surrogate.ranges,self.n_const)
 
@@ -208,14 +216,14 @@ class Model:
         else:
             raise Exception("Error should have been caught on initialization")
 
-        print("Metric: "+str(self.surrogate.metric[settings["data"]["convergence"]]))
+        print("Sample size convergence metric: "+settings["data"]["convergence"]+" - "+str(self.surrogate.metric[settings["data"]["convergence"]]))
         self.surrogate_metrics.append(self.surrogate.metric[settings["data"]["convergence"]])
 
         if self.trained:
             print("Surrogate converged")
             if settings["visual"]["show_convergence"]: 
                 # Plot the sample size convergence
-                sample_size_convergence(self.surrogate.metric[settings["data"]["convergence"]])
+                sample_size_convergence(self.surrogate_metrics,settings["data"]["convergence"])
             ##compare()
             
 
