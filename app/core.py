@@ -15,7 +15,7 @@ from settings import load_settings,settings,check_valid_settings
 # Initialize the settings
 ##settings.update(load_settings("app","00-getting_started"))
 ##settings.update(load_settings("app","01-squared"))
-##settings.update(load_settings("app","02-matlab_peaks"))
+settings.update(load_settings("app","02-matlab_peaks"))
 ##settings.update(load_settings("app","03-kursawe_unc"))
 ##settings.update(load_settings("app","04-bnh_unc"))
 ##settings.update(load_settings("app","05-tnk_unc"))

@@ -1,23 +1,28 @@
 installation using command line:
 
-- *navigate to desired path*
+- *navigate to desired installatino directory*
 - **git clone https://github.com/mrozx0/optimization** # get the project
-- **setup.bat** # install dependencies
-- **optimization/app/core.py** # run the framework
+- **cd optimization**                  # navigate to project
+- *if installing dependenction inside virtual environment, proceed from step 2 in virtual environment setup guide*
+- **setup.bat**                        # install dependencies
+- **app\core.py**                      # run the framework
 
 virtual environment setup guide in cmd:
 
-- **cd .../optimization**              # navigate to project
+- *navigate to desired virtual environment directory (can be any)*
 - **python -m venv venv**              # make a virtual environment
-- **venv/scripts/activate.bat**        # activate virtual envirnoment
-- **pip install -r requirements.txt**  # install required packages
-- **app/core.py**                      # run the framework
+- **venv\scripts\activate.bat**        # activate virtual envirnoment
+- **cd (project_path)\optimization**   # navigate to project, if not yet done
+- **setup.bat**                        # install required packages
+- **app\core.py**                      # run the framework
+- **deactivate**                       # excape the virtual environment
 
 documentation can be built using:
 
-- step 1
-- step 2
-- step 3
+- **cd (project_path)\optimization\docs**         # navigate to docs folder
+- **make html**                        # build html documentation
+- *the program will be run during the build, press **Enter** when Ended is print*
+- **build\html\index.html**            # open the html documentation
 
 readme.html is made using:
 
