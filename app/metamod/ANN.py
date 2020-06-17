@@ -18,8 +18,6 @@ from tensorflow_model_optimization.sparsity import keras as sparsity
 
 # Import custom packages
 from settings import load_json, settings
-
-setup = load_json(os.path.join(settings["root"],"app","config","metaconf","ann"))
         
 class ANN(SurrogateModel):
     """
@@ -32,7 +30,8 @@ class ANN(SurrogateModel):
     def __getitem__(self,a):
         return self.options[a]
 
-    def __init__(self,**kwargs):
+    def __init__(self,setup,**kwargs):
+        self.configurations = setup
         super().__init__(**kwargs)
         # Initialize model
         in_dim, out_dim = self["dims"]
@@ -51,7 +50,7 @@ class ANN(SurrogateModel):
                                                  kernel_initializer=self["init"],
                                                  bias_initializer=self["bias_init"],
                                                  kernel_regularizer=kernel_regularizer))
-        self.model.add(tf.keras.layers.Dense(self["architecture"][-1]))
+        self.model.add(tf.keras.layers.Dense(self["architecture"][-1],activation="sigmoid"))
 
         # Calculate for pruning
 
@@ -71,7 +70,10 @@ class ANN(SurrogateModel):
 
             self.model = sparsity.prune_low_magnitude(self.model, **new_pruning_params)
 
-        self.model.compile(self["optimizer"],self["loss"],metrics=[tf.keras.metrics.MeanAbsolutePercentageError()])
+        optimizer = tf.keras.optimizers.get(self["optimizer"])
+        optimizer._hyper["learning_rate"] = 0.003 #### Put this in config
+        
+        self.model.compile(optimizer,self["loss"],metrics=[tf.keras.metrics.MeanAbsolutePercentageError()])
 
         self._is_trained = False
         
@@ -101,8 +103,7 @@ class ANN(SurrogateModel):
             stopping_patience: number of iterations to wait before stopping
             plot_history: whether to plot the training history
         """
-
-        
+        setup = self.configurations
         # Set default values
         declare = self.options.declare
         declare("no_layers", setup["no_layers"], types=int, desc="number of layers")
@@ -115,8 +116,8 @@ class ANN(SurrogateModel):
         declare("optimizer", setup["optimizer"], types=str, desc="optimizer")
         declare("loss", setup["loss"], types=str, desc="loss function")
         declare("kernel_regularizer", setup["kernel_regularizer"], types=float, desc="regularization") # 000
-        declare("dims", tuple(setup["dims"]), types=tuple, desc="in and out dimensions")
-        declare("no_points", setup["no_points"], types=int, desc="in and out dimensions")
+        declare("dims", (None,None), types=tuple, desc="in and out dimensions")
+        declare("no_points", None, types=int, desc="in and out dimensions")
         declare("prune", setup["prune"], types=bool, desc="pruning")
         declare("sparsity", setup["sparsity"], types=float, desc="target sparsity")
         declare("pruning_frequency", setup["pruning_frequency"], types=int, desc="pruning frequency")
@@ -219,8 +220,6 @@ class ANN(SurrogateModel):
             plt.title('Learning Curves')
             plt.xlabel('Epoch')
             plt.ylabel('Loss')
-    ##        plt.plot(self.model.history.history['loss'], "k-", label='train')
-    ##        plt.plot(self.model.history.history['val_loss'], "r--", label='val')
             plt.plot(history.history['loss'], "k-", label='train')
             plt.plot(history.history['val_loss'], "r--", label='val')
 ##            plt.ylim([0,.1])
@@ -242,6 +241,6 @@ class ANN(SurrogateModel):
         error = self.model.evaluate(test_in, test_out, verbose=0, return_dict=True)
         print('MSE: %.3f, RMSE: %.3f' % (error["loss"], np.sqrt(error["loss"])))
         if "mean_absolute_percentage_error" in self.model.metrics_names:
-            print("MAPE %.0f:" % (error["mean_absolute_percentage_error"]))
+            print("MAPE: %.0f" % (error["mean_absolute_percentage_error"]))
 
         return error

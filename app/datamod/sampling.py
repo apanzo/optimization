@@ -16,7 +16,7 @@ from settings import settings
 
 def sample(name,points,n_dim):
     """
-    Sampling on a unit hypercube [0,1] using a selected DOE.
+    Sampling on a unit hypercube [-1,1] using a selected DOE.
 
     Arguments:
         name: sampling strategy
@@ -25,9 +25,12 @@ def sample(name,points,n_dim):
 
     Raises:
         NameError: if the sampling is not defined
+
+    Notes:
+        Assumes that data is on the [-1,1] range
     """
     
-    xlimits = np.tile((0,1),(n_dim,1))
+    xlimits = np.tile((-1,1),(n_dim,1))
     if name in samplings.keys():        
         sampling = samplings[name](xlimits=xlimits)
     else:

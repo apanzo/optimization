@@ -137,7 +137,6 @@ def normalize(data):
         ranges: normalization ranges
         s
     """
-
     data_norm = data/np.max(np.abs(data),0)
     ranges = np.stack((np.amin(data,0),np.amax(data,0)),1)
     

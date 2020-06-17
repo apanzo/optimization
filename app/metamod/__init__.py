@@ -6,6 +6,7 @@ The aim of the metamod package is to produce and run a surrogate modul
 # Import native packages
 from copy import copy,deepcopy
 import numpy as np
+import os
 
 # Import pypi packages
 from sklearn.metrics import mean_absolute_error as MAE
@@ -16,7 +17,7 @@ from smt.surrogate_models import RBF, KRG, GENN
 
 # Import custom packages
 from metamod import preproc ### not used now
-from settings import settings
+from settings import load_json, settings
 # ANN is imported in set_surrogate only if it is need
 
 
@@ -102,16 +103,17 @@ def set_surrogate(name,dim_in,dim_out,no_points):
         * genn - not working
         * initial parameters for rbg, krig
     """
+    setup = load_json(os.path.join(settings["root"],"app","config","metaconf",name))
     if name=="ann":
         from metamod.ANN import ANN         ### import only when actually used, its slow due to tensorflow
-        surrogate = ANN(no_points=no_points,dims=(dim_in,dim_out))
+        surrogate = ANN(setup,no_points=no_points,dims=(dim_in,dim_out))
     elif name=="rbf":
-        surrogate = RBF(d0=0.55) ### hard-coded
+        surrogate = RBF(**setup) #0.55
     elif name=="kriging":
-        surrogate = KRG(theta0=[1e2]) ### hard-coded
-##        surrogate = KRG() ### hard-coded
+        breakpoint()
+        surrogate = KRG(**setup) # 1e2
     elif name=="genn":
-        surrogate = GENN()
+        surrogate = GENN(**setup)
     else:
         raise NameError('Surrogate not defined, choose "ann","rbf","kriging" or "genn"')
     surrogate.options["print_prediction"] = False

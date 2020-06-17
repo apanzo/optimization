@@ -116,9 +116,12 @@ def set_problem(surrogate,ranges,n_constr):
 
     Returns:
         prob: problem object
+
+    Notes:
+        Assumes a [-1,1] range
     """
     n_var = ranges[0].shape[0]
-    prob = Custom(surrogate,[0]*n_var,[1]*n_var,n_constr=n_constr)
+    prob = Custom(surrogate,[-1]*n_var,[1]*n_var,n_constr=n_constr)
     
     prob.ranges = ranges
     

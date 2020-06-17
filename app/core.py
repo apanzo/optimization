@@ -37,7 +37,6 @@ while not model.optimization_converged:
         model.load_results()
         model.train()
         model.surrogate_convergence()
-
     if settings["optimization"]["optimize"]:
         # Solve the optimiaztion problem
         model.optimize()
