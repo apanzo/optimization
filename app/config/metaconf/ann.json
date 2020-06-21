@@ -7,6 +7,7 @@
  "init": "he_normal",
  "bias_init": "ones",
  "optimizer": "adam",
+ "learning_rate": 0.003,
  "loss": "mse",
  "kernel_regularizer": 0.0000,
  "prune": false,

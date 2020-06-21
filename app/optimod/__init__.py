@@ -3,7 +3,10 @@ Optimization package.
 
 The aim of the optimod package is to perform optimization
 """
+import os
+
 # Import pypi packages
+import numpy as np
 from pymoo.factory import get_sampling, get_crossover, get_mutation
 from pymoo.factory import get_termination
 from pymoo.factory import get_algorithm
@@ -12,8 +15,7 @@ from pymoo.optimize import minimize
 # Import custom packages
 from datamod import scale
 from datamod.problems import Custom
-from settings import settings
-
+from settings import load_json, settings
 
 def solve_problem(problem,algorithm,termination):
     """
@@ -27,8 +29,11 @@ def solve_problem(problem,algorithm,termination):
 
     Returns:
         res: results object
+
+    Notes:
+        save_history will work with ANN surrogate from Tensorflow only if line 290 in site-packages\pymoo\model\algorithm is changed from deepcopy to copy
     """
-    opt_seed = settings["optimization"]["opt_seed"]
+##    opt_seed = setup_gen["solve"]["opt_seed"]
     verbose = settings["optimization"]["opt_verbose"]
     res_nor = minimize(problem,
                    algorithm,
@@ -63,11 +68,12 @@ def set_optimization():
 
     """
     setup = settings["optimization"]
+    setup_gen = load_json(os.path.join(settings["root"],"app","config","opticonf",settings["optimization"]["optimization"]))
     
     # Get optimization settings objects
-    sampling = get_sampling(setup["opt_sampling"])
-    mutation = get_mutation(setup["mutation"], eta=setup["mutation_eta"])
-    crossover = get_crossover(setup["crossover"], prob=setup["crossover_prob"], eta=setup["crossover_eta"])
+    sampling = get_sampling(setup_gen["opt_sampling"])
+    mutation = get_mutation(**setup_gen["mutation"])
+    crossover = get_crossover(**setup_gen["crossover"])
 
     # Get optimization algorithm
     alg = get_algorithm(setup["optimization"],
@@ -99,13 +105,13 @@ def unnormalize_res(res,ranges):
 
     res.X_val = res.X
     res.F_val = res.F
-    
-    res.X = scale(res.X,ranges[0])
-    res.F = scale(res.F,ranges[1][:res.F.shape[-1],:]) # slicing to exclude constraints
+    breakpoint()
+    res.X = scale(np.atleast_2d(res.X),ranges[0])
+    res.F = scale(np.ataleast_2d(res.F),ranges[1][:res.F.shape[-1],:]) # slicing to exclude constraints
 
     return res
 
-def set_problem(surrogate,ranges,n_constr):
+def set_problem(function,ranges,n_obj,n_constr):
     """
     define the problem from Custom class.
 
@@ -121,7 +127,7 @@ def set_problem(surrogate,ranges,n_constr):
         Assumes a [-1,1] range
     """
     n_var = ranges[0].shape[0]
-    prob = Custom(surrogate,[-1]*n_var,[1]*n_var,n_constr=n_constr)
+    prob = Custom(function,[-1]*n_var,[1]*n_var,n_obj,n_constr)
     
     prob.ranges = ranges
     

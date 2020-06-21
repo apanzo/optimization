@@ -1,13 +1,13 @@
 {
  "data": {
- "id" : 8,
- "problem": "carside",
+ "id" : 12,
+ "problem": "matlab_peaks",
  "evaluator": "benchmark",
  "sampling": "halton",
  "resampling": "linear",
  "default_sample_coef": 5,
- "resampling_param": 1,
- "adaptive": null,
+ "resampling_param": 5,
+ "adaptive": "eason",
  "convergence": "r2",
  "convergence_limit": 0.99
  },
@@ -20,22 +20,14 @@
  },
 
  "optimization": {
- "optimize": true,
- "optimization": "nsga2",
- "pop_size": 100,
- "n_offsprings": 25,
- "termination": "f_tol",
- "termination_val": [0.01,5,5,150,null],
- "opt_verbose": true,
- "constrained": true,
- "error_limit": 5
+ "optimize": false
  },
 
  "visual": {
  "show_raw": 0,
  "show_surrogate": 0,
- "show_convergence": 1,
- "show_result_des": 1,
- "show_result_obj": 1
+ "show_convergence": 0,
+ "show_result_des": 0,
+ "show_result_obj": 0
  }
 }

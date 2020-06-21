@@ -33,6 +33,9 @@ def train_surrogates(data,dim_in,dim_out,no_points):
     Returns:
         best: best model according to selected metrics
         variance: metrics of surrogate variances for sample size determination
+
+    Note:
+        the indices are shuffled
     
     """
     # Unpack settings
@@ -49,13 +52,10 @@ def train_surrogates(data,dim_in,dim_out,no_points):
 ##        else:
 ##            interp = deepcopy(template)
         interp = set_surrogate(settings["surrogate"]["surrogate"],dim_in,dim_out,no_points)
-        ### shuffle it!!!
+        np.random.shuffle(train), np.random.shuffle(test) ###????
         interp.train_in, interp.train_out = data.input[train], data.output[train]
         interp.test_in, interp.test_out = data.input[test], data.output[test]
         interp.set_training_values(interp.train_in,interp.train_out)
-        if interp.name == "ANN":
-            interp.set_validation_values(interp.test_in,interp.test_out)
-
         interp.train()
         interp.ranges = [data.range_in,data.range_out]
         interp.metric = {}
@@ -110,7 +110,6 @@ def set_surrogate(name,dim_in,dim_out,no_points):
     elif name=="rbf":
         surrogate = RBF(**setup) #0.55
     elif name=="kriging":
-        breakpoint()
         surrogate = KRG(**setup) # 1e2
     elif name=="genn":
         surrogate = GENN(**setup)
@@ -151,7 +150,7 @@ def set_validation(validation,param):
     elif validation == "kfold":
         if isinstance(param, int) and param != 0:
             no_folds = param
-            split = KFold(no_folds)
+            split = KFold(no_folds, shuffle=True)
         else:
             invalid_param()
     else:

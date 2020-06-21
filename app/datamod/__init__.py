@@ -55,7 +55,7 @@ class get_data:
         self.output, self.range_out = normalize(self.response)
 
 
-def resample(points_new,points_now,sampling,dim_in,range_in):
+def resample(points_new,points_now,dim_in,range_in):
     """
     Determine the coordinates of the new sample.
 
@@ -71,13 +71,13 @@ def resample(points_new,points_now,sampling,dim_in,range_in):
     
     """
     # Sample
-    full_sample = sample(sampling,points_now+points_new,dim_in) # unit coordinates
+    full_sample = sample(settings["data"]["sampling"],points_now+points_new,dim_in) # unit coordinates
     new_sample = full_sample[points_now:,:] # only picked those that are new
     coordinates = scale(new_sample,range_in) # full coordinates
 
     return coordinates
 
-def resample_adaptive(surrogates,data):
+def resample_adaptive(points_new,surrogates,data):
     """
     STUFF
 
@@ -86,11 +86,13 @@ def resample_adaptive(surrogates,data):
 
     exploration, exploitation = adaptive_methods[settings["data"]["adaptive"]]
 
-    proposed_samples = sample(settings["data"]["sampling"],settings["data"]["adaptive_sample"],data.dim_in)
+    np_proposed_points = data.input.shape[0]*100
+    
+    proposed_samples = sample(settings["data"]["sampling"],np_proposed_points,data.dim_in)
     predictions_list = [sur.predict_values(proposed_samples) for sur in surrogates]
     predictions = np.array(predictions_list)
 
-    coordinates = sample_adaptive(data,sample,proposed_samples,exploration,exploitation,predictions)
+    coordinates = sample_adaptive(data,proposed_samples,predictions,points_new,exploration,exploitation)
 
     return coordinates
 

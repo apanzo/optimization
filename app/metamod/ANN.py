@@ -5,7 +5,6 @@ This module contains the definition of an ANN comptable
 with the SMT Toolbox
 """
 # Import native packages
-from collections import defaultdict
 import os
 
 # Import pypi packages
@@ -53,10 +52,8 @@ class ANN(SurrogateModel):
         self.model.add(tf.keras.layers.Dense(self["architecture"][-1],activation="sigmoid"))
 
         # Calculate for pruning
-
         if self["prune"]:
-            num_train_samples = self["no_points"]
-            end_step = np.ceil(1.0 * num_train_samples / self["batch_size"]).astype(np.int32) * ["no_epochs"]
+            end_step = np.ceil(1.0 * self["no_points"] / self["batch_size"]).astype(np.int32) * ["no_epochs"]
             print('End step: ' + str(end_step))
 
             # Add pruning layers
@@ -70,10 +67,11 @@ class ANN(SurrogateModel):
 
             self.model = sparsity.prune_low_magnitude(self.model, **new_pruning_params)
 
+        # Train
         optimizer = tf.keras.optimizers.get(self["optimizer"])
-        optimizer._hyper["learning_rate"] = 0.003 #### Put this in config
+        optimizer._hyper["learning_rate"] = self["learning_rate"]
         
-        self.model.compile(optimizer,self["loss"],metrics=[tf.keras.metrics.MeanAbsolutePercentageError()])
+        self.model.compile(optimizer,self["loss"],metrics=["mape"])
 
         self._is_trained = False
         
@@ -114,10 +112,11 @@ class ANN(SurrogateModel):
         declare("init", setup["init"], types=str, desc="weight initialization")
         declare("bias_init", setup["bias_init"], types=str, desc="bias initialization")
         declare("optimizer", setup["optimizer"], types=str, desc="optimizer")
+        declare("learning_rate", setup["learning_rate"], types=float, desc="optimizer")
         declare("loss", setup["loss"], types=str, desc="loss function")
         declare("kernel_regularizer", setup["kernel_regularizer"], types=float, desc="regularization") # 000
-        declare("dims", (None,None), types=tuple, desc="in and out dimensions")
-        declare("no_points", None, types=int, desc="in and out dimensions")
+        declare("dims", (None,None), types=tuple, desc="in and out dimensions") ## has to be declared
+        declare("no_points", None, types=int, desc="number of training points") ## has to be declared
         declare("prune", setup["prune"], types=bool, desc="pruning")
         declare("sparsity", setup["sparsity"], types=float, desc="target sparsity")
         declare("pruning_frequency", setup["pruning_frequency"], types=int, desc="pruning frequency")
@@ -129,8 +128,6 @@ class ANN(SurrogateModel):
 
 ##        self.supports["derivatives"] = True
         self.name = "ANN"
-
-        self.validation_points = defaultdict(dict)
 
     def _train(self):
         """
@@ -154,13 +151,12 @@ class ANN(SurrogateModel):
 ##            callback = tf.keras.callbacks.MyStopping(monitor='val_loss', target=5, patience=3, verbose=1)
 
         train_in, train_out = self.training_points[None][0]
-        test_in, test_out = self.validation_points[None][0]
 
         batch_size = self.options["batch_size"]
         no_epochs = self.options["no_epochs"]
 
-        histor = self.model.fit(train_in, train_out, validation_data = (test_in, test_out), epochs=no_epochs, batch_size=batch_size, verbose=0, callbacks=callbacks)
-        self.metric = self.evaluation()
+        histor = self.model.fit(train_in, train_out, epochs=no_epochs, batch_size=batch_size, verbose=0, callbacks=callbacks, validation_split = 0.2)
+        self.metric = self.evaluation(histor.history)
 
         self._is_trained = True
         if self.options["plot_history"]:
@@ -177,33 +173,6 @@ class ANN(SurrogateModel):
         """
         return self.model.predict(x)
 
-    def set_validation_values(self, xt, yt, name=None):
-        """
-        Set training data (values).
-
-        Parameters
-        ----------
-        xt : np.ndarray[nt, nx] or np.ndarray[nt]
-            The input values for the nt training points.
-        yt : np.ndarray[nt, ny] or np.ndarray[nt]
-            The output values for the nt training points.
-        name : str or None
-            An optional label for the group of training points being set.
-            This is only used in special situations (e.g., multi-fidelity applications).
-        """
-        xt = check_2d_array(xt, "xt")
-        yt = check_2d_array(yt, "yt")
-
-        if xt.shape[0] != yt.shape[0]:
-            raise ValueError(
-                "the first dimension of xt and yt must have the same length"
-            )
-
-        self.nt = xt.shape[0]
-        self.nx = xt.shape[1]
-        self.ny = yt.shape[1]
-        kx = 0
-        self.validation_points[name][kx] = [np.array(xt), np.array(yt)]
 
     def plot_training_history(self,history):
         """
@@ -229,18 +198,19 @@ class ANN(SurrogateModel):
         else:
             ValueError("Not trained yet")
 
-    def evaluation(self):
+    def evaluation(self,history):
         """
         Evaluate the generalization error.
 
         Returns:
             error: validation metric
+
+        Notes:
+            Assumes erros is MSE
         """
-        test_in, test_out = self.validation_points[None][0]
-        
-        error = self.model.evaluate(test_in, test_out, verbose=0, return_dict=True)
-        print('MSE: %.3f, RMSE: %.3f' % (error["loss"], np.sqrt(error["loss"])))
+        error = history["val_loss"][-1]
+        print('MSE: %.3f, RMSE: %.3f' % (error, np.sqrt(error)))
         if "mean_absolute_percentage_error" in self.model.metrics_names:
-            print("MAPE: %.0f" % (error["mean_absolute_percentage_error"]))
+            print("MAPE: %.0f" % (error["val_mape"]))
 
         return error

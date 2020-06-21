@@ -1,0 +1,18 @@
+{
+ "opt_sampling": "real_random",
+
+ "crossover": {
+ "name": "real_sbx",
+ "prob": 0.9,
+ "eta": 15
+ },
+
+ "mutation": {
+ "name": "real_pm",
+ "eta": 20
+ },
+
+ "solve": {
+ "opt_seed": null
+ }
+}

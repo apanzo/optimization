@@ -29,37 +29,38 @@ def sample(name,points,n_dim):
     Notes:
         Assumes that data is on the [-1,1] range
     """
-    
+
     xlimits = np.tile((-1,1),(n_dim,1))
-    if name in samplings.keys():        
+    if name in samplings.keys():
         sampling = samplings[name](xlimits=xlimits)
     else:
         raise NameError('Sampling not defined')
 
     return sampling(points)
 
-def sample_adaptive(data,sample,test_sample,exploration,exploitation,test_np):
+def sample_adaptive(data,samples,predictions,no_points_new,exploration,exploitation):
     """
     Sampling using an adaptive DOE
-    
+
     Notes:
         * Make a unit test to check that worst_new is 2D
     """
     if exploration == "nnd":
-        nnd = [np.linalg.norm(data.input-sample,axis=1).min() for sample in test_sample]
+        exploration_metric = np.array([np.linalg.norm(data.input-sample,axis=1).min() for sample in samples])
     else:
         raise Exception("Exploration method not implemented")
 
     if exploitation == "variance":
-        test_variances = np.var(test_np,axis=0)
-##        worst = test_sample[np.argmax(test_variances)]
-        reorder = np.argpartition(test_variances, -settings["data"]["resampling_param"],axis=0)
-        few_best = reorder[-settings["data"]["resampling_param"]:]
-        worst_new = test_sample[few_best]
-        worst_new = worst_new.reshape((settings["data"]["resampling_param"],-1))
+        exploitation_metric = np.var(predictions,axis=0)[:,0]
     else:
         raise Exception("Exploitation method not implemented")
+
+    overall_metric = exploration_metric/np.max(exploration_metric) + exploitation_metric/np.max(exploitation_metric)
     
+    reordered = np.argpartition(overall_metric, -no_points_new,axis=0)
+    few_best = reordered[-no_points_new:]
+    worst_new = samples[few_best]
+
     return worst_new
 
 class Halton(SamplingMethod):
@@ -69,7 +70,7 @@ class Halton(SamplingMethod):
     References:
         https://gist.github.com/tupui/cea0a91cc127ea3890ac0f002f887bae
     """
-    
+
     def _initialize(self):
 ##        self.options.declare("weights", values=[None], types=[list, np.ndarray])
 ##        self.options.declare("clip", types=bool)

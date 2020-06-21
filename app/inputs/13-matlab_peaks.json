@@ -1,0 +1,30 @@
+{
+ "data": {
+ "problem": "matlab_peaks",
+ "evaluator": "benchmark",
+ "sampling": null
+ },
+
+ "surrogate": {
+ "surrogate": null
+ },
+
+ "optimization": {
+ "optimize": true,
+ "optimization": "nsga2",
+ "pop_size": 40,
+ "n_offsprings": 10,
+ "termination": "f_tol",
+ "termination_val": [0.001,5,5,null,null],
+ "opt_verbose": true,
+ "constrained": false
+ },
+
+ "visual": {
+ "show_raw": 0,
+ "show_surrogate": 0,
+ "show_convergence": 0,
+ "show_result_des": 0,
+ "show_result_obj": 0
+ }
+}

@@ -1,6 +1,7 @@
 # Import native packages
 import os
 from pathlib import Path
+from math import ceil
 
 # Import pypi packages
 import numpy as np
@@ -37,22 +38,31 @@ class Model:
             raise Exception("Error should have been caught on initialization")
 
         # Deactivate constrains if not set otherwise
-        ### Constraints handling not yet tested
-        if not settings["optimization"]["constrained"]:
-            self.n_const = 0
 
         # Make response file
         folder_name = str(settings["data"]["id"]).zfill(2) + "-" +  settings["data"]["problem"]
         self.folder = os.path.join(settings["root"],"data",folder_name)
         Path(self.folder).mkdir(parents=True,exist_ok=True) # parents in fact not needed
         self.file = os.path.join(self.folder,"database.txt")
+        ids = [int(name[:2]) for name in next(os.walk(os.path.join(settings["root"],"data")))[1]] ##############xx
+        if settings["data"]["id"] in ids:
+            id_current = settings["data"]["id"]
+            while True:
+                overwrite = input(f"ID {id_current} has already results. Do you want to overwrite results? [y/n]")
+                if overwrite in ["y","n"]:
+                    if overwrite == "y":
+                        break
+                    else:
+                        raise Exception(f"ID {id_current} already defined")
+                else:
+                    print("Invalid input")
         make_results_file(self.file,self.dim_in)
 
         # Initialize sampling
         self.no_samples = 0
         self.sampling_iterations = 0
-        self.tracking = [self.no_samples] ## so that object can be passed to set_surrogate instead of number
         self.trained = False
+        self.retraining = False
         self.surrogate_metrics = []
 
         # Load surrogate
@@ -62,6 +72,8 @@ class Model:
         self.optimization_converged = False
         if settings["optimization"]["optimize"]:
             self.algorithm, self.termination = set_optimization()
+            if not settings["optimization"]["constrained"]:
+                self.n_const = 0
             
 
     def sample(self):
@@ -87,9 +99,9 @@ class Model:
 
         # Obtain new samples
         if self.no_samples == 0 or not settings["data"]["adaptive"]: ## So if non-adaptive sampling is used, adaptive must be set to None
-            self.samples = resample(no_new_samples,self.no_samples,settings["data"]["sampling"],self.dim_in,self.range_in)
+            self.samples = resample(no_new_samples,self.no_samples,self.dim_in,self.range_in)
         else: # if the sampling is adaptive
-            self.samples = resample_adaptive(self.surrogates,self.data)
+            self.samples = resample_adaptive(no_new_samples,self.surrogates,self.data)
 
         # Update sample count
         self.no_samples += no_new_samples
@@ -122,6 +134,15 @@ class Model:
         if verify:
             self.verification = get_data(self.verification_file)
         else:
+            # add verification results to database
+            if self.retraining:
+                with open(self.file, 'a') as datafile:
+                    with open(self.verification_file, 'r') as verifile:
+                        read = "\n".join(verifile.read().split("\n")[2:])
+                        datafile.write(read)
+                        self.retraining = False
+
+            # read database
             self.data = get_data(self.file)
             # Plot the input data
             if settings["visual"]["show_raw"]:
@@ -134,7 +155,7 @@ class Model:
         STUFF
         """
         # Train the surrogates
-        self.surrogates = train_surrogates(self.data,self.dim_in,self.dim_out,self.tracking[0])
+        self.surrogates = train_surrogates(self.data,self.dim_in,self.dim_out,self.no_samples)
 
         # Select the best model
         self.surrogate = select_best_surrogate(self.surrogates)
@@ -149,13 +170,23 @@ class Model:
 
         Todo - optimization error logic
         """
+        if not settings["surrogate"]["surrogate"]:
+            self.optimization_converged = True
+
+            return
+
         if self.res is not None:        
             # Verify back the result
             self.verification_file = os.path.join(self.folder,"verification.txt")
             make_results_file(self.verification_file,self.dim_in)
 
             # Set the optimal solutions as new sample
-            self.samples = np.reshape(self.res.X, (-1, self.dim_in))
+            results = np.atleast_2d(self.res.X)
+            no_results = results.shape[0]
+            verification_ratio = 0.2
+            no_verifications = ceil(no_results*verification_ratio)
+            idx =  np.random.default_rng().choice(no_results,size=(no_verifications),replace=False)
+            self.samples = results[idx]
 
             # Evaluate the samples and load the results
             self.evaluate(verify=True)
@@ -163,7 +194,7 @@ class Model:
 
             # Calculate error
             response_F = self.verification.response[:,:-self.problem.n_constr or None]
-            self.optimization_error = (100*(response_F-self.res.F)/response_F)
+            self.optimization_error = (100*(response_F-self.res.F[idx])/response_F)
 
             self.optimization_error_max = np.max(np.abs(self.optimization_error))
             self.optimization_error_mean = np.mean(self.optimization_error,0)
@@ -176,8 +207,10 @@ class Model:
                 print("Total number of samples: %.0f" %(self.no_samples))
             else:
                 self.trained = False
+                self.retraining = True
         else:
             self.trained = False
+            self.retraining = True
 
         ##len([step["delta_f"] for step in model.res.algorithm.display.term.metrics])
 
@@ -190,7 +223,12 @@ class Model:
         print("###### Optimization #######")
 
         # Define the problem using the surogate
-        self.problem = set_problem(self.surrogate,self.surrogate.ranges,self.n_const)
+        n_obj = self.dim_out-self.n_const
+        ranges = np.stack((self.system.xl,self.system.xu),1)
+        if settings["surrogate"]["surrogate"]:
+            self.problem = set_problem(self.surrogate.predict_values,self.surrogate.ranges,n_obj,self.n_const)
+        else:
+            self.problem = set_problem(self.system.evaluate,ranges,n_obj,self.n_const)
 
         self.res = solve_problem(self.problem,self.algorithm,self.termination)
 

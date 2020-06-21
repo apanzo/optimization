@@ -14,7 +14,7 @@ class Custom(Problem):
     Note:
         data should be always normalized
     """
-    def __init__(self, surrogate, xl, xu, n_constr):
+    def __init__(self, function, xl, xu, n_obj, n_constr):
         """Constructor.
 
         Arguments:
@@ -30,9 +30,8 @@ class Custom(Problem):
         if len(xl) != len(xu):
             raise ValueError('Incorrent bounds')
         n_var = len(xl)
-        n_obj = surrogate.ny - n_constr
         super().__init__(n_var=n_var, n_obj=n_obj, n_constr=n_constr, xl=xl, xu=xu, type_var=np.double)
-        self.function = surrogate.predict_values
+        self.function = function
         self.n_constr = n_constr
 
         
