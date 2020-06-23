@@ -11,7 +11,6 @@ def load_json(file):
 
     return data
 
-
 def get_input_from_id(problem_id,problem_folder):
     """
     Get filename from problem ID.

@@ -4,7 +4,6 @@ Surrogate package.
 The aim of the metamod package is to produce and run a surrogate modul
 """
 # Import native packages
-from copy import copy,deepcopy
 import numpy as np
 import os
 
@@ -12,11 +11,11 @@ import os
 from sklearn.metrics import mean_absolute_error as MAE
 from sklearn.metrics import r2_score as R2
 
-from sklearn.model_selection import KFold, ShuffleSplit
 from smt.surrogate_models import RBF, KRG, GENN
 
 # Import custom packages
-from metamod import preproc ### not used now
+from metamod.postproc import check_convergence, select_best_surrogate, verify_results
+from metamod.preproc import set_validation
 from settings import load_json, settings
 # ANN is imported in set_surrogate only if it is need
 
@@ -47,11 +46,8 @@ def train_surrogates(data,dim_in,dim_out,no_points):
     split = set_validation(validation,validation_param)
     
     for train, test in split.split(data.input):
-##        if template.name == "ANN":
-##            interp = deepcopy(template)
-##        else:
-##            interp = deepcopy(template)
-        interp = set_surrogate(settings["surrogate"]["surrogate"],dim_in,dim_out,no_points)
+
+        interp = set_surrogate(settings["surrogate"]["surrogate"],dim_in,dim_out,no_points,len(surrogates))
         np.random.shuffle(train), np.random.shuffle(test) ###????
         interp.train_in, interp.train_out = data.input[train], data.output[train]
         interp.test_in, interp.test_out = data.input[test], data.output[test]
@@ -66,24 +62,8 @@ def train_surrogates(data,dim_in,dim_out,no_points):
     return surrogates
 
         
-def select_best_surrogate(surrogates):
 
-    metrics = np.array([sur.metric[settings["surrogate"]["selection_metric"]] for sur in surrogates])
-
-    if settings["surrogate"]["selection_metric"] == "mae":
-        best_index = metrics.argmin()
-    elif settings["surrogate"]["selection_metric"] == "r2":
-        best_index = metrics.argmax()
-
-    best_surrogate = surrogates[best_index]
-    
-    # Store the metric for sample size determination
-    best_surrogate.metric["variance"] = np.var(metrics)
-    
-    return best_surrogate
-
-
-def set_surrogate(name,dim_in,dim_out,no_points):
+def set_surrogate(name,dim_in,dim_out,no_points,keras_optimized):
     """
     Select the desired surrogate model.
 
@@ -106,7 +86,7 @@ def set_surrogate(name,dim_in,dim_out,no_points):
     setup = load_json(os.path.join(settings["root"],"app","config","metaconf",name))
     if name=="ann":
         from metamod.ANN import ANN         ### import only when actually used, its slow due to tensorflow
-        surrogate = ANN(setup,no_points=no_points,dims=(dim_in,dim_out))
+        surrogate = ANN(setup,keras_optimized,no_points=no_points,dims=(dim_in,dim_out))
     elif name=="rbf":
         surrogate = RBF(**setup) #0.55
     elif name=="kriging":
@@ -120,49 +100,5 @@ def set_surrogate(name,dim_in,dim_out,no_points):
     
     return surrogate
 
-def set_validation(validation,param):
-    """
-    Select the desired validation technique model.
 
-    Arguments:
-        validation: validation technique
-        param: validation technique parameter
 
-    Returns:
-        split: indices for the split
-
-    Raises:
-        NameError: if the validation technique is not defined
-    """
-    if validation == "holdout":
-        if 0 < param < 1:
-            split_ratio = param
-            split = ShuffleSplit(1,split_ratio)
-        else:
-            invalid_param()
-    elif validation == "rlt":
-        if isinstance(param[0], int) and param[0] != 0 and 0 < param[1] < 1:
-            no_repeats = param[0]
-            split_ratio = param[1]
-            split = ShuffleSplit(no_repeats,split_ratio)  
-        else:
-            invalid_param()
-    elif validation == "kfold":
-        if isinstance(param, int) and param != 0:
-            no_folds = param
-            split = KFold(no_folds, shuffle=True)
-        else:
-            invalid_param()
-    else:
-         raise NameError('Validation not defined')
-
-    return split
-
-def invalid_param():
-    """
-    Raise error if validation parameter is invalid
-
-    Notes:
-
-    """
-    raise ValueError('Invalid validation parameter')

@@ -28,7 +28,7 @@ def determine_samples(no_samples,dim_in):
 
     return no_new_samples
 
-def resample(points_new,points_now,dim_in,range_in):
+def resample_static(points_new,points_now,dim_in,range_in):
     """
     Determine the coordinates of the new sample.
 

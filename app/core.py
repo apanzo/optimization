@@ -1,7 +1,6 @@
 # Import native packages
 import os
 from pathlib import Path
-from math import ceil
 
 # Import pypi packages
 import numpy as np
@@ -9,26 +8,12 @@ import numpy as np
 # Import custom packages
 from datamod import get_data, load_problem
 from datamod.evaluator import EvaluatorBenchmark
-from datamod.results import make_data_file
-from datamod.sampling import determine_samples, resample, resample_adaptive
+from datamod.results import make_data_file, append_verification_to_database
+from datamod.sampling import determine_samples, resample_static, resample_adaptive
 from datamod.visual import plot_raw, show_problem, vis_design_space, vis_objective_space, sample_size_convergence
-from metamod import set_surrogate, train_surrogates, select_best_surrogate
+from metamod import set_surrogate, train_surrogates, select_best_surrogate, check_convergence, verify_results
 from optimod import set_optimization, set_problem, solve_problem
 from settings import settings
-
-def make_workfolder():
-    """
-    Initialize the workdirectory.
-
-    """
-    # Setup the folder path
-    folder_name = str(settings["data"]["id"]).zfill(2) + "-" +  settings["data"]["problem"]
-    folder_path = os.path.join(settings["root"],"data",folder_name)
-
-    # Create folder, if not done yet
-    Path(folder_path).mkdir(parents=True,exist_ok=True) # parents in fact not needed
-
-    return folder_path
 
 
 class Model:
@@ -52,16 +37,22 @@ class Model:
         # Obtain problem information 
         if settings["data"]["evaluator"] == "benchmark":
 ##             self.system, self.range_in, self.dim_in, self.dim_out, self.n_const = load_problem(settings["data"]["problem"])
-             self.system, self.range_in, self.dim_in, self.dim_out, self.n_const = load_problem(settings["data"]["problem"])
+            self.system, self.range_in, self.dim_in, self.dim_out, self.n_const = load_problem(settings["data"]["problem"])
+            self.evaluator = EvaluatorBenchmark(self.n_const)
         else:
             raise Exception("Error should have been caught on initialization")
 
-        self.n_obj = self.dim_out - self.n_const 
+        self.n_obj = self.dim_out - self.n_const
 
             
 class Surrogate:
     
     def __init__(self,model):
+
+        # Carry over model
+        self.model = model
+
+        # Training status
         self.trained = False
         self.retraining = False
         
@@ -69,20 +60,14 @@ class Surrogate:
         self.no_samples = 0
         self.sampling_iterations = 0
 
+        # Initialize metrics
         self.surrogate_metrics = []
 
-        self.model = model
-
+        # Make response filess
         self.file = os.path.join(self.model.folder,"database.csv")
         make_data_file(self.file,self.model.dim_in)
         self.verification_file = os.path.join(self.model.folder,"verification.csv")
         make_data_file(self.verification_file,self.model.dim_in)
-
-        self.evaluator = EvaluatorBenchmark(self.model.n_const)
-
-
-        # Load surrogate
-##        self.surrogate_template = set_surrogate(settings["surrogate"]["surrogate"],self.dim_in,self.dim_out,self.tracking[0])
 
     def sample(self):
         """
@@ -90,17 +75,19 @@ class Surrogate:
 
         Note: be careful with geometric, grows fast
         """
+
+        # Track iteration number
         self.sampling_iterations += 1
         print("----------------------------------------")
         print("Iteration "+str(self.sampling_iterations))
 
         # Determine number of new samples
-        no_new_samples = determine_samples(self.no_samples,self.model.dim_in) ####
+        no_new_samples = determine_samples(self.no_samples,self.model.dim_in)
         
         # Obtain new samples
         if self.no_samples == 0 or not settings["data"]["adaptive"]: ## So if non-adaptive sampling is used, adaptive must be set to None
-            self.samples = resample(no_new_samples,self.no_samples,self.model.dim_in,self.model.range_in)
-        else: # if the sampling is adaptive
+            self.samples = resample_static(no_new_samples,self.no_samples,self.model.dim_in,self.model.range_in)
+        else:
             self.samples = resample_adaptive(no_new_samples,self.surrogates,self.data)
 
         # Update sample count
@@ -118,7 +105,7 @@ class Surrogate:
             file = self.file
             
         if settings["data"]["evaluator"] == "benchmark":
-            self.evaluator.evaluate(self.model.system,self.samples,file,self.model.n_const)
+            self.model.evaluator.evaluate(self.model.system,self.samples,file,self.model.n_const)
         else:
             raise Exception("Error should have been caught on initialization")
         
@@ -134,15 +121,12 @@ class Surrogate:
         if verify:
             self.verification = get_data(self.verification_file)
         else:
-            # add verification results to database
+            # Add verification results to database
             if self.retraining:
-                with open(self.file, 'a') as datafile:
-                    with open(self.verification_file, 'r') as verifile:
-                        read = "\n".join(verifile.read().split("\n")[2:])
-                        datafile.write(read)
-                        self.retraining = False
+                append_verification_to_database()
+                self.retraining = False
 
-            # read database
+            # Read database
             self.data = get_data(self.file)
             # Plot the input data
             if settings["visual"]["show_raw"]:
@@ -165,19 +149,9 @@ class Surrogate:
             show_problem(self.problem)
             
     def surrogate_convergence(self):
-        if settings["data"]["convergence"] == "max_iterations":
-            if self.sampling_iterations >= settings["data"]["convergence_limit"]:
-                self.trained = True
-        elif settings["data"]["convergence"] in ["mae","variance"]:
-            if self.surrogate.metric[settings["data"]["convergence"]] <= settings["data"]["convergence_limit"]:
-                self.trained = True
-        elif settings["data"]["convergence"] in ["r2"]:
-            if self.surrogate.metric[settings["data"]["convergence"]] >= settings["data"]["convergence_limit"]:
-                self.trained = True
-        else:
-            raise Exception("Error should have been caught on initialization")
+        self.trained = check_convergence(self.sampling_iterations,self.surrogate.metric[settings["data"]["convergence"]])
 
-        print("Sample size convergence metric: "+settings["data"]["convergence"]+" - "+str(self.surrogate.metric[settings["data"]["convergence"]]))
+        print(f"Sample size convergence metric: {settings['data']['convergence']} - {self.surrogate.metric[settings['data']['convergence']]}")
         self.surrogate_metrics.append(self.surrogate.metric[settings["data"]["convergence"]])
 
         if self.trained:
@@ -189,19 +163,18 @@ class Surrogate:
         
 class Optimization:
     def __init__(self,model,function,range_out,surrogate):
+
         # Obtain optimization setup
         self.optimization_converged = False
-        if settings["optimization"]["optimize"]:
-            self.algorithm, self.termination = set_optimization()
-            # Deactivate constrains if not set otherwise
-            if not settings["optimization"]["constrained"]:
-                self.n_const = 0
+        self.algorithm, self.termination = set_optimization()
+        # Deactivate constrains if not set otherwise
+        if not settings["optimization"]["constrained"]:
+            self.n_const = 0
 
         self.range_out = range_out
         self.model = model
         self.function = function
         self.surrogate = surrogate
-        self.srgt = True
 
     def optimize(self):
         """
@@ -242,21 +215,10 @@ class Optimization:
             return
 
         if self.res is not None:        
-
-            # Set the optimal solutions as new sample
-            results = np.atleast_2d(self.res.X)
-            no_results = results.shape[0]
-            verification_ratio = 0.2
-            no_verifications = ceil(no_results*verification_ratio)
-            idx =  np.random.default_rng().choice(no_results,size=(no_verifications),replace=False)
-            self.surrogate.samples = results[idx]
+            idx = verify_results(self.res.X, self.surrogate)
             
-            # Evaluate the samples and load the results
-            if self.srgt:
-                self.surrogate.evaluate(verify=True) 
-                self.surrogate.load_results(verify=True)
-
             # Calculate error
+            breakpoint()
             response_F = self.surrogate.verification.response[:,:-self.problem.n_constr or None]
             self.optimization_error = (100*(response_F-self.res.F[idx])/response_F)
 
@@ -272,9 +234,29 @@ class Optimization:
             else:
                 self.trained = False
                 self.retraining = True
+
+            return idx
         else:
             self.trained = False
             self.retraining = True
 
+            return None
+
         ##len([step["delta_f"] for step in model.res.algorithm.display.term.metrics])
+
+
+
+def make_workfolder():
+    """
+    Initialize the workdirectory.
+
+    """
+    # Setup the folder path
+    folder_name = str(settings["data"]["id"]).zfill(2) + "-" +  settings["data"]["problem"]
+    folder_path = os.path.join(settings["root"],"data",folder_name)
+
+    # Create folder, if not done yet
+    Path(folder_path).mkdir(parents=True,exist_ok=True) # parents in fact not needed
+
+    return folder_path
 

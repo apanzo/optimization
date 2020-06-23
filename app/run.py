@@ -36,8 +36,8 @@ model = Model()
 surrogate = Surrogate(model)
 train_surrogate()
 
-optimization = Optimization(model,surrogate.surrogate.predict_values,surrogate.data.range_out,surrogate)
-optimize()
+##optimization = Optimization(model,surrogate.surrogate.predict_values,surrogate.data.range_out,surrogate)
+##optimize()
 
 ### Surrogate training loop
 ##while not model.optimization_converged:

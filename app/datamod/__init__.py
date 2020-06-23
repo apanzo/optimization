@@ -53,7 +53,6 @@ class get_data:
         self.output, self.range_out = normalize(self.response)
 
 
-
 def load_problem(name):
     """
     Load a pre-defined benchmark problem.

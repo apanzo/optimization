@@ -51,3 +51,9 @@ def header_names(dim_in,n_obj,n_const):
         headers.append(f"constraint_{i+1}")
 
     return headers
+
+def append_verification_to_database():
+    with open(self.file, 'a') as datafile:
+        with open(self.verification_file, 'r') as verifile:
+            read = "\n".join(verifile.read().split("\n")[2:])
+            datafile.write(read)
