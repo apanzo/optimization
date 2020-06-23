@@ -13,7 +13,7 @@ from pymoo.factory import get_problem
 
 # Import custom packages
 from datamod.problems import problems
-from datamod.sampling import sample, sample_adaptive
+from datamod.results import load_results
 from settings import load_json, settings
 
 adaptive_methods = load_json(os.path.join(settings["root"],"app","config","dataconf","adaptive"))
@@ -39,9 +39,7 @@ class get_data:
             response: sample response
             
         """
-        self.dim_in = int(np.loadtxt(file,max_rows=1))
-        self.col_names = np.loadtxt(file,skiprows=1,max_rows=1,dtype=str,delimiter=",")
-        data = np.loadtxt(file,skiprows=2)
+        self.dim_in, self.col_names, data = load_results(file)
         if len(data.shape) == 1:
             data = np.reshape(data,(-1, len(data)))
         elif len(data.shape) == 0:
@@ -55,46 +53,6 @@ class get_data:
         self.output, self.range_out = normalize(self.response)
 
 
-def resample(points_new,points_now,dim_in,range_in):
-    """
-    Determine the coordinates of the new sample.
-
-    Arguments:
-        points_new: number of new samples
-        points_now: number of current samples
-        sampling: sampling strategy
-        dim_in: number of input dimensions
-        range_in: range of inputs
-
-    Returns:
-        coordinates: coordinates of the new samples
-    
-    """
-    # Sample
-    full_sample = sample(settings["data"]["sampling"],points_now+points_new,dim_in) # unit coordinates
-    new_sample = full_sample[points_now:,:] # only picked those that are new
-    coordinates = scale(new_sample,range_in) # full coordinates
-
-    return coordinates
-
-def resample_adaptive(points_new,surrogates,data):
-    """
-    STUFF
-
-    not working for multiple dimensions
-    """
-
-    exploration, exploitation = adaptive_methods[settings["data"]["adaptive"]]
-
-    np_proposed_points = data.input.shape[0]*100
-    
-    proposed_samples = sample(settings["data"]["sampling"],np_proposed_points,data.dim_in)
-    predictions_list = [sur.predict_values(proposed_samples) for sur in surrogates]
-    predictions = np.array(predictions_list)
-
-    coordinates = sample_adaptive(data,proposed_samples,predictions,points_new,exploration,exploitation)
-
-    return coordinates
 
 def load_problem(name):
     """
@@ -159,17 +117,4 @@ def scale(data,ranges):
     
     return data_scale
 
-def make_results_file(target,dim_in):
-    """
-    Initialize the results file.
 
-    Arguments:
-        target: target file path
-        dim_in: number of input dimensions
-
-    Todo:
-        * column names
-    """
-    with open(target, "w") as file:
-        file.write(str(dim_in))
-        file.write("\n"+",".join(["dim_"+str(i) for i in range(dim_in)])+"\n")

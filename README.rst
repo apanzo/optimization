@@ -5,7 +5,7 @@ installation using command line:
 - **cd optimization**                  # navigate to project
 - *if installing dependenction inside virtual environment, proceed from step 2 in virtual environment setup guide*
 - **setup.bat**                        # install dependencies
-- **app\core.py**                      # run the framework
+- **app\run.py**                      # run the framework
 
 virtual environment setup guide in cmd:
 
@@ -14,7 +14,7 @@ virtual environment setup guide in cmd:
 - **venv\scripts\activate.bat**        # activate virtual envirnoment
 - **cd (project_path)\optimization**   # navigate to project, if not yet done
 - **setup.bat**                        # install required packages
-- **app\core.py**                      # run the framework
+- **app\run.py**                      # run the framework
 - **deactivate**                       # excape the virtual environment
 
 documentation can be built using:

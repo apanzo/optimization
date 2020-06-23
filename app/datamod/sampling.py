@@ -12,7 +12,63 @@ from smt.sampling_methods.sampling_method import SamplingMethod
 from .external.halton import halton
 
 # Import custom packages
+from datamod import scale
 from settings import settings
+
+def determine_samples(no_samples,dim_in):
+    if no_samples == 0:
+        no_new_samples = settings["data"]["default_sample_coef"]*dim_in
+    else:
+        if settings["data"]["resampling"] == "linear":
+            no_new_samples = settings["data"]["resampling_param"]*dim_in
+        elif settings["data"]["resampling"] == "geometric":
+            no_new_samples  = int(settings["data"]["resampling_param"]*no_samples)
+        else:
+            raise Exception("Error should have been caught on initialization")
+
+    return no_new_samples
+
+def resample(points_new,points_now,dim_in,range_in):
+    """
+    Determine the coordinates of the new sample.
+
+    Arguments:
+        points_new: number of new samples
+        points_now: number of current samples
+        sampling: sampling strategy
+        dim_in: number of input dimensions
+        range_in: range of inputs
+
+    Returns:
+        coordinates: coordinates of the new samples
+    
+    """
+    # Sample
+    full_sample = sample(settings["data"]["sampling"],points_now+points_new,dim_in) # unit coordinates
+    new_sample = full_sample[points_now:,:] # only picked those that are new
+    coordinates = scale(new_sample,range_in) # full coordinates
+
+    return coordinates
+
+def resample_adaptive(points_new,surrogates,data):
+    """
+    STUFF
+
+    not working for multiple dimensions
+    """
+
+    exploration, exploitation = adaptive_methods[settings["data"]["adaptive"]]
+
+    np_proposed_points = data.input.shape[0]*100
+    
+    proposed_samples = sample(settings["data"]["sampling"],np_proposed_points,data.dim_in)
+    predictions_list = [sur.predict_values(proposed_samples) for sur in surrogates]
+    predictions = np.array(predictions_list)
+
+    coordinates = sample_adaptive(data,proposed_samples,predictions,points_new,exploration,exploitation)
+
+    return coordinates
+
 
 def sample(name,points,n_dim):
     """
@@ -70,6 +126,12 @@ class Halton(SamplingMethod):
     References:
         https://gist.github.com/tupui/cea0a91cc127ea3890ac0f002f887bae
     """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        no_dim = self.options["xlimits"].shape[0]
+        if no_dim > 8:
+            raise Exception("Halton sampling performs poor for no_dim > 8")
 
     def _initialize(self):
 ##        self.options.declare("weights", values=[None], types=[list, np.ndarray])

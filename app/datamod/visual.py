@@ -121,3 +121,9 @@ def sample_size_convergence(metric,name):
     plt.title(name)
 ##    plt.ylim(ymin=0)
     plt.show()
+
+def plot_2d_sample():
+    pass
+        ##        import matplotlib.pyplot as plt
+    ##        plt.scatter(model.data.input[:,0],model.data.input[:,1])
+    ##        plt.show()

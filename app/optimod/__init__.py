@@ -76,14 +76,24 @@ def set_optimization():
     crossover = get_crossover(**setup_gen["crossover"])
 
     # Get optimization algorithm
-    alg = get_algorithm(setup["optimization"],
-    pop_size=setup["pop_size"],
-    n_offsprings=setup["n_offsprings"],
-    sampling=sampling,
-    crossover=crossover,
-    mutation=mutation,
-    eliminate_duplicates=True
-)
+
+    if get_algorithm(setup["optimization"]):
+        alg = get_algorithm(setup["optimization"],
+        pop_size=setup["pop_size"],
+        n_offsprings=setup["n_offsprings"],
+        sampling=sampling,
+        crossover=crossover,
+        mutation=mutation,
+        eliminate_duplicates=True
+        )
+    else:
+        if no_dim == 1:
+            raise Exception()
+        elif no_dim == 2:
+            raise Exception()
+        else:
+            raise Exception()
+    
     # Get termination criterion
     term = get_termination(setup["termination"], *setup["termination_val"])
     
@@ -105,9 +115,9 @@ def unnormalize_res(res,ranges):
 
     res.X_val = res.X
     res.F_val = res.F
-    breakpoint()
+
     res.X = scale(np.atleast_2d(res.X),ranges[0])
-    res.F = scale(np.ataleast_2d(res.F),ranges[1][:res.F.shape[-1],:]) # slicing to exclude constraints
+    res.F = scale(np.atleast_2d(res.F),ranges[1][:res.F.shape[-1],:]) # slicing to exclude constraints
 
     return res
 
