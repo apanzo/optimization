@@ -80,6 +80,7 @@ def set_optimization():
     # Get optimization algorithm
 
     if setup["algorithm"] == "default":
+        raise Exception("Defaults not implemented yet")
         if no_dim == 1:
             raise Exception()
         elif no_dim == 2:
@@ -115,8 +116,8 @@ def unnormalize_res(res,ranges):
     Implemented for: F,X
     """
 
-    res.X_val = res.X
-    res.F_val = res.F
+    res.X_norm = res.X
+    res.F_norm = res.F
 
     res.X = scale(np.atleast_2d(res.X),ranges[0])
     res.F = scale(np.atleast_2d(res.F),ranges[1][:res.F.shape[-1],:]) # slicing to exclude constraints
@@ -139,9 +140,13 @@ def set_problem(function,ranges,n_obj,n_constr):
         Assumes a [-1,1] range
     """
     n_var = ranges[0].shape[0]
-    prob = Custom(function,[-1]*n_var,[1]*n_var,n_obj,n_constr)
-    
-    prob.ranges = ranges
+    if ranges[1] is None:
+        ranges = np.array(ranges).T
+        breakpoint()
+        prob = Custom(function,[-1]*n_var,[1]*n_var,n_obj,n_constr)
+    else:
+        prob = Custom(function,[-1]*n_var,[1]*n_var,n_obj,n_constr)
+        prob.ranges = ranges
     
     return prob
-    
+   

@@ -57,15 +57,14 @@ def resample_adaptive(points_new,surrogates,data):
     not working for multiple dimensions
     """
 
-    exploration, exploitation = adaptive_methods[settings["data"]["adaptive"]]
-
-    np_proposed_points = data.input.shape[0]*100
+    multiplier_proposed = 100
+    np_proposed_points = data.input.shape[0]*multiplier_proposed
     
     proposed_samples = sample(settings["data"]["sampling"],np_proposed_points,data.dim_in)
     predictions_list = [sur.predict_values(proposed_samples) for sur in surrogates]
     predictions = np.array(predictions_list)
 
-    coordinates = sample_adaptive(data,proposed_samples,predictions,points_new,exploration,exploitation)
+    coordinates = sample_adaptive(data,proposed_samples,predictions,points_new)
 
     return coordinates
 
@@ -101,6 +100,10 @@ def sample_adaptive(data,samples,predictions,no_points_new,exploration,exploitat
     Notes:
         * Make a unit test to check that worst_new is 2D
     """
+    adaptive_method = settings["data"]["adaptive"]
+
+    exploration, exploitation = adaptive_methods[adaptive_method]
+
     if exploration == "nnd":
         exploration_metric = np.array([np.linalg.norm(data.input-sample,axis=1).min() for sample in samples])
     else:
@@ -111,13 +114,16 @@ def sample_adaptive(data,samples,predictions,no_points_new,exploration,exploitat
     else:
         raise Exception("Exploitation method not implemented")
 
-    overall_metric = exploration_metric/np.max(exploration_metric) + exploitation_metric/np.max(exploitation_metric)
+    if adaptive_method == "eason":
+        overall_metric = exploration_metric/np.max(exploration_metric) + exploitation_metric/np.max(exploitation_metric)
+    else:
+        raise Exception("Adaptive method not implemented")
     
-    reordered = np.argpartition(overall_metric, -no_points_new,axis=0)
-    few_best = reordered[-no_points_new:]
-    worst_new = samples[few_best]
+    reordered_metrics = np.argpartition(overall_metric, -no_points_new,axis=0)
+    candidate_indices = reordered_metrics[-no_points_new:]
+    candidates = samples[candidate_indices]
 
-    return worst_new
+    return candidates
 
 class Halton(SamplingMethod):
     """

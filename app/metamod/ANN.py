@@ -26,6 +26,18 @@ class ANN(SurrogateModel):
 
     See also:
         Tensorflow documentation
+        
+    To do:
+        * check if pretraining
+        * if pretrainning:
+            * select hyperparameters to optimize, keep rest default
+            * take defaults from settings
+            * select optimization method
+            * perform pretraining
+            * select best model
+            * save best model
+        * else:
+            * load hyperparameters from optimization
     """
 
     def __getitem__(self,a):
@@ -62,7 +74,7 @@ class ANN(SurrogateModel):
             loss: loss function
             kernel_regularizer: regularization paremeres
             dims: number of input and output dimension
-            no_points: nu,ber of sample points
+            no_points: number of sample points
             prune: whether to use pruning
             sparsity: target network sparsity (fraction of zero weights)
             pruning_frequency: frequency of pruning
@@ -113,38 +125,37 @@ class ANN(SurrogateModel):
         
         callbacks = []
 
-        if self.options["prune"]:
+        if self["prune"]:
             callbacks.append(sparsity.UpdatePruningStep())
-        if self.options["tensorboard"]:
+        if self["tensorboard"]:
             raise ValueError("Tensorboard not implemented yet")
 ##            log_dir = "logs\\fit\\"#+ datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 ##            callbacks.append(tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=20))
-        if self.options["stopping"]:
+        if self["stopping"]:
             callbacks.append(tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=stopping_delta, patience=stopping_patience, verbose=1,restore_best_weights=True))
 ##            callback = tf.keras.callbacks.MyStopping(monitor='val_loss', target=5, patience=3, verbose=1)
 
         train_in, train_out = self.training_points[None][0]
 
-        batch_size = self.options["batch_size"]
-        no_epochs = self.options["no_epochs"]
-
         if not self.optimized:
-            print("Hello")
-            log_dir = os.path.join(settings["root"],"logs")
-            tuner = RandomSearch(self.build_hypermodel,objective="val_mape",max_trials=10,executions_per_trial=1,directory=log_dir)
-
-            tuner.search(
-              train_in, train_out,
-              epochs=no_epochs, validation_split = 0.2, verbose=0, shuffle=True, batch_size = train_in.shape[0]//1)
-
-        histor = self.model.fit(train_in, train_out, epochs=no_epochs, batch_size=batch_size, verbose=0, callbacks=callbacks, validation_split = 0.2)
-        self.metric = self.evaluation(histor.history)
+            self.pretrain()
+            
+        histor = self.model.fit(train_in, train_out, epochs=self["no_epochs"], batch_size=self["batch_size"], verbose=0, callbacks=callbacks, validation_split = 0.2)
+        self.validation_metric = self.evaluation(histor.history)
 
         self._is_trained = True
         if self.options["plot_history"]:
             self.plot_training_history(histor)
-        
 
+    def pretrain():
+        print("Hello")
+        log_dir = os.path.join(settings["root"],"logs")
+        tuner = RandomSearch(self.build_hypermodel,objective="val_mape",max_trials=10,executions_per_trial=1,directory=log_dir)
+
+        tuner.search(
+            train_in, train_out,
+            epochs=self["no_epochs"], validation_split = 0.2, verbose=0, shuffle=True, batch_size = train_in.shape[0]//1)
+        
     def _predict_values(self, x):
         """
         API method: predict values using appropriate methods from the neural_network.py module
@@ -177,7 +188,7 @@ class ANN(SurrogateModel):
             plt.ylim(bottom=0)
             plt.show()
         else:
-            ValueError("Not trained yet")
+            raise ValueError("Not trained yet")
 
     def evaluation(self,history):
         """
@@ -226,7 +237,16 @@ class ANN(SurrogateModel):
         kernel_regularizer = tf.keras.regularizers.l2(self["kernel_regularizer"])
         
         neurons_hyp = hp.Int("No_neur",1,20)
-
+        layers_hyp = hp.Int("No_layers",1,4)
+        lr_hyp = hp.Float("Learning_rate",0.001,0.1,sampling="log")
+        activation_hyp = hp.Choice("Activation_function", ["sigmoid","relu","swish"]
+        regularization_hyp = hp.Float("Regularization coefficient",0.001,1,sampling="log")
+        sparsity_hyp = hyp.Float("Final sparsity",0.3,0.9)
+        batch_size_ratio_hyp = hyp.Float("Batch size ration",0.1,1.0)
+                                   
+        # ADD EARLY STOPPING
+        
+        
         # Add layers        
         model.add(tf.keras.layers.Dense(self["architecture"][1], activation=self["activation"],
                                              kernel_initializer=self["init"],
@@ -252,7 +272,7 @@ class ANN(SurrogateModel):
 
 
     def prune_model(self):
-        end_step = np.ceil(1.0 * self["no_points"] / self["batch_size"]).astype(np.int32) * ["no_epochs"]
+        end_step = np.ceil(1.0 * self["no_points"] / self["batch_size"]).astype(np.int32) * self["no_epochs"]
         print(f"End step: {end_step}")
 
         # Add pruning layers

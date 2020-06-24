@@ -8,13 +8,12 @@ import numpy as np
 # Import custom packages
 from datamod import get_data, load_problem
 from datamod.evaluator import EvaluatorBenchmark
-from datamod.results import make_data_file, append_verification_to_database
+from datamod.results import make_data_file, make_response_files, append_verification_to_database
 from datamod.sampling import determine_samples, resample_static, resample_adaptive
 from datamod.visual import plot_raw, show_problem, vis_design_space, vis_objective_space, sample_size_convergence
-from metamod import set_surrogate, train_surrogates, select_best_surrogate, check_convergence, verify_results
+from metamod import train_surrogates, select_best_surrogate, check_convergence, verify_results
 from optimod import set_optimization, set_problem, solve_problem
 from settings import settings
-
 
 class Model:
     """
@@ -36,7 +35,6 @@ class Model:
 
         # Obtain problem information 
         if settings["data"]["evaluator"] == "benchmark":
-##             self.system, self.range_in, self.dim_in, self.dim_out, self.n_const = load_problem(settings["data"]["problem"])
             self.system, self.range_in, self.dim_in, self.dim_out, self.n_const = load_problem(settings["data"]["problem"])
             self.evaluator = EvaluatorBenchmark(self.system,self.n_const)
         else:
@@ -44,8 +42,8 @@ class Model:
 
         self.n_obj = self.dim_out - self.n_const
 
-        self.converged = False
-
+        # Need to specify ranges if direct
+        
 class Surrogate:
     
     def __init__(self,model):
@@ -55,7 +53,6 @@ class Surrogate:
 
         # Training status
         self.trained = False
-        self.retraining = False
         
         # Initialize sampling
         self.no_samples = 0
@@ -64,11 +61,8 @@ class Surrogate:
         # Initialize metrics
         self.surrogate_metrics = []
 
-        # Make response filess
-        self.file = os.path.join(self.model.folder,"database.csv")
-        make_data_file(self.file,self.model.dim_in)
-        self.verification_file = os.path.join(self.model.folder,"verification.csv")
-        make_data_file(self.verification_file,self.model.dim_in)
+        # Make response files
+        self.file, self.verification_file = make_response_files(self.model.folder,self.model.dim_in,self.model.n_obj,self.model.n_constr)
 
     def sample(self):
         """
@@ -80,7 +74,7 @@ class Surrogate:
         # Track iteration number
         self.sampling_iterations += 1
         print("----------------------------------------")
-        print("Iteration "+str(self.sampling_iterations))
+        print(f"Iteration {self.sampling_iterations}")
 
         # Determine number of new samples
         no_new_samples = determine_samples(self.no_samples,self.model.dim_in)
@@ -104,11 +98,13 @@ class Surrogate:
             file = self.verification_file
         else:
             file = self.file
-            
-        if settings["data"]["evaluator"] == "benchmark":
-            self.model.evaluator.generate_results(self.samples,file)
-        else:
-            raise Exception("Error should have been caught on initialization")
+
+        self.model.evaluator.generate_results(self.samples,file)
+
+    def append_verification(self):
+        # Add verification results to database
+##            if self.retraining and settings["surrogate"]["append_verification"]:
+        append_verification_to_database(self.file,self.verification_file)
         
     def load_results(self,verify=False):
         """
@@ -122,12 +118,6 @@ class Surrogate:
         if verify:
             self.verification = get_data(self.verification_file)
         else:
-            # Add verification results to database
-            if self.retraining and settings["surrogate"]["append_verification"]:
-                breakpoint()
-                append_verification_to_database(self.file,self.verification_file)
-                self.retraining = False
-
             # Read database
             self.data = get_data(self.file)
             # Plot the input data
@@ -141,44 +131,54 @@ class Surrogate:
         STUFF
         """
         # Train the surrogates
-        self.surrogates = train_surrogates(self.data,self.model.dim_in,self.model.dim_out,self.no_samples)
+        self.surrogates = train_surrogates(self.data)
 
         # Select the best model
         self.surrogate = select_best_surrogate(self.surrogates)
+        self.surrogate.metric["max_iterations"] = self.sampling_iterations
 
         # Plot the surrogate response
         if "surrogate" in settings["visual"]:
             show_problem(self.problem)
             
     def surrogate_convergence(self):
-        self.trained = check_convergence(self.sampling_iterations,self.surrogate.metric[settings["data"]["convergence"]])
+        criterion = settings["data"]["convergence"]
 
-        print(f"Sample size convergence metric: {settings['data']['convergence']} - {self.surrogate.metric[settings['data']['convergence']]}")
-        self.surrogate_metrics.append(self.surrogate.metric[settings["data"]["convergence"]])
+        self.trained = check_convergence(self.surrogate.metric[criterion])
+
+        self.surrogate_metrics.append(self.surrogate.metric[criterion])
 
         if self.trained:
             print("Surrogate converged")
             if "convergence" in settings["visual"]: 
                 # Plot the sample size convergence
-                sample_size_convergence(self.surrogate_metrics,settings["data"]["convergence"])
+                sample_size_convergence(self.surrogate_metrics,criterion)
             ##compare()
         
 class Optimization:
-    def __init__(self,model,function,range_out,surrogate,direct=False):
+    """
+    Docstring
+    """
+    def __init__(self,model,surrogate):
+
+        self.model = model
+        self.surrogate = surrogate
 
         # Obtain optimization setup
-        self.optimization_converged = False
         self.algorithm, self.termination = set_optimization()
         # Deactivate constrains if not set otherwise
         if not settings["optimization"]["constrained"]:
             self.n_const = 0
 
-        self.range_out = range_out
-        self.model = model
-        self.function = function
-        self.surrogate = surrogate
-        self.direct = direct
-
+        self.direct = bool(settings["surrogate"]["surrogate"])
+        if self.direct:
+            # Specify range
+            self.ranges = [None,None]
+            self.model.evaluator.evaluate
+        else:
+            self.ranges = self.surrogate.surrogate.ranges
+            self.function = self.surrogate.surrogate.predict_values
+            
     def optimize(self):
         """
         Wrapper function to perform optimization.
@@ -188,12 +188,12 @@ class Optimization:
         print("###### Optimization #######")
 
         # Define the problem using the surogate
-        ranges = [self.range_out]
+##        if settings["surrogate"]["surrogate"]:
+##            self.problem = set_problem(self.function,self.ranges,self.model.n_obj,self.model.n_const)
+##        else:
+##            self.problem = set_problem(self.model.evaluator.evaluate,self.ranges,self.model.n_obj,self.model.n_const)
 
-        if settings["surrogate"]["surrogate"]:
-            self.problem = set_problem(self.function,self.surrogate.surrogate.ranges,self.model.n_obj,self.model.n_const)
-        else:
-            self.problem = set_problem(self.model.evaluator.evaluate,None,self.model.n_obj,self.model.n_const)
+        self.problem = set_problem(self.function,self.ranges,self.model.n_obj,self.model.n_const)
 
         self.res = solve_problem(self.problem,self.algorithm,self.termination,self.direct)
 
@@ -212,37 +212,31 @@ class Optimization:
 
         Todo - optimization error logic
         """
-        if not settings["surrogate"]["surrogate"]:
-            self.optimization_converged = True
-
-            return
-
+        
         if self.res is not None:        
             idx = verify_results(self.res.X, self.surrogate)
             
             # Calculate error
             response_F = self.surrogate.verification.response[:,:-self.problem.n_constr or None]
-            self.optimization_error = (100*(response_F-self.res.F[idx])/response_F)
+            self.error = (100*(response_F-self.res.F[idx])/response_F)
 
-            self.optimization_error_max = np.max(np.abs(self.optimization_error))
-            self.optimization_error_mean = np.mean(self.optimization_error,0)
+            self.error_max = np.max(np.abs(self.error))
+            self.error_mean = np.mean(self.error,0)
 
-            print("Maximal percentage optimization error: %.2f " % (self.optimization_error_max))
+            print("Maximal percentage optimization error: %.2f " % (self.error_max))
             
-            if self.optimization_error_max < settings["optimization"]["error_limit"]:
-                self.model.converged = True
+            if self.error_max < settings["optimization"]["error_limit"]:
+                self.converged = True
                 print("\n############ Optimization finished ############")
                 print("Total number of samples: %.0f" %(self.surrogate.no_samples))
             else:
                 self.surrogate.trained = False
-                self.surrogate.retraining = True
 
-            return idx
+##            return idx
         else:
             self.surrogate.trained = False
-            self.surrogate.retraining = True
 
-            return None
+##            return None
 
         ##len([step["delta_f"] for step in model.res.algorithm.display.term.metrics])
 

@@ -8,19 +8,16 @@ import numpy as np
 import os
 
 # Import pypi packages
-from sklearn.metrics import mean_absolute_error as MAE
-from sklearn.metrics import r2_score as R2
-
 from smt.surrogate_models import RBF, KRG, GENN
 
 # Import custom packages
-from metamod.postproc import check_convergence, select_best_surrogate, verify_results
+from metamod.postproc import check_convergence, select_best_surrogate, verify_results, evaluate_metrics
 from metamod.preproc import set_validation
 from settings import load_json, settings
 # ANN is imported in set_surrogate only if it is need
 
 
-def train_surrogates(data,dim_in,dim_out,no_points):
+def train_surrogates(data):
     """
     Train the defined surrogate on the provided data.
 
@@ -44,26 +41,25 @@ def train_surrogates(data,dim_in,dim_out,no_points):
     
     surrogates = []
     split = set_validation(validation,validation_param)
+    no_points = data.input.shape[0]
     
     for train, test in split.split(data.input):
-
-        interp = set_surrogate(settings["surrogate"]["surrogate"],dim_in,dim_out,no_points,len(surrogates))
+        pretrain_ANN = not bool(len(surrogates)) and name == "ann"
+        interp = set_surrogate(name,data.dim_in,data.dim_out,no_points))
         np.random.shuffle(train), np.random.shuffle(test) ###????
         interp.train_in, interp.train_out = data.input[train], data.output[train]
         interp.test_in, interp.test_out = data.input[test], data.output[test]
         interp.set_training_values(interp.train_in,interp.train_out)
+##        if pretrain_ANN:
+##            interp.pretrain()
         interp.train()
-        interp.ranges = [data.range_in,data.range_out]
-        interp.metric = {}
-        interp.metric["mae"] = MAE(interp.test_out,interp.predict_values(interp.test_in))
-        interp.metric["r2"] = R2(interp.test_out,interp.predict_values(interp.test_in)) 
+##        interp.ranges = [data.range_in,data.range_out]
+        interp.metric = evaluate_metrics(interp.test_in,interp.test_out,interp.predict_values,metrics=["mae","r2"])
         surrogates.append(interp)
 
     return surrogates
 
-        
-
-def set_surrogate(name,dim_in,dim_out,no_points,keras_optimized):
+def set_surrogate(name,dim_in,dim_out,no_points,first_trained):
     """
     Select the desired surrogate model.
 
@@ -86,7 +82,7 @@ def set_surrogate(name,dim_in,dim_out,no_points,keras_optimized):
     setup = load_json(os.path.join(settings["root"],"app","config","metaconf",name))
     if name=="ann":
         from metamod.ANN import ANN         ### import only when actually used, its slow due to tensorflow
-        surrogate = ANN(setup,keras_optimized,no_points=no_points,dims=(dim_in,dim_out))
+        surrogate = ANN(setup,first_trained,no_points=no_points,dims=(dim_in,dim_out))
     elif name=="rbf":
         surrogate = RBF(**setup) #0.55
     elif name=="kriging":

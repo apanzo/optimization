@@ -41,11 +41,11 @@ class get_data:
         """
         self.dim_in, self.col_names, data = load_results(file)
         if len(data.shape) == 1:
-            data = np.reshape(data,(-1, len(data)))
+            data = np.atleast_2d(data)
         elif len(data.shape) == 0:
             raise Exception("0 dimensions data")
         elif len(data.shape) > 2:
-            raise Exception("Too many dimensions")
+            raise Exception("Too many data dimensions")
         self.dim_out = data.shape[1]-self.dim_in
         self.coordinates = data[:,:self.dim_in]
         self.response = data[:,self.dim_in:]
@@ -86,7 +86,7 @@ def load_problem(name):
 
 def normalize(data):
     """
-    Normalize data to [0,1] range.
+    Normalize data to [-1,1] range.
 
     Arguments:
         data: data to normalize
@@ -103,7 +103,7 @@ def normalize(data):
 
 def scale(data,ranges):
     """
-    Scale data from [0,1] range to desired range.
+    Scale data from [-1,1] range to desired range.
 
     Arguments:
         data: data to scale
@@ -115,5 +115,3 @@ def scale(data,ranges):
     data_scale = data*np.max(np.abs(ranges),1)
     
     return data_scale
-
-

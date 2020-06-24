@@ -7,7 +7,15 @@ import numpy as np
 # Import custom packages
 from settings import settings
 
-def make_data_file(file,dim_in):
+def make_response_files(folder,dim_in,n_obj,n_constr):
+    files = []
+    for name in ["database","verification"]:
+        files.append(os.path.join(folder,f"{name}.csv"))
+        make_data_file(files[-1],dim_in,n_obj,n_constr)
+
+    return files
+
+def make_data_file(file,dim_in,n_obj,n_constr):
     """
     Initialize the results file.
 
@@ -22,7 +30,7 @@ def make_data_file(file,dim_in):
     # Set results file
     
     with open(file, "w") as f:
-        headers = header_names(2,3,1)
+        headers = header_names(dim_in,n_obj,n_constr)
         f.write(str(dim_in))
         f.write("\n")
         f.write(",".join(headers))

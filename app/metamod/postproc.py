@@ -8,6 +8,8 @@ from math import ceil
 
 # Import pypi packages
 import numpy as np
+from sklearn.metrics import mean_absolute_error as MAE
+from sklearn.metrics import r2_score as R2
 
 # Import custom packages
 from settings import settings
@@ -30,20 +32,19 @@ def select_best_surrogate(surrogates):
     return best_surrogate
 
 ##
-def check_convergence(sampling_iterations,metric):
+def check_convergence(metric):
     trained = False
 
-    if settings["data"]["convergence"] == "max_iterations":
-        if sampling_iterations >= settings["data"]["convergence_limit"]:
-            trained = True
-    elif settings["data"]["convergence"] in ["mae","variance"]:
+    if settings["data"]["convergence"] in ["mae","variance"]:
         if metric <= settings["data"]["convergence_limit"]:
             trained = True
-    elif settings["data"]["convergence"] in ["r2"]:
+    elif settings["data"]["convergence"] in ["r2","max_iterations"]:
         if metric >= settings["data"]["convergence_limit"]:
             trained = True
     else:
         raise Exception("Error should have been caught on initialization")
+
+    print(f"Sample size convergence metric: {settings['data']['convergence']} - {metric}")
 
     return trained
 
@@ -61,3 +62,14 @@ def verify_results(results,surrogate):
     surrogate.load_results(verify=True)
 
     return idx
+
+def evaluate_metrics(test_in,test_out,evaluate,requested):
+    metrics = {}
+    for measure in requested:
+        metrics[measure] = defined_metrics[measure](test_out,evaluate(test_in))
+
+    return metrics
+          
+defined_metrics = {
+    "r2": R2,
+    "MAE": MAE}

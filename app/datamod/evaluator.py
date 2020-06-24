@@ -5,6 +5,9 @@ import numpy as np
 from datamod.results import write_results
 
 class Evaluator:
+    """
+    Docstring
+    """
 
     def __init__(self):
         self.save_results = write_results
@@ -43,6 +46,9 @@ class EvaluatorBenchmark(Evaluator):
         self.save_results(file,samples,response)
 
 class EvaluatorANSYS:
+    """
+    Docstring
+    """
 
     def __init__(self):
         pass
