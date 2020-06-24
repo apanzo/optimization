@@ -1,0 +1,25 @@
+{
+ "data": {
+ "problem": "matlab_peaks",
+ "evaluator": "benchmark"
+ },
+
+ "surrogate": {
+ "surrogate": "rbf",
+ "validation": "kfold",
+ "validation_param": 5,
+ "selection_metric": "r2"
+ },
+
+ "optimization": {
+ "algorithm": "nsga2",
+ "pop_size": 40,
+ "n_offsprings": 10,
+ "termination": "f_tol",
+ "termination_val": [0.001,5,5,null,null],
+ "constrained": false
+ },
+
+ "visual": {
+ }
+}

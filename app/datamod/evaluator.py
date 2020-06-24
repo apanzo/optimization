@@ -7,7 +7,7 @@ from datamod.results import write_results
 class Evaluator:
 
     def __init__(self):
-        pass
+        self.save_results = write_results
 
 class EvaluatorBenchmark(Evaluator):
     """
@@ -26,17 +26,21 @@ class EvaluatorBenchmark(Evaluator):
         * return values is wrongly implemented in pymoo
     """
 
-    def __init__(self,n_constr):
+    def __init__(self,problem,n_constr):
+        super().__init__()
         self.results = ["F","G"] if n_constr else ["F"]
+        self.problem = problem
 
-    def evaluate(self,problem,samples,file,n_constr):
-
+    def evaluate(self,samples):
         # Evaluate
-        response_all = problem.evaluate(samples,return_values_of=self.results,return_as_dictionary=True) # return values doesn't work - pymoo implementatino problem
+        response_all = self.problem.evaluate(samples,return_values_of=self.results,return_as_dictionary=True) # return values doesn't work - pymoo implementatino problem
         response = np.concatenate([response_all[column] for column in response_all if column in self.results], axis=1)
-        
-        write_results(file,samples,response)
 
+        return response
+
+    def generate_results(self,samples,file):
+        response = self.evaluate(samples)
+        self.save_results(file,samples,response)
 
 class EvaluatorANSYS:
 

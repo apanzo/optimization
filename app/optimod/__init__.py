@@ -17,7 +17,7 @@ from datamod import scale
 from datamod.problems import Custom
 from settings import load_json, settings
 
-def solve_problem(problem,algorithm,termination):
+def solve_problem(problem,algorithm,termination,direct):
     """
     Solve the defined problem.
 
@@ -34,21 +34,23 @@ def solve_problem(problem,algorithm,termination):
         save_history will work with ANN surrogate from Tensorflow only if line 290 in site-packages\pymoo\model\algorithm is changed from deepcopy to copy
     """
 ##    opt_seed = setup_gen["solve"]["opt_seed"]
-    verbose = settings["optimization"]["opt_verbose"]
+##    verbose = settings["optimization"]["opt_verbose"]
     res_nor = minimize(problem,
                    algorithm,
                    termination,
 ##                   seed=opt_seed,
 ##                   pf=problem.pareto_front(use_cache=False),
 ##                   save_history=True,
-                   verbose=verbose)
+                   verbose=True)
 
-    if res_nor.F is not None:
-        # Unnormalize the results
-        res = unnormalize_res(res_nor,problem.ranges)
+    if not direct:
+        if res_nor.F is not None:
+            # Unnormalize the results
+            res = unnormalize_res(res_nor,problem.ranges)
+        else:
+            res = None
     else:
-        res = None
-
+        res = res_nor
     return res
 
 def set_optimization():
@@ -68,7 +70,7 @@ def set_optimization():
 
     """
     setup = settings["optimization"]
-    setup_gen = load_json(os.path.join(settings["root"],"app","config","opticonf",settings["optimization"]["optimization"]))
+    setup_gen = load_json(os.path.join(settings["root"],"app","config","opticonf",setup["algorithm"]))
     
     # Get optimization settings objects
     sampling = get_sampling(setup_gen["opt_sampling"])
@@ -77,22 +79,22 @@ def set_optimization():
 
     # Get optimization algorithm
 
-    if get_algorithm(setup["optimization"]):
-        alg = get_algorithm(setup["optimization"],
-        pop_size=setup["pop_size"],
-        n_offsprings=setup["n_offsprings"],
-        sampling=sampling,
-        crossover=crossover,
-        mutation=mutation,
-        eliminate_duplicates=True
-        )
-    else:
+    if setup["algorithm"] == "default":
         if no_dim == 1:
             raise Exception()
         elif no_dim == 2:
             raise Exception()
         else:
             raise Exception()
+    else:
+        alg = get_algorithm(setup["algorithm"],
+            pop_size=setup["pop_size"],
+            n_offsprings=setup["n_offsprings"],
+            sampling=sampling,
+            crossover=crossover,
+            mutation=mutation,
+            eliminate_duplicates=True
+            )
     
     # Get termination criterion
     term = get_termination(setup["termination"], *setup["termination_val"])
@@ -136,10 +138,10 @@ def set_problem(function,ranges,n_obj,n_constr):
     Notes:
         Assumes a [-1,1] range
     """
-    n_var = ranges[0].shape[0]
+    n_var = ranges.shape[0]
     prob = Custom(function,[-1]*n_var,[1]*n_var,n_obj,n_constr)
     
-    prob.ranges = ranges
+##    prob.ranges = ranges
     
     return prob
     

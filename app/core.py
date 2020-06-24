@@ -38,13 +38,14 @@ class Model:
         if settings["data"]["evaluator"] == "benchmark":
 ##             self.system, self.range_in, self.dim_in, self.dim_out, self.n_const = load_problem(settings["data"]["problem"])
             self.system, self.range_in, self.dim_in, self.dim_out, self.n_const = load_problem(settings["data"]["problem"])
-            self.evaluator = EvaluatorBenchmark(self.n_const)
+            self.evaluator = EvaluatorBenchmark(self.system,self.n_const)
         else:
             raise Exception("Error should have been caught on initialization")
 
         self.n_obj = self.dim_out - self.n_const
 
-            
+        self.converged = False
+
 class Surrogate:
     
     def __init__(self,model):
@@ -105,7 +106,7 @@ class Surrogate:
             file = self.file
             
         if settings["data"]["evaluator"] == "benchmark":
-            self.model.evaluator.evaluate(self.model.system,self.samples,file,self.model.n_const)
+            self.model.evaluator.generate_results(self.samples,file)
         else:
             raise Exception("Error should have been caught on initialization")
         
@@ -129,7 +130,7 @@ class Surrogate:
             # Read database
             self.data = get_data(self.file)
             # Plot the input data
-            if settings["visual"]["show_raw"]:
+            if "raw_data" in settings["visual"]:
                 plot_raw(self.data,"scatter")
 
     def train(self):
@@ -145,7 +146,7 @@ class Surrogate:
         self.surrogate = select_best_surrogate(self.surrogates)
 
         # Plot the surrogate response
-        if settings["visual"]["show_surrogate"]:
+        if "surrogate" in settings["visual"]:
             show_problem(self.problem)
             
     def surrogate_convergence(self):
@@ -156,13 +157,13 @@ class Surrogate:
 
         if self.trained:
             print("Surrogate converged")
-            if settings["visual"]["show_convergence"]: 
+            if "convergence" in settings["visual"]: 
                 # Plot the sample size convergence
                 sample_size_convergence(self.surrogate_metrics,settings["data"]["convergence"])
             ##compare()
         
 class Optimization:
-    def __init__(self,model,function,range_out,surrogate):
+    def __init__(self,model,function,range_out,surrogate,direct=False):
 
         # Obtain optimization setup
         self.optimization_converged = False
@@ -175,6 +176,7 @@ class Optimization:
         self.model = model
         self.function = function
         self.surrogate = surrogate
+        self.direct = direct
 
     def optimize(self):
         """
@@ -185,22 +187,22 @@ class Optimization:
         print("###### Optimization #######")
 
         # Define the problem using the surogate
-        ranges = [self.model.range_in,self.range_out]
+        ranges = [self.range_out]
 
         if settings["surrogate"]["surrogate"]:
-            self.problem = set_problem(self.function,ranges,self.model.n_obj,self.model.n_const)
+            self.problem = set_problem(self.function,self.model.range_in,self.model.n_obj,self.model.n_const)
         else:
-            self.problem = set_problem(self.system.evaluate,ranges,n_obj,self.n_const)
+            self.problem = set_problem(self.model.evaluator.evaluate,self.model.range_in,self.model.n_obj,self.model.n_const)
 
-        self.res = solve_problem(self.problem,self.algorithm,self.termination)
+        self.res = solve_problem(self.problem,self.algorithm,self.termination,self.direct)
 
         if self.res is not None: 
             # Plot the optimization result in design space
-            if settings["visual"]["show_result_des"]:
+            if "design_space" in settings["visual"]:
                 vis_design_space(self.res)
                 
             # Plot the optimization result in objective space
-            if settings["visual"]["show_result_obj"]:
+            if "objective_space" in settings["visual"]:
                 vis_objective_space(self.res)        
     
     def verify(self):

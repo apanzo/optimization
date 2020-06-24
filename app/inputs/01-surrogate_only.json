@@ -1,33 +1,26 @@
 {
  "data": {
- "id" : 12,
  "problem": "matlab_peaks",
  "evaluator": "benchmark",
  "sampling": "halton",
+ "default_sample_coef": 10,
  "resampling": "linear",
- "default_sample_coef": 5,
  "resampling_param": 5,
- "adaptive": "eason",
+ "adaptive": null,
  "convergence": "r2",
  "convergence_limit": 0.99
  },
 
  "surrogate": {
- "surrogate": "kriging",
+ "surrogate": "rbf",
  "validation": "kfold",
  "validation_param": 5,
  "selection_metric": "r2"
  },
 
  "optimization": {
- "optimize": false
+ "algorithm": null
  },
 
- "visual": {
- "show_raw": 0,
- "show_surrogate": 0,
- "show_convergence": 0,
- "show_result_des": 0,
- "show_result_obj": 0
- }
+ "visual": []
 }

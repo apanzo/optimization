@@ -9,6 +9,8 @@ from core import Model, Surrogate, Optimization
 from settings import settings,update_settings
 
 def train_surrogate():
+    
+    # Train surrorate
     while not surrogate.trained:
         if not surrogate.retraining:
             surrogate.sample()
@@ -18,6 +20,7 @@ def train_surrogate():
         surrogate.surrogate_convergence()
 
 def optimize():
+
     # Solve the optimiaztion problem
     optimization.optimize()
 
@@ -25,7 +28,7 @@ def optimize():
     optimization.verify()
         
 # Choose problem to solve
-problem_id = 6
+problem_id = 3
 
 # Initialize the settings
 update_settings(problem_id)
@@ -33,24 +36,23 @@ update_settings(problem_id)
 # Initialize the model
 model = Model() 
 
-surrogate = Surrogate(model)
-train_surrogate()
+build_surrogate = bool(settings["surrogate"]["surrogate"])
+perform_optimization = bool(settings["optimization"]["algorithm"])
 
-##optimization = Optimization(model,surrogate.surrogate.predict_values,surrogate.data.range_out,surrogate)
-##optimize()
-
-### Surrogate training loop
-##while not model.optimization_converged:
-##
-##    # Train the surrogate
-##    if settings["surrogate"]["surrogate"]:
-##        train_surrogate()
-##
-##    # Optimize
-##    if settings["optimization"]["optimize"]:
-##        optimize()
-##    else:
-##        break
+if build_surrogate and not perform_optimization:
+    surrogate = Surrogate(model)
+    train_surrogate()
+elif perform_optimization and not build_surrogate:
+    optimization = Optimization(model,model.system.evaluate,None,None,direct=True)
+    optimize()
+elif build_surrogate and perform_optimization:
+    surrogate = Surrogate(model)
+    optimization = Optimization(model,surrogate.surrogate.predict_values,surrogate.data.range_out,surrogate)
+    while not model.converged:
+        train_surrogate()
+        optimize()    
+else:
+    print("There is nothing to perform within this model")
 
 input("Ended")
 
