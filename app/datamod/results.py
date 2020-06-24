@@ -52,8 +52,8 @@ def header_names(dim_in,n_obj,n_const):
 
     return headers
 
-def append_verification_to_database():
-    with open(self.file, 'a') as datafile:
-        with open(self.verification_file, 'r') as verifile:
+def append_verification_to_database(file,verification_file):
+    with open(file, 'a') as datafile:
+        with open(verification_file, 'r') as verifile:
             read = "\n".join(verifile.read().split("\n")[2:])
             datafile.write(read)

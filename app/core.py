@@ -123,8 +123,9 @@ class Surrogate:
             self.verification = get_data(self.verification_file)
         else:
             # Add verification results to database
-            if self.retraining:
-                append_verification_to_database()
+            if self.retraining and settings["surrogate"]["append_verification"]:
+                breakpoint()
+                append_verification_to_database(self.file,self.verification_file)
                 self.retraining = False
 
             # Read database
@@ -190,9 +191,9 @@ class Optimization:
         ranges = [self.range_out]
 
         if settings["surrogate"]["surrogate"]:
-            self.problem = set_problem(self.function,self.model.range_in,self.model.n_obj,self.model.n_const)
+            self.problem = set_problem(self.function,self.surrogate.surrogate.ranges,self.model.n_obj,self.model.n_const)
         else:
-            self.problem = set_problem(self.model.evaluator.evaluate,self.model.range_in,self.model.n_obj,self.model.n_const)
+            self.problem = set_problem(self.model.evaluator.evaluate,None,self.model.n_obj,self.model.n_const)
 
         self.res = solve_problem(self.problem,self.algorithm,self.termination,self.direct)
 
@@ -220,7 +221,6 @@ class Optimization:
             idx = verify_results(self.res.X, self.surrogate)
             
             # Calculate error
-            breakpoint()
             response_F = self.surrogate.verification.response[:,:-self.problem.n_constr or None]
             self.optimization_error = (100*(response_F-self.res.F[idx])/response_F)
 
@@ -230,17 +230,17 @@ class Optimization:
             print("Maximal percentage optimization error: %.2f " % (self.optimization_error_max))
             
             if self.optimization_error_max < settings["optimization"]["error_limit"]:
-                self.optimization_converged = True
+                self.model.converged = True
                 print("\n############ Optimization finished ############")
-                print("Total number of samples: %.0f" %(self.no_samples))
+                print("Total number of samples: %.0f" %(self.surrogate.no_samples))
             else:
-                self.trained = False
-                self.retraining = True
+                self.surrogate.trained = False
+                self.surrogate.retraining = True
 
             return idx
         else:
-            self.trained = False
-            self.retraining = True
+            self.surrogate.trained = False
+            self.surrogate.retraining = True
 
             return None
 

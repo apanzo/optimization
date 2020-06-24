@@ -1,14 +1,22 @@
 {
  "data": {
  "problem": "matlab_peaks",
- "evaluator": "benchmark"
+ "evaluator": "benchmark",
+ "sampling": "halton",
+ "default_sample_coef": 10,
+ "resampling": "linear",
+ "resampling_param": 5,
+ "adaptive": null,
+ "convergence": "r2",
+ "convergence_limit": 0.99
  },
 
  "surrogate": {
  "surrogate": "rbf",
  "validation": "kfold",
  "validation_param": 5,
- "selection_metric": "r2"
+ "selection_metric": "r2",
+ "append_verification": false
  },
 
  "optimization": {
@@ -17,7 +25,8 @@
  "n_offsprings": 10,
  "termination": "f_tol",
  "termination_val": [0.001,5,5,null,null],
- "constrained": false
+ "constrained": false,
+ "error_limit": 5
  },
 
  "visual": {

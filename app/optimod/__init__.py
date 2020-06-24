@@ -138,10 +138,10 @@ def set_problem(function,ranges,n_obj,n_constr):
     Notes:
         Assumes a [-1,1] range
     """
-    n_var = ranges.shape[0]
+    n_var = ranges[0].shape[0]
     prob = Custom(function,[-1]*n_var,[1]*n_var,n_obj,n_constr)
     
-##    prob.ranges = ranges
+    prob.ranges = ranges
     
     return prob
     
