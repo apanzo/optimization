@@ -72,4 +72,4 @@ def evaluate_metrics(test_in,test_out,evaluate,requested):
           
 defined_metrics = {
     "r2": R2,
-    "MAE": MAE}
+    "mae": MAE}

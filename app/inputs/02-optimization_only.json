@@ -14,7 +14,8 @@
  "n_offsprings": 10,
  "termination": "f_tol",
  "termination_val": [0.001,5,5,null,null],
- "constrained": false
+ "constrained": false,
+ "ranges": [[-3,3],[-2,2]]
  },
 
  "visual": {

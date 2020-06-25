@@ -45,8 +45,7 @@ def train_surrogates(data):
     
     for train, test in split.split(data.input):
         pretrain_ANN = not bool(len(surrogates)) and name == "ann"
-        interp = set_surrogate(name,data.dim_in,data.dim_out,no_points))
-        np.random.shuffle(train), np.random.shuffle(test) ###????
+        interp = set_surrogate(name,data.dim_in,data.dim_out,no_points)
         interp.train_in, interp.train_out = data.input[train], data.output[train]
         interp.test_in, interp.test_out = data.input[test], data.output[test]
         interp.set_training_values(interp.train_in,interp.train_out)
@@ -54,12 +53,12 @@ def train_surrogates(data):
 ##            interp.pretrain()
         interp.train()
 ##        interp.ranges = [data.range_in,data.range_out]
-        interp.metric = evaluate_metrics(interp.test_in,interp.test_out,interp.predict_values,metrics=["mae","r2"])
+        interp.metric = evaluate_metrics(interp.test_in,interp.test_out,interp.predict_values,["mae","r2"])
         surrogates.append(interp)
 
     return surrogates
 
-def set_surrogate(name,dim_in,dim_out,no_points,first_trained):
+def set_surrogate(name,dim_in,dim_out,no_points):
     """
     Select the desired surrogate model.
 
@@ -80,9 +79,11 @@ def set_surrogate(name,dim_in,dim_out,no_points,first_trained):
         * initial parameters for rbg, krig
     """
     setup = load_json(os.path.join(settings["root"],"app","config","metaconf",name))
+    if "setup" in settings["surrogate"].keys():
+        setup.update(settings["surrogate"]["setup"])
     if name=="ann":
         from metamod.ANN import ANN         ### import only when actually used, its slow due to tensorflow
-        surrogate = ANN(setup,first_trained,no_points=no_points,dims=(dim_in,dim_out))
+        surrogate = ANN(setup,no_points=no_points,dims=(dim_in,dim_out))
     elif name=="rbf":
         surrogate = RBF(**setup) #0.55
     elif name=="kriging":

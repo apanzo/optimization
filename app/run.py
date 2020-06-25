@@ -3,10 +3,6 @@ This is the main module
 
 Notes:
     * It is assumed one problem is run at a time
-    * Retraining not applied yet
-    * Retraining logic missing as well
-    * Pass surrogate setting (kriging)
-    * CHeck if shuffle is needed in Kfold
 """
 # Import custom packages
 from core import Model,Surrogate,Optimization
@@ -55,7 +51,7 @@ if build_surrogate and not perform_optimization:
     surrogate = Surrogate(model)
     train_surrogate()
 elif perform_optimization and not build_surrogate:
-    optimization = Optimization(model,None,None,None)
+    optimization = Optimization(model,None)
     optimize()
 elif build_surrogate and perform_optimization:
     surrogate = Surrogate(model)

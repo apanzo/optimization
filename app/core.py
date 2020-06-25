@@ -62,7 +62,7 @@ class Surrogate:
         self.surrogate_metrics = []
 
         # Make response files
-        self.file, self.verification_file = make_response_files(self.model.folder,self.model.dim_in,self.model.n_obj,self.model.n_constr)
+        self.file, self.verification_file = make_response_files(self.model.folder,self.model.dim_in,self.model.n_obj,self.model.n_const)
 
     def sample(self):
         """
@@ -170,14 +170,16 @@ class Optimization:
         if not settings["optimization"]["constrained"]:
             self.n_const = 0
 
-        self.direct = bool(settings["surrogate"]["surrogate"])
+        self.direct = not bool(settings["surrogate"]["surrogate"])
         if self.direct:
             # Specify range
-            self.ranges = [None,None]
-            self.model.evaluator.evaluate
+            self.ranges = [np.array(settings["optimization"]["ranges"]),None]
+            self.function = self.model.evaluator.evaluate
         else:
-            self.ranges = self.surrogate.surrogate.ranges
+            self.ranges = [surrogate.data.range_in,surrogate.data.range_out]
             self.function = self.surrogate.surrogate.predict_values
+
+        self.converged = False
             
     def optimize(self):
         """

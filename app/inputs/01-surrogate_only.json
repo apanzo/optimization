@@ -15,7 +15,10 @@
  "surrogate": "rbf",
  "validation": "kfold",
  "validation_param": 5,
- "selection_metric": "r2"
+ "selection_metric": "r2",
+ "setup": {
+   "d0": 0.6
+   }
  },
 
  "optimization": {

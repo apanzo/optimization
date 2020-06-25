@@ -142,8 +142,7 @@ def set_problem(function,ranges,n_obj,n_constr):
     n_var = ranges[0].shape[0]
     if ranges[1] is None:
         ranges = np.array(ranges).T
-        breakpoint()
-        prob = Custom(function,[-1]*n_var,[1]*n_var,n_obj,n_constr)
+        prob = Custom(function,ranges[0].T[0],ranges[0].T[1],n_obj,n_constr)
     else:
         prob = Custom(function,[-1]*n_var,[1]*n_var,n_obj,n_constr)
         prob.ranges = ranges

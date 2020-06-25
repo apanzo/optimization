@@ -43,7 +43,7 @@ class ANN(SurrogateModel):
     def __getitem__(self,a):
         return self.options[a]
 
-    def __init__(self,setup,keras_optimized,**kwargs):
+    def __init__(self,setup,**kwargs):
         self.configurations = setup
         super().__init__(**kwargs)
         # Initialize model
@@ -56,7 +56,6 @@ class ANN(SurrogateModel):
             prune_model()
 
         self._is_trained = False
-        self.optimized = keras_optimized
         
     def _initialize(self):
         """
