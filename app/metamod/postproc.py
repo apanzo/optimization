@@ -4,11 +4,15 @@ This module provides surrogate pre-processing.
 preprocessing stuff
 """
 # Import native packages
+import operator
 from math import ceil
 
 # Import pypi packages
 import numpy as np
+from sklearn.metrics import max_error as MAX
 from sklearn.metrics import mean_absolute_error as MAE
+from sklearn.metrics import mean_squared_error as MSE
+from sklearn.metrics import median_absolute_error as MedAE
 from sklearn.metrics import r2_score as R2
 
 # Import custom packages
@@ -19,12 +23,10 @@ def select_best_surrogate(surrogates):
 
     metrics = np.array([sur.metric[settings["surrogate"]["selection_metric"]] for sur in surrogates])
 
-    if settings["surrogate"]["selection_metric"] == "mae":
-        best_index = metrics.argmin()
-    elif settings["surrogate"]["selection_metric"] == "r2":
-        best_index = metrics.argmax()
+    argbest, _ = maximize_minimize()
+    select_best = argbest(metrics)
 
-    best_surrogate = surrogates[best_index]
+    best_surrogate = surrogates[select_best]
     
     # Store the metric for sample size determination
     best_surrogate.metric["variance"] = np.var(metrics)
@@ -32,19 +34,26 @@ def select_best_surrogate(surrogates):
     return best_surrogate
 
 ##
-def check_convergence(metric):
+def check_convergence(metrics):
     trained = False
 
-    if settings["data"]["convergence"] in ["mae","variance"]:
-        if metric <= settings["data"]["convergence_limit"]:
-            trained = True
-    elif settings["data"]["convergence"] in ["r2","max_iterations"]:
-        if metric >= settings["data"]["convergence_limit"]:
-            trained = True
-    else:
-        raise Exception("Error should have been caught on initialization")
+    _, direction = maximize_minimize()
+    
+    if settings["data"]["convergence_relative"]:
+        if len(metrics) < 2:
+            return False
+        else:
+            diff = np.diff(metrics)
+            delta = settings["data"]["convergence_limit"]
 
-    print(f"Sample size convergence metric: {settings['data']['convergence']} - {metric}")
+            if direction(diff[-1],0):
+                if abs(diff[-1]) < delta:
+                    trained = True
+    else:
+       if not direction(metrics[-1],0):
+                trained = True
+
+    print(f"Sample size convergence metric: {settings['data']['convergence']} - {metrics[-1]}")
 
     return trained
 
@@ -69,7 +78,27 @@ def evaluate_metrics(test_in,test_out,evaluate,requested):
         metrics[measure] = defined_metrics[measure](test_out,evaluate(test_in))
 
     return metrics
+
+def maximize_minimize():
+    if settings["surrogate"]["selection_metric"] in ["mae","mse","medae","max_error"]:
+        target = np.argmin
+    elif settings["surrogate"]["selection_metric"] in ["r2"]:
+        target = np.argmax
+    else:
+        raise Exception("Error should have been caught on initialization")
+
+    if settings["data"]["convergence"] in ["mae","mse","medae","max_error"]:
+        op = operator.lt
+    elif settings["data"]["convergence"] in ["r2","max_iterations"]:
+        op = operator.gt
+    else:
+        raise Exception("Error should have been caught on initialization")
+
+    return target, op
           
 defined_metrics = {
     "r2": R2,
+    "mse": MSE,
+    "max_error": MAX,
+    "medae": MedAE,
     "mae": MAE}

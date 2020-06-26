@@ -1,6 +1,5 @@
 # Import native packages
 import os
-from pathlib import Path
 
 # Import pypi packages
 import numpy as np
@@ -10,10 +9,10 @@ from datamod import get_data, load_problem
 from datamod.evaluator import EvaluatorBenchmark
 from datamod.results import make_data_file, make_response_files, append_verification_to_database
 from datamod.sampling import determine_samples, resample_static, resample_adaptive
-from datamod.visual import plot_raw, show_problem, vis_design_space, vis_objective_space, sample_size_convergence
 from metamod import train_surrogates, select_best_surrogate, check_convergence, verify_results
 from optimod import set_optimization, set_problem, solve_problem
 from settings import settings
+from visumod import plot_raw, show_problem, vis_design_space, vis_objective_space, sample_size_convergence
 
 class Model:
     """
@@ -29,9 +28,6 @@ class Model:
         Todo:
             * real problem information
         """
-
-        # Make workfolder
-        self.folder = make_workfolder()
 
         # Obtain problem information 
         if settings["data"]["evaluator"] == "benchmark":
@@ -62,7 +58,7 @@ class Surrogate:
         self.surrogate_metrics = []
 
         # Make response files
-        self.file, self.verification_file = make_response_files(self.model.folder,self.model.dim_in,self.model.n_obj,self.model.n_const)
+        self.file, self.verification_file = make_response_files(settings["folder"],self.model.dim_in,self.model.n_obj,self.model.n_const)
 
     def sample(self):
         """
@@ -121,8 +117,8 @@ class Surrogate:
             # Read database
             self.data = get_data(self.file)
             # Plot the input data
-            if "raw_data" in settings["visual"]:
-                plot_raw(self.data,"scatter")
+
+            plot_raw(self.data,"scatter")
 
     def train(self):
         """
@@ -138,21 +134,19 @@ class Surrogate:
         self.surrogate.metric["max_iterations"] = self.sampling_iterations
 
         # Plot the surrogate response
-        if "surrogate" in settings["visual"]:
-            show_problem(self.problem)
+##        show_problem(self.problem)
             
     def surrogate_convergence(self):
         criterion = settings["data"]["convergence"]
 
-        self.trained = check_convergence(self.surrogate.metric[criterion])
-
         self.surrogate_metrics.append(self.surrogate.metric[criterion])
+
+        self.trained = check_convergence(self.surrogate_metrics)
 
         if self.trained:
             print("Surrogate converged")
-            if "convergence" in settings["visual"]: 
-                # Plot the sample size convergence
-                sample_size_convergence(self.surrogate_metrics,criterion)
+            # Plot the sample size convergence
+            sample_size_convergence(self.surrogate_metrics,criterion)
             ##compare()
         
 class Optimization:
@@ -201,12 +195,10 @@ class Optimization:
 
         if self.res is not None: 
             # Plot the optimization result in design space
-            if "design_space" in settings["visual"]:
-                vis_design_space(self.res)
+            vis_design_space(self.res)
                 
             # Plot the optimization result in objective space
-            if "objective_space" in settings["visual"]:
-                vis_objective_space(self.res)        
+            vis_objective_space(self.res)        
     
     def verify(self):
         """
@@ -241,20 +233,3 @@ class Optimization:
 ##            return None
 
         ##len([step["delta_f"] for step in model.res.algorithm.display.term.metrics])
-
-
-
-def make_workfolder():
-    """
-    Initialize the workdirectory.
-
-    """
-    # Setup the folder path
-    folder_name = str(settings["data"]["id"]).zfill(2) + "-" +  settings["data"]["problem"]
-    folder_path = os.path.join(settings["root"],"data",folder_name)
-
-    # Create folder, if not done yet
-    Path(folder_path).mkdir(parents=True,exist_ok=True) # parents in fact not needed
-
-    return folder_path
-

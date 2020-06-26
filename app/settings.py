@@ -1,6 +1,8 @@
 # Import native packages
-import os
 import json
+import os
+from pathlib import Path
+import shutil
 
 def load_json(file):
     """
@@ -56,27 +58,59 @@ def update_settings(problem_id):
     check_valid_settings()
 
     # Add ID
-    settings["data"]["id"] = int(file[:2])
+    settings["id"] = int(file[:2])
     check_already_present()
 
 def check_already_present():
     # List defined problems
-    valid_ids = [int(name[:2]) for name in next(os.walk(os.path.join(settings["root"],"data")))[1]]
+    data_folder, all_result_folders = get_results_folders()
+
+    id_current = settings["id"]
+    matching_folders = [folder for folder in all_result_folders if folder.startswith(str(id_current).zfill(2))]
 
     # If ID has already results, decide whether to overwrite
-    if settings["data"]["id"] in valid_ids:
-        id_current = settings["data"]["id"]
+    if len(matching_folders) > 0:
         while True:
             overwrite = input(f"ID {id_current} has already results. Do you want to overwrite results? [y/n]")
             if overwrite in ["y","n"]:
                 if overwrite == "y":
+                    for folder in matching_folders:
+                        shutil.rmtree(os.path.join(data_folder,folder))
                     break
                 else:
                     raise Exception(f"ID {id_current} already defined")
             else:
                 print("Invalid input")
 
-    
+    # Make workfolder
+    settings["folder"] = make_workfolder()
+
+def get_results_folders():
+    """
+    Docstring
+    """
+    data_folder = os.path.join(settings["root"],"data")
+    all_result_folders = [name for name in next(os.walk(os.path.join(settings["root"],"data")))[1]]
+    return data_folder, all_result_folders
+
+def make_workfolder():
+    """
+    Initialize the workdirectory.
+
+    """
+    # Setup the folder path
+    folder_name = str(settings["id"]).zfill(2) + "-" +  settings["data"]["problem"]
+    folder_path = os.path.join(settings["root"],"data",folder_name)
+    figures_path = os.path.join(folder_path,"figures")
+    logs_path = os.path.join(folder_path,"logs")
+
+    # Create folder, if not done yet
+    Path(folder_path).mkdir(parents=True,exist_ok=True) # parents in fact not needed   
+    Path(figures_path).mkdir(parents=True,exist_ok=True) # parents in fact not needed  
+    Path(logs_path).mkdir(parents=True,exist_ok=True) # parents in fact not needed    
+
+    return folder_path
+
 # Initialize setting with the path to the root folder
 settings = {"root": os.path.split(os.path.split(__file__)[0])[0]}
 

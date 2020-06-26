@@ -8,6 +8,7 @@
  "resampling_param": 5,
  "adaptive": null,
  "convergence": "r2",
+ "convergence_relative": false,
  "convergence_limit": 0.99
  },
 
@@ -23,7 +24,5 @@
 
  "optimization": {
  "algorithm": null
- },
-
- "visual": []
+ }
 }

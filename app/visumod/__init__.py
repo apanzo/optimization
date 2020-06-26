@@ -3,6 +3,8 @@ This is the visualization module.
 
 visual - scatter 2D/3D, curve, surface tri (not quad)
 """
+# Import native packages
+import os
 
 # Import pypi packages
 ##import matplotlib.pyplot as plt
@@ -12,7 +14,7 @@ import numpy as np
 from pymoo.factory import get_visualization
 
 # Import custom packages
-from datamod import scale
+from settings import settings
 
 def plot_raw(data,name,normalized=False,**kwargs):
     """
@@ -27,8 +29,8 @@ def plot_raw(data,name,normalized=False,**kwargs):
         ValueError: if the visualization method is not supported
         
     """
-    
-##    breakpoint()
+    fname = os.path.join(settings["folder"],"figures","raw")
+
     if normalized:
         data_all = np.concatenate((data.input,data.output),1)
     else:
@@ -43,7 +45,7 @@ def plot_raw(data,name,normalized=False,**kwargs):
     plot.add(data_all,plot_type=plot_type,**kwargs)
     plot.do()
 ##    plot.apply(lambda ax: ax.set_xlim([0,1]))
-    plot.show()
+    plot.save(fname)
 
 
 def vis_design_space(res):
@@ -60,7 +62,8 @@ def vis_design_space(res):
 ##    plot.apply(lambda ax: ax.set_xlim(*res.problem.ranges[0][0]))
 ##    plot.apply(lambda ax: ax.set_ylim(*res.problem.ranges[0][1]))
 ##    plot.apply(lambda ax: ax.grid())
-    plot.show()
+    fname = os.path.join(settings["folder"],"figures","design_space")
+    plot.save(fname)    
 
 
 def vis_objective_space(res):
@@ -81,7 +84,8 @@ def vis_objective_space(res):
 ##    plot.apply(lambda ax: ax.set_xlim(*res.problem.ranges[1][0]))
 ##    plot.apply(lambda ax: ax.set_ylim(*res.problem.ranges[0][1]))
 ##    plot.apply(lambda ax: ax.grid())
-    plot.show()    
+    fname = os.path.join(settings["folder"],"figures","objective_space")
+    plot.save(fname)    
 
 def show_problem(problem):
     """
@@ -92,11 +96,10 @@ def show_problem(problem):
     """
     plot = get_visualization("fitness-landscape", problem, angle=(30,-135), _type="surface", kwargs_surface = dict(cmap="coolwarm", rstride=1, cstride=1))
 ##    plot.do()
-##    breakpoint()
+    breakpoint()
 ##    plot.apply(lambda ax: ax.set_zlim([0,1]))
-    plot.show() 
-##    get_visualization("fitness-landscape", problem, _type="contour", colorbar=True, kwargs_contour = dict(cmap="coolwarm", linestyles="solid", offset=-1)).show()
-
+    fname = os.path.join(settings["folder"],"figures","surrogate")
+    plot.save(fname)    
 
 def compare():
     """
@@ -120,10 +123,11 @@ def sample_size_convergence(metric,name):
     plt.plot(metric)
     plt.title(name)
 ##    plt.ylim(ymin=0)
-    plt.show()
+    fname = os.path.join(settings["folder"],"figures","sample_size_convergence")
+    plt.savefig(fname)
 
 def plot_2d_sample():
     pass
-        ##        import matplotlib.pyplot as plt
-    ##        plt.scatter(model.data.input[:,0],model.data.input[:,1])
-    ##        plt.show()
+##    import matplotlib.pyplot as plt
+##    plt.scatter(model.data.input[:,0],model.data.input[:,1])
+##    plt.show()

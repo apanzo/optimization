@@ -42,15 +42,21 @@ def train_surrogates(data):
     surrogates = []
     split = set_validation(validation,validation_param)
     no_points = data.input.shape[0]
+
+    # Pretrain
+    if name == "ann":
+        pretrain_split = set_validation(validation,validation_param)
+        pretrain_indices = next(pretrain_split.split(data.input))
+        pretrain_in, pretrain_out = data.input[pretrain_indices[0]], data.output[pretrain_indices[0]]
+        pretrain = set_surrogate(name,data.dim_in,data.dim_out,no_points)
+        pretrain.set_training_values(pretrain_in, pretrain_out)
+        pretrain.pretrain()
     
     for train, test in split.split(data.input):
-        pretrain_ANN = not bool(len(surrogates)) and name == "ann"
         interp = set_surrogate(name,data.dim_in,data.dim_out,no_points)
         interp.train_in, interp.train_out = data.input[train], data.output[train]
         interp.test_in, interp.test_out = data.input[test], data.output[test]
         interp.set_training_values(interp.train_in,interp.train_out)
-##        if pretrain_ANN:
-##            interp.pretrain()
         interp.train()
 ##        interp.ranges = [data.range_in,data.range_out]
         interp.metric = evaluate_metrics(interp.test_in,interp.test_out,interp.predict_values,["mae","r2"])
@@ -81,21 +87,23 @@ def set_surrogate(name,dim_in,dim_out,no_points):
     setup = load_json(os.path.join(settings["root"],"app","config","metaconf",name))
     if "setup" in settings["surrogate"].keys():
         setup.update(settings["surrogate"]["setup"])
+
     if name=="ann":
         from metamod.ANN import ANN         ### import only when actually used, its slow due to tensorflow
-        surrogate = ANN(setup,no_points=no_points,dims=(dim_in,dim_out))
-    elif name=="rbf":
-        surrogate = RBF(**setup) #0.55
-    elif name=="kriging":
-        surrogate = KRG(**setup) # 1e2
-    elif name=="genn":
-        surrogate = GENN(**setup)
-    else:
-        raise NameError('Surrogate not defined, choose "ann","rbf","kriging" or "genn"')
+        available.update({"ann": ANN})
+        setup.update({"no_points":no_points,"dims":(dim_in,dim_out)})
+
+    surrogate = available[name](**setup)
+
     surrogate.options["print_prediction"] = False
     surrogate.options["print_global"] = False
     
     return surrogate
+
+available = {
+    "rbf": RBF,
+    "kriging": KRG,
+    "genn": GENN}
 
 
 

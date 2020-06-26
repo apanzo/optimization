@@ -8,7 +8,7 @@ with the SMT Toolbox
 import os
 
 # Import pypi packages
-from kerastuner.tuners import RandomSearch
+from kerastuner.tuners import RandomSearch, BayesianOptimization
 from kerastuner.engine.hyperparameters import HyperParameters
 import matplotlib.pyplot as plt
 import numpy as np
@@ -43,18 +43,20 @@ class ANN(SurrogateModel):
     def __getitem__(self,a):
         return self.options[a]
 
-    def __init__(self,setup,**kwargs):
-        self.configurations = setup
+    def __init__(self,**kwargs):
+        self.tbd = kwargs.keys()
         super().__init__(**kwargs)
+
         # Initialize model
-        in_dim, out_dim = self["dims"]
-        self.options.declare("architecture", [in_dim]+[self["no_neurons"]]*self["no_layers"]+[out_dim], types=list, desc="default architecture")
-        self.model = self.build_model()
+        self.name = "ANN"
+        self.log_dir = os.path.join(settings["folder"],"logs","ann")
 
-        # Calculate for pruning
-        if self["prune"]:
-            prune_model()
+        # Declare architecture
+##        in_dim, out_dim = self["dims"]
+##        self.options.declare("architecture", [in_dim]+[self["no_neurons"]]*self["no_layers"]+[out_dim], types=list, desc="default architecture")
+##        self.model = self.build_model()
 
+        self.optimized = False
         self._is_trained = False
         
     def _initialize(self):
@@ -83,45 +85,62 @@ class ANN(SurrogateModel):
             stopping_patience: number of iterations to wait before stopping
             plot_history: whether to plot the training history
         """
-        setup = self.configurations
-        # Set default values
+##        setup = self.configurations
+##        # Set default values
         declare = self.options.declare
-        declare("no_layers", setup["no_layers"], types=int, desc="number of layers")
-        declare("no_neurons", setup["no_neurons"], types=int, desc="neurons per layer")
-        declare("activation", setup["activation"], types=str, desc="activation function")
-        declare("batch_size", setup["batch_size"], types=int, desc="batch size")
-        declare("no_epochs", setup["no_epochs"], types=int, desc="no epochs")
-        declare("init", setup["init"], types=str, desc="weight initialization")
-        declare("bias_init", setup["bias_init"], types=str, desc="bias initialization")
-        declare("optimizer", setup["optimizer"], types=str, desc="optimizer")
-        declare("learning_rate", setup["learning_rate"], types=float, desc="optimizer")
-        declare("loss", setup["loss"], types=str, desc="loss function")
-        declare("kernel_regularizer", setup["kernel_regularizer"], types=float, desc="regularization") # 000
-        declare("prune", setup["prune"], types=bool, desc="pruning")
-        declare("sparsity", setup["sparsity"], types=float, desc="target sparsity")
-        declare("pruning_frequency", setup["pruning_frequency"], types=int, desc="pruning frequency")
-        declare("tensorboard", setup["tensorboard"], types=bool, desc="tensorboard") ## not tested
-        declare("stopping", setup["stopping"], types=bool, desc="early stopping")
-        declare("stopping_delta", setup["stopping_delta"], types=float, desc="stopping delta")
-        declare("stopping_patience", setup["stopping_patience"], types=int, desc="stopping patience")
-        declare("plot_history", setup["plot_history"], types=bool, desc="plot training history")
+        for param in self.tbd:
+            declare(param, None)
 
-        # Declare variables
-        declare("dims", (None,None), types=tuple, desc="in and out dimensions")
-        declare("no_points", None, types=int, desc="number of training points")
+        pass
+    
+    def build_hypermodel(self,hp):
+        # Initiallze model
+        model = tf.keras.Sequential()
 
-##        self.supports["derivatives"] = True
-        self.name = "ANN"
-
-    def _train(self):
-        """
-        Train the ANN.
-
-        API function: train the neural net
-        """
-        stopping_delta = self.options["stopping_delta"]
-        stopping_patience = self.options["stopping_patience"]
+        # Initialize hyperparameters        
+        neurons_hyp = hp.Fixed("no_neurons",self["no_neurons"])
+        layers_hyp = hp.Fixed("no_hid_layers",self["no_layers"])
+        lr_hyp = hp.Fixed("learning_rate",self["learning_rate"])
+        activation_hyp = hp.Fixed("activation_function", self["activation"])
+        regularization_hyp = hp.Fixed("regularization",self["kernel_regularizer"])
+        sparsity_hyp = hp.Fixed("sparsity",self["sparsity"])
+        # 
+        kernel_regularizer = tf.keras.regularizers.l2(regularization_hyp)
         
+        # Add layers        
+        in_dim, out_dim = self["dims"]
+        model.add(tf.keras.layers.Dense(neurons_hyp, activation=activation_hyp,
+                                             kernel_initializer=self["init"],
+                                             bias_initializer=self["bias_init"],
+                                             kernel_regularizer=kernel_regularizer,
+                                             input_shape=(in_dim,)))
+        for neurons in range(layers_hyp-3):
+            model.add(tf.keras.layers.Dense(neurons_hyp, activation=activation_hyp,
+                                                 kernel_initializer=self["init"],
+                                                 bias_initializer=self["bias_init"],
+                                                 kernel_regularizer=kernel_regularizer))
+        model.add(tf.keras.layers.Dense(out_dim,activation="tanh",bias_initializer="zeros"))
+
+        # Train
+        optimizer = tf.keras.optimizers.get(self["optimizer"])
+        optimizer._hyper["learning_rate"] = lr_hyp
+
+        # Prune the model
+        if self["prune"]:
+            model = self.prune_model(model,sparsity_hyp)
+
+        model.compile(optimizer,self["loss"],metrics=["mse","mae","mape"])
+
+        return model
+
+    def prune_model(self,model,target_sparsity):
+##        end_step = np.ceil(self["no_points"]/self["batch_size"]*self["no_epochs"]
+##        print(f"End step: {end_step}")
+##        model = sparsity.prune_low_magnitude(model, sparsity.PolynomialSparsity(0,target_sparsity, 0, end_step, frequency=10)        )
+        model = sparsity.prune_low_magnitude(model, sparsity.ConstantSparsity(target_sparsity, 0, frequency=10)        )
+        return model
+
+    def get_callbacks(self):
         callbacks = []
 
         if self["prune"]:
@@ -131,30 +150,82 @@ class ANN(SurrogateModel):
 ##            log_dir = "logs\\fit\\"#+ datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 ##            callbacks.append(tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=20))
         if self["stopping"]:
-            callbacks.append(tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=stopping_delta, patience=stopping_patience, verbose=1,restore_best_weights=True))
-##            callback = tf.keras.callbacks.MyStopping(monitor='val_loss', target=5, patience=3, verbose=1)
+            callbacks.append(tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=self["stopping_delta"], patience=self["stopping_patience"], verbose=1,restore_best_weights=True))
+##            callbacks.append(tf.keras.callbacks.MyStopping(monitor='val_loss', target=5, patience=stopping_patience, verbose=1,restore_best_weights=True))
 
+        return callbacks
+
+    def pretrain(self):
+        # Select hyperparameters to tune
+        hp = HyperParameters()
+        hp.Int("no_neurons",5,40,default=self["no_neurons"])
+        hp.Int("no_hid_layers",1,4,default=self["no_layers"])
+        hp.Float("learning_rate",0.01,0.1,sampling="log",default=self["learning_rate"])
+        hp.Choice("activation_function",["sigmoid","relu","swish"],default=self["activation"])
+        hp.Float("regularization",0.001,1,sampling="log",default=self["kernel_regularizer"])
+##        hp.Float("sparsity",0.3,0.9,default=self["sparsity"])
+
+        # Load tuner
+        max_trials = self["max_trials"]
+
+        tuner = BayesianOptimization(self.build_hypermodel,objective="val_mape",hyperparameters=hp,
+                             max_trials=max_trials,executions_per_trial=1,overwrite=True, num_initial_points=5)
+##                             max_trials=max_trials,executions_per_trial=1,directory=self.log_dir,overwrite=True)
+        
+##        tuner = RandomSearch(self.build_hypermodel,objective="val_mape",hyperparameters=hp,
+##                             max_trials=max_trials,executions_per_trial=1,overwrite=True)
+##                             max_trials=max_trials,executions_per_trial=1,directory=self.log_dir,overwrite=True)
+
+        # Load data and callbacks
         train_in, train_out = self.training_points[None][0]
+        callbacks = self.get_callbacks()
 
-        if not self.optimized:
-            self.pretrain()
-            
-        histor = self.model.fit(train_in, train_out, epochs=self["no_epochs"], batch_size=self["batch_size"], verbose=0, callbacks=callbacks, validation_split = 0.2)
+        # Optimize
+        tuner.search(train_in, train_out, batch_size = train_in.shape[0],
+            epochs=self["no_epochs"], validation_split = 0.2, verbose=0, shuffle=True, callbacks=callbacks)
+
+        # Retrieve and save best model
+        best_hp = tuner.get_best_hyperparameters()[0]
+        untrained_model = tuner.hypermodel.build(best_hp)
+        untrained_model.save(self.log_dir)
+
+    def _train(self):
+        """
+        Train the ANN.
+
+        API function: train the neural net
+        """
+        # Load untrained optimized model
+        self.model = tf.keras.models.load_model(self.log_dir)
+        
+        # Load data and callbacks
+        train_in, train_out = self.training_points[None][0]
+        callbacks = self.get_callbacks()
+
+        # Train the ANN    
+        histor = self.model.fit(train_in, train_out, batch_size = train_in.shape[0],
+            epochs=self["no_epochs"], validation_split = 0.2, verbose=0, shuffle=True, callbacks=callbacks)
+
+        # Evaluate the model
         self.validation_metric = self.evaluation(histor.history)
 
         self._is_trained = True
         if self.options["plot_history"]:
             self.plot_training_history(histor)
+       
+    def evaluation(self,history):
+        """
+        Evaluate the generalization error.
 
-    def pretrain():
-        print("Hello")
-        log_dir = os.path.join(settings["root"],"logs")
-        tuner = RandomSearch(self.build_hypermodel,objective="val_mape",max_trials=10,executions_per_trial=1,directory=log_dir)
+        Returns:
+            error: validation metric
+        """
+        error = history["val_mean_squared_error"][-1]
+        print('MSE: %.3f, RMSE: %.3f' % (error, np.sqrt(error)))
+        print("MAPE: %.0f" % (history["val_mean_absolute_percentage_error"][-1]))
 
-        tuner.search(
-            train_in, train_out,
-            epochs=self["no_epochs"], validation_split = 0.2, verbose=0, shuffle=True, batch_size = train_in.shape[0]//1)
-        
+        return error
+
     def _predict_values(self, x):
         """
         API method: predict values using appropriate methods from the neural_network.py module
@@ -177,6 +248,7 @@ class ANN(SurrogateModel):
             
         """
         if self._is_trained:
+            plt.figure()
             plt.title('Learning Curves')
             plt.xlabel('Epoch')
             plt.ylabel('Loss')
@@ -189,101 +261,28 @@ class ANN(SurrogateModel):
         else:
             raise ValueError("Not trained yet")
 
-    def evaluation(self,history):
-        """
-        Evaluate the generalization error.
-
-        Returns:
-            error: validation metric
-
-        Notes:
-            Assumes erros is MSE
-        """
-        error = history["val_loss"][-1]
-        print('MSE: %.3f, RMSE: %.3f' % (error, np.sqrt(error)))
-        if "mean_absolute_percentage_error" in self.model.metrics_names:
-            print("MAPE: %.0f" % (error["val_mape"]))
-
-        return error
-
-    def build_model(self):
-        model = tf.keras.Sequential()
-        kernel_regularizer = tf.keras.regularizers.l2(self["kernel_regularizer"])
-        
-        # Add layers        
-        model.add(tf.keras.layers.Dense(self["architecture"][1], activation=self["activation"],
-                                             kernel_initializer=self["init"],
-                                             bias_initializer=self["bias_init"],
-                                             kernel_regularizer=kernel_regularizer,
-                                             input_shape=(self["architecture"][0],)))
-        for neurons in self["architecture"][2:-1]:
-            model.add(tf.keras.layers.Dense(neurons, activation=self["activation"],
-                                                 kernel_initializer=self["init"],
-                                                 bias_initializer=self["bias_init"],
-                                                 kernel_regularizer=kernel_regularizer))
-        model.add(tf.keras.layers.Dense(self["architecture"][-1],activation="sigmoid"))
-
-        # Train
-        optimizer = tf.keras.optimizers.get(self["optimizer"])
-        optimizer._hyper["learning_rate"] = self["learning_rate"]
-
-        model.compile(optimizer,self["loss"],metrics=["mape"])
-
-        return model
-
-    def build_hypermodel(self,hp):
-        model = tf.keras.Sequential()
-        kernel_regularizer = tf.keras.regularizers.l2(self["kernel_regularizer"])
-        
-        neurons_hyp = hp.Int("No_neur",1,20)
-        layers_hyp = hp.Int("No_layers",1,4)
-        lr_hyp = hp.Float("Learning_rate",0.001,0.1,sampling="log")
-        activation_hyp = hp.Choice("Activation_function", ["sigmoid","relu","swish"]
-        regularization_hyp = hp.Float("Regularization coefficient",0.001,1,sampling="log")
-        sparsity_hyp = hyp.Float("Final sparsity",0.3,0.9)
-        batch_size_ratio_hyp = hyp.Float("Batch size ration",0.1,1.0)
-                                   
-        # ADD EARLY STOPPING
-        
-        
-        # Add layers        
-        model.add(tf.keras.layers.Dense(self["architecture"][1], activation=self["activation"],
-                                             kernel_initializer=self["init"],
-                                             bias_initializer=self["bias_init"],
-                                             kernel_regularizer=kernel_regularizer,
-                                             input_shape=(self["architecture"][0],)))
-        for neurons in self["architecture"][2:-1]:
-            model.add(tf.keras.layers.Dense(neurons_hyp, activation=self["activation"],
-                                                 kernel_initializer=self["init"],
-                                                 bias_initializer=self["bias_init"],
-                                                 kernel_regularizer=kernel_regularizer))
-        model.add(tf.keras.layers.Dense(self["architecture"][-1],activation="sigmoid"))
-
-        # Train
-        optimizer = tf.keras.optimizers.get(self["optimizer"])
-        optimizer._hyper["learning_rate"] = self["learning_rate"]
-
-        model.compile(optimizer,self["loss"],metrics=["mape"])
-
-        model.summary()
-
-        return model
-
-
-    def prune_model(self):
-        end_step = np.ceil(1.0 * self["no_points"] / self["batch_size"]).astype(np.int32) * self["no_epochs"]
-        print(f"End step: {end_step}")
-
-        # Add pruning layers
-        new_pruning_params = {
-              'pruning_schedule': sparsity.PolynomialDecay(initial_sparsity=0.0,
-                                                           final_sparsity=self["sparsity"],
-                                                           begin_step=0,
-                                                           end_step=end_step,
-                                                           frequency=self["pruning_frequency"])
-        }
-
-        self.model = sparsity.prune_low_magnitude(self.model, **new_pruning_params)
-
-    def optimize(self):
-        pass
+##    def build_model(self):
+##        model = tf.keras.Sequential()
+##        kernel_regularizer = tf.keras.regularizers.l2(self["kernel_regularizer"])
+##        
+##        # Add layers        
+##        model.add(tf.keras.layers.Dense(self["architecture"][1], activation=self["activation"],
+##                                             kernel_initializer=self["init"],
+##                                             bias_initializer=self["bias_init"],
+##                                             kernel_regularizer=kernel_regularizer,
+##                                             input_shape=(self["architecture"][0],)))
+##        for neurons in self["architecture"][2:-1]:
+##            model.add(tf.keras.layers.Dense(neurons, activation=self["activation"],
+##                                                 kernel_initializer=self["init"],
+##                                                 bias_initializer=self["bias_init"],
+##                                                 kernel_regularizer=kernel_regularizer))
+##        model.add(tf.keras.layers.Dense(self["architecture"][-1],activation="sigmoid"))
+##
+##        # Train
+##        optimizer = tf.keras.optimizers.get(self["optimizer"])
+##        optimizer._hyper["learning_rate"] = self["learning_rate"]
+##
+##        model.compile(optimizer,self["loss"],metrics=["mape"])
+##
+##        return model
+##

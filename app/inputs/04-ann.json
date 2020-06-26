@@ -8,24 +8,18 @@
  "resampling_param": 5,
  "adaptive": null,
  "convergence": "r2",
+ "convergence_relative": false,
  "convergence_limit": 0.99
  },
 
  "surrogate": {
- "surrogate": "rbf",
+ "surrogate": "ann",
  "validation": "kfold",
  "validation_param": 5,
- "selection_metric": "r2",
- "append_verification": false
+ "selection_metric": "r2"
  },
 
  "optimization": {
- "algorithm": "nsga2",
- "pop_size": 40,
- "n_offsprings": 10,
- "termination": "f_tol",
- "termination_val": [0.001,5,5,null,null],
- "constrained": false,
- "error_limit": 5
+ "algorithm": null
  }
 }
