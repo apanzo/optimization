@@ -105,7 +105,7 @@ class ANN(SurrogateModel):
         regularization_hyp = hp.Fixed("regularization",self["kernel_regularizer"])
         sparsity_hyp = hp.Fixed("sparsity",self["sparsity"])
         # 
-        kernel_regularizer = tf.keras.regularizers.l2(regularization_hyp)
+        kernel_regularizer = tf.keras.regularizers.l1(regularization_hyp)
         
         # Add layers        
         in_dim, out_dim = self["dims"]
@@ -114,12 +114,12 @@ class ANN(SurrogateModel):
                                              bias_initializer=self["bias_init"],
                                              kernel_regularizer=kernel_regularizer,
                                              input_shape=(in_dim,)))
-        for neurons in range(layers_hyp-3):
+        for _ in range(layers_hyp-1):
             model.add(tf.keras.layers.Dense(neurons_hyp, activation=activation_hyp,
                                                  kernel_initializer=self["init"],
                                                  bias_initializer=self["bias_init"],
                                                  kernel_regularizer=kernel_regularizer))
-        model.add(tf.keras.layers.Dense(out_dim,activation="tanh",bias_initializer="zeros"))
+        model.add(tf.keras.layers.Dense(out_dim,activation="linear",use_bias=False))
 
         # Train
         optimizer = tf.keras.optimizers.get(self["optimizer"])
@@ -147,8 +147,7 @@ class ANN(SurrogateModel):
             callbacks.append(sparsity.UpdatePruningStep())
         if self["tensorboard"]:
             raise ValueError("Tensorboard not implemented yet")
-##            log_dir = "logs\\fit\\"#+ datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-##            callbacks.append(tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=20))
+##            callbacks.append(tf.keras.callbacks.TensorBoard(log_dir=os.path.join(self.log_dir,"tensorboard"), histogram_freq=20))
         if self["stopping"]:
             callbacks.append(tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=self["stopping_delta"], patience=self["stopping_patience"], verbose=1,restore_best_weights=True))
 ##            callbacks.append(tf.keras.callbacks.MyStopping(monitor='val_loss', target=5, patience=stopping_patience, verbose=1,restore_best_weights=True))
@@ -158,31 +157,36 @@ class ANN(SurrogateModel):
     def pretrain(self):
         # Select hyperparameters to tune
         hp = HyperParameters()
-        hp.Int("no_neurons",5,40,default=self["no_neurons"])
-        hp.Int("no_hid_layers",1,4,default=self["no_layers"])
-        hp.Float("learning_rate",0.01,0.1,sampling="log",default=self["learning_rate"])
-        hp.Choice("activation_function",["sigmoid","relu","swish"],default=self["activation"])
-        hp.Float("regularization",0.001,1,sampling="log",default=self["kernel_regularizer"])
+##        hp.Int("no_neurons",6,40,step=2,default=self["no_neurons"])
+##        hp.Int("no_hid_layers",1,3,default=self["no_layers"])
+##        hp.Float("learning_rate",0.001,0.1,sampling="log",default=self["learning_rate"])
+##        hp.Fixed("activation_function","tanh")
+##        hp.Choice("activation_function",["sigmoid","relu","swish"],default=self["activation"])
+##        hp.Float("regularization",0.001,1,sampling="log",default=self["kernel_regularizer"])
 ##        hp.Float("sparsity",0.3,0.9,default=self["sparsity"])
 
         # Load tuner
         max_trials = self["max_trials"]
-
-        tuner = BayesianOptimization(self.build_hypermodel,objective="val_mape",hyperparameters=hp,
-                             max_trials=max_trials,executions_per_trial=1,overwrite=True, num_initial_points=5)
-##                             max_trials=max_trials,executions_per_trial=1,directory=self.log_dir,overwrite=True)
+        max_trials = 1
+        path_tf_format = "logs"
+##        tuner = BayesianOptimization(self.build_hypermodel,objective="val_mae",hyperparameters=hp,
+##                             max_trials=max_trials,executions_per_trial=1,directory="logs",num_initial_points=10,
+##                                     overwrite=True,tune_new_entries=False)
         
-##        tuner = RandomSearch(self.build_hypermodel,objective="val_mape",hyperparameters=hp,
-##                             max_trials=max_trials,executions_per_trial=1,overwrite=True)
-##                             max_trials=max_trials,executions_per_trial=1,directory=self.log_dir,overwrite=True)
+        tuner = RandomSearch(self.build_hypermodel,objective="val_mape",hyperparameters=hp,
+                             max_trials=max_trials,executions_per_trial=1,directory="logs",overwrite=True)
 
         # Load data and callbacks
         train_in, train_out = self.training_points[None][0]
-        callbacks = self.get_callbacks()
+        callbacks_all = self.get_callbacks()
+
+        # Remove early stopping
+        callbacks = [call for call in callbacks_all if not isinstance(call,tf.keras.callbacks.EarlyStopping)]
+
 
         # Optimize
         tuner.search(train_in, train_out, batch_size = train_in.shape[0],
-            epochs=self["no_epochs"], validation_split = 0.2, verbose=0, shuffle=True, callbacks=callbacks)
+            epochs=10, validation_split = 0.2, verbose=0, shuffle=True, callbacks=callbacks)
 
         # Retrieve and save best model
         best_hp = tuner.get_best_hyperparameters()[0]
@@ -202,16 +206,16 @@ class ANN(SurrogateModel):
         train_in, train_out = self.training_points[None][0]
         callbacks = self.get_callbacks()
 
-        # Train the ANN    
+        # Train the ANN
         histor = self.model.fit(train_in, train_out, batch_size = train_in.shape[0],
             epochs=self["no_epochs"], validation_split = 0.2, verbose=0, shuffle=True, callbacks=callbacks)
 
         # Evaluate the model
         self.validation_metric = self.evaluation(histor.history)
-
+##        breakpoint()
         self._is_trained = True
         if self.options["plot_history"]:
-            self.plot_training_history(histor)
+            self.plot_training_history(histor,train_in,train_out,self.model.predict)
        
     def evaluation(self,history):
         """
@@ -222,6 +226,7 @@ class ANN(SurrogateModel):
         """
         error = history["val_mean_squared_error"][-1]
         print('MSE: %.3f, RMSE: %.3f' % (error, np.sqrt(error)))
+        print("MAE: %.3f" % (history["val_mean_absolute_error"][-1]))
         print("MAPE: %.0f" % (history["val_mean_absolute_percentage_error"][-1]))
 
         return error
@@ -236,7 +241,7 @@ class ANN(SurrogateModel):
         return self.model.predict(x)
 
 
-    def plot_training_history(self,history):
+    def plot_training_history(self,history,inputs,outputs,predict):
         """
         Plot the evolution of the training and testing error.
 
@@ -248,7 +253,9 @@ class ANN(SurrogateModel):
             
         """
         if self._is_trained:
+            plt.close()
             plt.figure()
+            plt.subplot(1, 2, 1)
             plt.title('Learning Curves')
             plt.xlabel('Epoch')
             plt.ylabel('Loss')
@@ -257,6 +264,14 @@ class ANN(SurrogateModel):
 ##            plt.ylim([0,.1])
             plt.legend()
             plt.ylim(bottom=0)
+            
+            plt.subplot(1, 2, 2)
+            plt.scatter(outputs.flatten(),predict(inputs).flatten())
+            plt.title('Prediction correletation')
+            plt.xlabel('Data')
+            plt.ylabel('Prediction')
+            plt.xlim([-1,1])
+            plt.ylim([-1,1])
             plt.show()
         else:
             raise ValueError("Not trained yet")

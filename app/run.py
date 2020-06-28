@@ -3,6 +3,7 @@ This is the main module
 
 Notes:
     * It is assumed one problem is run at a time
+    * logs are not stored in data due to max path length issues in kerastuner
 """
 # Import custom packages
 from core import Model,Surrogate,Optimization

@@ -209,9 +209,9 @@ class Optimization:
         
         if self.res is not None:        
             idx = verify_results(self.res.X, self.surrogate)
-            
+
             # Calculate error
-            response_F = self.surrogate.verification.response[:,:-self.problem.n_constr or None]
+            response_F = self.surrogate.verification.response[:,:-self.problem.n_constr or None][-len(idx):,:]
             self.error = (100*(response_F-self.res.F[idx])/response_F)
 
             self.error_max = np.max(np.abs(self.error))

@@ -30,7 +30,7 @@ def select_best_surrogate(surrogates):
     
     # Store the metric for sample size determination
     best_surrogate.metric["variance"] = np.var(metrics)
-    
+
     return best_surrogate
 
 ##
@@ -38,19 +38,19 @@ def check_convergence(metrics):
     trained = False
 
     _, direction = maximize_minimize()
+    threshold = settings["data"]["convergence_limit"]
     
     if settings["data"]["convergence_relative"]:
         if len(metrics) < 2:
             return False
         else:
             diff = np.diff(metrics)
-            delta = settings["data"]["convergence_limit"]
 
             if direction(diff[-1],0):
-                if abs(diff[-1]) < delta:
+                if abs(diff[-1]) < threshold:
                     trained = True
     else:
-       if not direction(metrics[-1],0):
+       if direction(metrics[-1],threshold):
                 trained = True
 
     print(f"Sample size convergence metric: {settings['data']['convergence']} - {metrics[-1]}")

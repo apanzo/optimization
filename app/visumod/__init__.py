@@ -74,6 +74,7 @@ def vis_objective_space(res):
         res: results object
         
     """
+    breakpoint()
     if res.F.shape[-1] <= 2:
         plot = get_visualization("scatter", title = "Objective Space", axis_labels="f")
         plot.add(res.F, s=30, facecolors='none', edgecolors='r')

@@ -1,5 +1,6 @@
 # Own ignores
 app/inputs/backup/
+app/logs
 automatic_model_selection
 backups/
 data/*

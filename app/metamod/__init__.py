@@ -43,6 +43,8 @@ def train_surrogates(data):
     split = set_validation(validation,validation_param)
     no_points = data.input.shape[0]
 
+    print(f"Training using {name} on {len(data.input)} examples")
+
     # Pretrain
     if name == "ann":
         pretrain_split = set_validation(validation,validation_param)
