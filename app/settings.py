@@ -40,7 +40,8 @@ def check_valid_settings():
     for i in valid.keys():
         for j in valid[i].keys():
             if not (settings[i][j] in valid[i][j]):
-                raise Exception(f"Invalid setting for {join([i,j])}, valid keys are: [{', '.join(valid[i][j])}]")
+                breakpoint()
+                raise Exception(f"Invalid setting for {j}, valid keys are: [{', '.join(valid[i][j])}]")
 
 def update_settings(problem_id):
     if not len(settings.keys()) == 1:

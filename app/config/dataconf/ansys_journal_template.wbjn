@@ -1,0 +1,55 @@
+# imports
+import os
+
+# encoding: utf-8
+# 2019 R2
+SetScriptVersion(Version="19.4.159")
+
+# inputs
+project_folder = "C:\\Users\\antonin.panzo\\Downloads\\ANSYS\\Test models\\14 - batch multi\\"
+workbench_project = "Project.wbpj"
+points = [[7,20],[8,40]]
+input_param_name = ["P2","P3"] # so that I can define them independednt of ANSYS definitoin order
+iteration = 7
+
+# open project
+Open(FilePath=project_folder+workbench_project)
+
+# clear design points
+for dp in Parameters.GetAllDesignPoints():
+   if dp.Name != "0":
+      dp.Delete()
+
+# define new points
+no_dp = len(points)
+
+## create dp obejcts
+#for _ in range(no_dp-1):
+#   Parameters.CreateDesignPoint()
+
+# [i for i in Parameters.GetAllParameters() if i.Usage =='Input'] # all input parameters
+
+input_param = [Parameters.GetParameter(Name=param) for param in input_param_name]
+
+# set sample points
+for index, point in enumerate(points):
+   if index == 0:
+      dp = Parameters.GetDesignPoint(Name="0")
+   else:
+      dp = Parameters.CreateDesignPoint()    
+   for idx,param in enumerate(input_param):
+      parameter_current = str(dp.GetParameterValue(param))
+      parameter_new = " ".join([str(point[idx]),parameter_current.split()[1]]) # same units are used
+
+      dp.SetParameterExpression(
+        Parameter=param,
+        Expression=parameter_new)
+
+# solve 
+UpdateAllDesignPoints()
+
+# export results
+if not "results" in os.listdir(project_folder):
+	os.mkdir(os.path.join(project_folder,"results"))
+
+Parameters.ExportAllDesignPointsData(FilePath=os.path.join(project_folder,"results","iteration_"+str(iteration))+".csv")

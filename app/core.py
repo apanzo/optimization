@@ -6,7 +6,7 @@ import numpy as np
 
 # Import custom packages
 from datamod import get_data, load_problem
-from datamod.evaluator import EvaluatorBenchmark
+from datamod.evaluator import EvaluatorBenchmark, EvaluatorANSYS
 from datamod.results import make_data_file, make_response_files, append_verification_to_database
 from datamod.sampling import determine_samples, resample_static, resample_adaptive
 from metamod import train_surrogates, select_best_surrogate, check_convergence, verify_results
@@ -33,6 +33,9 @@ class Model:
         if settings["data"]["evaluator"] == "benchmark":
             self.system, self.range_in, self.dim_in, self.dim_out, self.n_const = load_problem(settings["data"]["problem"])
             self.evaluator = EvaluatorBenchmark(self.system,self.n_const)
+        elif settings["data"]["evaluator"] == "ansys":
+            self.evaluator = EvaluatorANSYS()
+            self.range_in, self.dim_in, self.dim_out, self.n_const = self.evaluator.get_info()
         else:
             raise Exception("Error should have been caught on initialization")
 

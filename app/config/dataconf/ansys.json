@@ -1,0 +1,11 @@
+{
+ "ansys_directory": "C:\\Program Files\\ANSYS Inc\\v194\\Framework\\bin\\Win64",
+
+ "license_checker": "C:\\Program Files\\ANSYS Inc\\Shared Files\\Licensing\\winx64",
+ "license_server": "1055@srv-lic06.skoda.cz",
+
+ "licenses": {
+ "1": ["ansys","mech_1","mech_2"] ,
+ "2": ["a_spaceclaim_dirmod"]
+ }
+}
