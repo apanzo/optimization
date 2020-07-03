@@ -10,11 +10,13 @@ import numpy as np
 from pymoo.factory import get_sampling, get_crossover, get_mutation
 from pymoo.factory import get_termination
 from pymoo.factory import get_algorithm
+from pymoo.factory import get_reference_directions
 from pymoo.optimize import minimize
 
 # Import custom packages
 from datamod import scale
 from datamod.problems import Custom
+from optimod.termination import default_termination
 from settings import load_json, settings
 
 def solve_problem(problem,algorithm,termination,direct):
@@ -31,15 +33,12 @@ def solve_problem(problem,algorithm,termination,direct):
         res: results object
 
     Notes:
-        save_history will work with ANN surrogate from Tensorflow only if line 290 in site-packages\pymoo\model\algorithm is changed from deepcopy to copy
+        * save_history will work with ANN surrogate from Tensorflow only if line 290 in site-packages\pymoo\model\algorithm is changed from deepcopy to copy
+        * optional seed not implemented
     """
-##    opt_seed = setup_gen["solve"]["opt_seed"]
-##    verbose = settings["optimization"]["opt_verbose"]
     res_nor = minimize(problem,
                    algorithm,
                    termination,
-##                   seed=opt_seed,
-##                   pf=problem.pareto_front(use_cache=False),
 ##                   save_history=True,
                    verbose=True)
 
@@ -53,52 +52,59 @@ def solve_problem(problem,algorithm,termination,direct):
         res = res_nor
     return res
 
-def set_optimization():
+def set_optimization(no_obj):
     """
     Set the selected optimization technique.
-
-    Arguments:
-        setting: setting object
 
     Raises:
         alg: optimization algorithm
         term: termination method
 
-    Note:
-        there is also a single objective one
-        termination_val = [0.0025*1000,5,5,None,None]
-
     """
     setup = settings["optimization"]
-    setup_gen = load_json(os.path.join(settings["root"],"app","config","opticonf",setup["algorithm"]))
-    
-    # Get optimization settings objects
-    sampling = get_sampling(setup_gen["opt_sampling"])
-    mutation = get_mutation(**setup_gen["mutation"])
-    crossover = get_crossover(**setup_gen["crossover"])
 
     # Get optimization algorithm
+    name = setup["algorithm"]
 
-    if setup["algorithm"] == "default":
-        raise Exception("Defaults not implemented yet")
-        if no_dim == 1:
-            raise Exception()
-        elif no_dim == 2:
-            raise Exception()
-        else:
-            raise Exception()
-    else:
-        alg = get_algorithm(setup["algorithm"],
-            pop_size=setup["pop_size"],
-            n_offsprings=setup["n_offsprings"],
-            sampling=sampling,
-            crossover=crossover,
-            mutation=mutation,
-            eliminate_duplicates=True
-            )
+    if name == "default":
+        if no_obj == 1:
+            name = "ga"
+        elif no_obj > 1:
+            name = "nsga3"
+
+    # Get settings
+    setup_alg = load_json(os.path.join(settings["root"],"app","config","opticonf",name))
+    setup_gen = load_json(os.path.join(settings["root"],"app","config","opticonf","general"))
+    algortihm_args = {}
+    
+    # Get optimization settings objects
+    algortihm_args["sampling"] = get_sampling(setup_gen["sampling"])
+
+    if "operators" in setup:
+        for operator in setup["operators"]:
+            algortihm_args[operator] = get_operator(operator,setup)
+
+    # Get reference directions
+    if name == "nsga3":
+        algortihm_args["ref_dirs"] = get_reference_directions("energy", no_obj, setup_alg["ref_dirs_coef"]*no_obj)
+
+    # Modify population
+    if "n_offsprings" in setup:
+        algortihm_args["n_offsprings"] = setup["n_offsprings"]  
+    if "pop_size" in setup:
+        algortihm_args["pop_size"] = setup["pop_size"]
+        
+    alg = get_algorithm(name,eliminate_duplicates=True,**algortihm_args)
     
     # Get termination criterion
-    term = get_termination(setup["termination"], *setup["termination_val"])
+    termination = setup["termination"]
+
+    if termination == "default":
+        terimnation = "f_tol"
+        setup_term = [0.001,5,5,150,None]
+        term = default_termination(no_obj,setup_term)
+    else:
+        term = get_termination(termination, *setup["termination_val"])
     
     return alg, term
 
@@ -148,4 +154,17 @@ def set_problem(function,ranges,n_obj,n_constr):
         prob.ranges = ranges
     
     return prob
-   
+
+def get_operator(name,setup):
+    """
+    docstring
+    """
+    
+    if name == "mutation":
+        operator = get_mutation(**setup[operator])
+    elif name == "crossover":
+        operator = get_crossover(**setup[operator])
+    else:
+        raise Exception("Invalid operator requested")
+
+    return operator

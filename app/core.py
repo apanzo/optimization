@@ -162,7 +162,8 @@ class Optimization:
         self.surrogate = surrogate
 
         # Obtain optimization setup
-        self.algorithm, self.termination = set_optimization()
+        self.algorithm, self.termination = set_optimization(model.n_obj)
+        
         # Deactivate constrains if not set otherwise
         if not settings["optimization"]["constrained"]:
             self.n_const = 0

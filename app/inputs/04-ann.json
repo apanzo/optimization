@@ -20,11 +20,7 @@
  },
 
  "optimization": {
- "algorithm": "nsga2",
- "pop_size": 100,
- "n_offsprings": 25,
- "termination": "f_tol",
- "termination_val": [0.001,5,5,150,null],
+ "algorithm": "default",
  "constrained": true,
  "error_limit": 10
  }
