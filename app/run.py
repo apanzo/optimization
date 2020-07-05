@@ -14,11 +14,11 @@ def train_surrogate():
     Docstring.
     """    
     # Train surrogate
+    if surrogate.retraining and settings["surrogate"]["append_verification"]:
+        surrogate.append_verification
     while not surrogate.trained:
-        if True:
-##        if not surrogate.retraining or not settings["surrogate"]["append_verification"]:
-            surrogate.sample()
-            surrogate.evaluate()
+        surrogate.sample()
+        surrogate.evaluate()
         surrogate.load_results()
         surrogate.train()
         surrogate.surrogate_convergence()

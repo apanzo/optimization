@@ -1,4 +1,5 @@
 # Import native packages
+from collections import Counter
 import json
 import os
 from pathlib import Path
@@ -63,11 +64,11 @@ def update_settings(problem_id):
 
     # Add ID
     settings["id"] = problem_id
-    check_already_present(settings["id"])
+    restart_check(settings["id"],file)
 
     copyfile(file+".json",os.path.join(settings["folder"],"input.json"))
 
-def check_already_present(id_current):
+def restart_check(id_current,file):
     # List defined problems
     data_folder, all_result_folders = get_results_folders()
 
@@ -75,18 +76,28 @@ def check_already_present(id_current):
 
     # If ID has already results, decide whether to overwrite
     if len(matching_folders) > 0:
-        while True:
-##            overwrite = input(f"ID {id_current} has already results. Do you want to overwrite results? [y/n]")
-            overwrite = "y"
-            if overwrite in ["y","n"]:
-                if overwrite == "y":
-                    for folder in matching_folders:
-                        rmtree(os.path.join(data_folder,folder))
-                    break
-                else:
-                    raise Exception(f"ID {id_current} already defined")
+        if len(matching_folders) > 1:
+            raise Exception("Too many matching folders")
+
+        # Check whether the stored input file is identic
+        stored_input_path = os.path.join(data_folder,matching_folders[0],"input")
+        
+        new_input = load_json(file)
+        stored_input = load_json(stored_input_path)
+        
+        same_inputs = Counter(new_input) == Counter(stored_input)
+
+        if same_inputs:
+            breakpoint()
+            if new_input["surrogate"]["surrogate"] is None:
+                ask_to_overwrite(id_current,"restarting is not supported for direct optimization")
+            elif False: # Check whether the result is converged
+                ask_to_overwrite(id_current,"the model is converged")
             else:
-                print("Invalid input")
+                # Restart
+                ask_to_overwrite(id_current,"restarting not implemented yet") ############
+        else:
+            ask_to_overwrite(id_current,"the inputs are different")
 
     # Make workfolder
     settings["folder"] = make_workfolder()
@@ -131,6 +142,22 @@ def load_object(name):
         obj = pickle.load(f)
 
     return obj
+
+def ask_to_overwrite(id_current,text):
+    # Ask what to do
+    while True:
+        response = input(f"ID {id_current} has already results and {text}. Do you want to overwrite results? [y/n]")
+        if response in ["y","n"]:
+            overwrite = True if response=="y" else False
+            break
+        else:
+            print("Invalid input")    
+
+    # Either overwrite or abort
+    if overwrite:
+        rmtree(os.path.join(data_folder,folder))
+    else:
+        raise Exception(f"ID {id_current} already defined")
 
 # Initialize setting with the path to the root folder
 settings = {"root": os.path.split(os.path.split(__file__)[0])[0]}
