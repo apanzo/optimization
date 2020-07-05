@@ -5,14 +5,16 @@ import os
 import numpy as np
 
 # Import custom packages
-from datamod import get_data, load_problem
+from datamod import get_data, load_problem, scale
 from datamod.evaluator import EvaluatorBenchmark, EvaluatorANSYS
 from datamod.results import make_data_file, make_response_files, append_verification_to_database
-from datamod.sampling import determine_samples, resample_static, resample_adaptive
+from datamod.sampling import determine_samples, resample_static, resample_adaptive, complete_grid
 from metamod import train_surrogates, select_best_surrogate, check_convergence, verify_results
+from metamod.deploy import get_partial_input
 from optimod import set_optimization, set_problem, solve_problem
-from settings import settings
-from visumod import plot_raw, show_problem, vis_design_space, vis_objective_space, sample_size_convergence
+from settings import dump_object, settings
+from visumod import plot_raw, vis_design_space, vis_objective_space, sample_size_convergence, vis_objective_space_pcp
+from visumod import compare_surrogate, correlation_heatmap, surrogate_response
 
 class Model:
     """
@@ -80,7 +82,7 @@ class Surrogate:
         
         # Obtain new samples
         if self.no_samples == 0 or not settings["data"]["adaptive"]: ## So if non-adaptive sampling is used, adaptive must be set to None
-            self.samples = resample_static(no_new_samples,self.no_samples,self.model.dim_in,self.model.range_in)
+            self.samples = resample_static(no_new_samples,self.no_samples,self.model.range_in)
         else:
             self.samples = resample_adaptive(no_new_samples,self.surrogates,self.data)
 
@@ -115,13 +117,12 @@ class Surrogate:
         STUFFs
         """
         if verify:
-            self.verification = get_data(self.verification_file)
+            self.verification = get_data(self.verification_file,self.model.range_in)
         else:
             # Read database
-            self.data = get_data(self.file)
+            self.data = get_data(self.file,self.model.range_in)
             # Plot the input data
-
-            plot_raw(self.data,"scatter")
+            plot_raw(self.data,self.sampling_iterations)
 
     def train(self):
         """
@@ -137,7 +138,7 @@ class Surrogate:
         self.surrogate.metric["max_iterations"] = self.sampling_iterations
 
         # Plot the surrogate response
-##        show_problem(self.problem)
+        compare_surrogate(self.data.input,self.data.output,self.surrogate.predict_values,self.sampling_iterations)
             
     def surrogate_convergence(self):
         criterion = settings["data"]["convergence"]
@@ -150,7 +151,43 @@ class Surrogate:
             print("Surrogate converged")
             # Plot the sample size convergence
             sample_size_convergence(self.surrogate_metrics,criterion)
-            ##compare()
+            correlation_heatmap(self.surrogate.predict_values,self.model.range_in)
+
+        dump_object("stats",self.surrogate_metrics,self.sampling_iterations)
+
+##    def response_grid(self):
+##        self.grid = complete_grid(10,self.model.dim_in)
+##        self.response = self.surrogate.predict_values(self.grid)
+    def plot_response(self,inputs,output,density=10,**kwargs):
+        if len(inputs) > 2:
+            raise Exception("Too many input dimensions requested for a plot")
+
+        if not isinstance(output,int):
+            raise Exception("Too many output dimensions requested for a plot, should specify an integer")
+
+        if output > self.model.dim_out:
+            raise Exception("Output dimension out of bounds")
+        
+        # Convert to 0 based indexing
+        inputs = np.array(inputs) - 1
+        output = output - 1
+
+        # Get response        
+        input_norm = get_partial_input(density,inputs,self.model.dim_in,self.data.norm_fact,**kwargs)
+        output_norm = self.surrogate.predict_values(input_norm)
+
+        # Unormalize
+        input_vec = scale(input_norm,self.model.range_in)
+        output_vec = scale(output_norm,self.data.range_out)
+
+        # Make plot
+        surrogate_response(input_vec[:,inputs],output_vec[:,[output]],inputs)
+
+    def save(self):
+        if self.surrogate.name == 'ANN':
+            self.surrogate.model.save(os.path.join(settings["folder"],"logs","ann"))
+        else:
+            dump_object("meta",self.surrogate)
         
 class Optimization:
     """
@@ -160,6 +197,8 @@ class Optimization:
 
         self.model = model
         self.surrogate = surrogate
+
+        self.iterations = 0
 
         # Obtain optimization setup
         self.algorithm, self.termination = set_optimization(model.n_obj)
@@ -174,7 +213,7 @@ class Optimization:
             self.ranges = [np.array(settings["optimization"]["ranges"]),None]
             self.function = self.model.evaluator.evaluate
         else:
-            self.ranges = [surrogate.data.range_in,surrogate.data.range_out]
+            self.ranges = [self.model.range_in,surrogate.data.range_out]
             self.function = self.surrogate.surrogate.predict_values
 
         self.converged = False
@@ -199,10 +238,12 @@ class Optimization:
 
         if self.res is not None: 
             # Plot the optimization result in design space
-            vis_design_space(self.res)
+            vis_design_space(self.res.X,self.iterations)
                 
             # Plot the optimization result in objective space
-            vis_objective_space(self.res)        
+            vis_objective_space(self.res.F,self.iterations)
+            if self.model.n_obj > 1:
+                vis_objective_space_pcp(self.res.F,self.iterations)
     
     def verify(self):
         """
@@ -228,10 +269,12 @@ class Optimization:
                 print("\n############ Optimization finished ############")
                 print("Total number of samples: %.0f" %(self.surrogate.no_samples))
             else:
+                self.iterations += 1
                 self.surrogate.trained = False
 
 ##            return idx
         else:
+            self.iterations += 1
             self.surrogate.trained = False
 
 ##            return None

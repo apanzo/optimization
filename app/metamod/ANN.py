@@ -5,6 +5,7 @@ This module contains the definition of an ANN comptable
 with the SMT Toolbox
 """
 # Import native packages
+from collections import defaultdict
 import os
 
 # Import pypi packages
@@ -45,6 +46,7 @@ class ANN(SurrogateModel):
 
     def __init__(self,**kwargs):
         self.tbd = kwargs.keys()
+        self.validation_points = defaultdict(dict)
         super().__init__(**kwargs)
 
         # Initialize model
@@ -96,7 +98,7 @@ class ANN(SurrogateModel):
     def build_hypermodel(self,hp):
         # Initiallze model
         model = tf.keras.Sequential()
-
+        
         # Initialize hyperparameters        
         neurons_hyp = hp.Fixed("no_neurons",self["no_neurons"])
         layers_hyp = hp.Fixed("no_hid_layers",self["no_layers"])
@@ -178,6 +180,7 @@ class ANN(SurrogateModel):
 
         # Load data and callbacks
         train_in, train_out = self.training_points[None][0]
+        test_in, test_out = self.validation_points[None][0]
         callbacks_all = self.get_callbacks()
 
         # Remove early stopping
@@ -186,12 +189,12 @@ class ANN(SurrogateModel):
 
         # Optimize
         tuner.search(train_in, train_out, batch_size = train_in.shape[0],
-            epochs=10, validation_split = 0.2, verbose=0, shuffle=True, callbacks=callbacks)
+            epochs=10, validation_data = (test_in, test_out), verbose=0, shuffle=True, callbacks=callbacks)
 
         # Retrieve and save best model
         best_hp = tuner.get_best_hyperparameters()[0]
         untrained_model = tuner.hypermodel.build(best_hp)
-        untrained_model.save(self.log_dir)
+        untrained_model.save(self.log_dir+"_untrained")
 
     def _train(self):
         """
@@ -200,15 +203,16 @@ class ANN(SurrogateModel):
         API function: train the neural net
         """
         # Load untrained optimized model
-        self.model = tf.keras.models.load_model(self.log_dir)
+        self.model = tf.keras.models.load_model(self.log_dir+"_untrained")
         
         # Load data and callbacks
         train_in, train_out = self.training_points[None][0]
+        test_in, test_out = self.validation_points[None][0]
         callbacks = self.get_callbacks()
 
         # Train the ANN
         histor = self.model.fit(train_in, train_out, batch_size = train_in.shape[0],
-            epochs=self["no_epochs"], validation_split = 0.2, verbose=0, shuffle=True, callbacks=callbacks)
+            epochs=self["no_epochs"], validation_data = (test_in, test_out), verbose=0, shuffle=True, callbacks=callbacks)
 
         # Evaluate the model
         self.validation_metric = self.evaluation(histor.history)
@@ -275,6 +279,34 @@ class ANN(SurrogateModel):
             plt.show()
         else:
             raise ValueError("Not trained yet")
+
+    def set_validation_values(self, xt, yt, name=None):
+        """
+        Set validation data (values).
+
+        Parameters
+        ----------
+        xt : np.ndarray[nt, nx] or np.ndarray[nt]
+            The input values for the nt training points.
+        yt : np.ndarray[nt, ny] or np.ndarray[nt]
+            The output values for the nt training points.
+        name : str or None
+            An optional label for the group of training points being set.
+            This is only used in special situations (e.g., multi-fidelity applications).
+        """
+        xt = check_2d_array(xt, "xt")
+        yt = check_2d_array(yt, "yt")
+
+        if xt.shape[0] != yt.shape[0]:
+            raise ValueError(
+                "the first dimension of xt and yt must have the same length"
+            )
+
+        self.nt = xt.shape[0]
+        self.nx = xt.shape[1]
+        self.ny = yt.shape[1]
+        kx = 0
+        self.validation_points[name][kx] = [np.array(xt), np.array(yt)]
 
 ##    def build_model(self):
 ##        model = tf.keras.Sequential()

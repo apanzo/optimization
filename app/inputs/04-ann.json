@@ -21,6 +21,7 @@
 
  "optimization": {
  "algorithm": "default",
+ "termination": "default",
  "constrained": true,
  "error_limit": 10
  }

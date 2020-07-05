@@ -32,6 +32,7 @@ def train_surrogates(data):
 
     Note:
         the indices are shuffled
+        for pretraining, holout with 0.2 assumed
     
     """
     # Unpack settings
@@ -47,11 +48,14 @@ def train_surrogates(data):
 
     # Pretrain
     if name == "ann":
-        pretrain_split = set_validation(validation,validation_param)
-        pretrain_indices = next(pretrain_split.split(data.input))
-        pretrain_in, pretrain_out = data.input[pretrain_indices[0]], data.output[pretrain_indices[0]]
+        pretrain_split = set_validation("holdout",0.2)
+        train, test = next(pretrain_split.split(data.input))
+
         pretrain = set_surrogate(name,data.dim_in,data.dim_out,no_points)
-        pretrain.set_training_values(pretrain_in, pretrain_out)
+        pretrain.train_in, pretrain.train_out = data.input[train], data.output[train]
+        pretrain.test_in, pretrain.test_out = data.input[test], data.output[test]
+        pretrain.set_training_values(pretrain.train_in, pretrain.train_out)
+        pretrain.set_validation_values(pretrain.test_in,pretrain.test_out)
         pretrain.pretrain()
     
     for train, test in split.split(data.input):
@@ -59,6 +63,8 @@ def train_surrogates(data):
         interp.train_in, interp.train_out = data.input[train], data.output[train]
         interp.test_in, interp.test_out = data.input[test], data.output[test]
         interp.set_training_values(interp.train_in,interp.train_out)
+        if name == "ann":
+            interp.set_validation_values(interp.test_in,interp.test_out)
         interp.train()
 ##        interp.ranges = [data.range_in,data.range_out]
         interp.metric = evaluate_metrics(interp.test_in,interp.test_out,interp.predict_values,["mae","r2"])

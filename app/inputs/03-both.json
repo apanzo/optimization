@@ -1,6 +1,6 @@
 {
  "data": {
- "problem": "matlab_peaks",
+ "problem": "kursawe",
  "evaluator": "benchmark",
  "sampling": "halton",
  "default_sample_coef": 10,
@@ -8,11 +8,12 @@
  "resampling_param": 5,
  "adaptive": null,
  "convergence": "r2",
- "convergence_limit": 0.99
+ "convergence_relative": false,
+ "convergence_limit": -0.95
  },
 
  "surrogate": {
- "surrogate": "rbf",
+ "surrogate": "kriging",
  "validation": "kfold",
  "validation_param": 5,
  "selection_metric": "r2",
@@ -20,12 +21,9 @@
  },
 
  "optimization": {
- "algorithm": "nsga2",
- "pop_size": 40,
- "n_offsprings": 10,
- "termination": "f_tol",
- "termination_val": [0.001,5,5,null,null],
- "constrained": false,
- "error_limit": 5
+ "algorithm": "default",
+ "termination": "default",
+ "constrained": true,
+ "error_limit": 50000
  }
 }

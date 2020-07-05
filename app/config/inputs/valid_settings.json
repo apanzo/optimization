@@ -1,5 +1,23 @@
 {
  "data": {
- "evaluator": ["benchmark","ansys"]
+ "evaluator": ["benchmark","ansys"],
+ "sampling": ["random","halton","lhs","grid"],
+ "resampling": ["linear","geometric"],
+ "adaptive": [null,"eason"],
+ "convergence": ["mae","mse","medae","max_error","r2","max_iterations"],
+ "convergence_relative": [true,false]
+ },
+
+ "surrogate": {
+ "surrogate": ["ann","kriging","rbf"],
+ "validation": ["kfold","holdout","rlt"],
+ "selection_metric": ["r2","mse","max_error","medae","mae"],
+ "append_verification": [true,false]
+ },
+
+ "optimization": {
+ "algorithm": ["default","nsga2","nsga3"],
+ "termination": ["default","f_tol"],
+ "constrained": [true,false]
  }
 }

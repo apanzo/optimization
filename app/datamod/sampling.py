@@ -28,7 +28,7 @@ def determine_samples(no_samples,dim_in):
 
     return no_new_samples
 
-def resample_static(points_new,points_now,dim_in,range_in):
+def resample_static(points_new,points_now,range_in):
     """
     Determine the coordinates of the new sample.
 
@@ -43,6 +43,7 @@ def resample_static(points_new,points_now,dim_in,range_in):
         coordinates: coordinates of the new samples
     
     """
+    dim_in = range_in.shape[0]
     # Sample
     full_sample = sample(settings["data"]["sampling"],points_now+points_new,dim_in) # unit coordinates
     new_sample = full_sample[points_now:,:] # only picked those that are new
@@ -83,6 +84,7 @@ def sample(name,points,n_dim):
 
     Notes:
         Assumes that data is on the [-1,1] range
+        Grid actually doesnt make full grid
     """
 
     xlimits = np.tile((-1,1),(n_dim,1))
@@ -125,6 +127,19 @@ def sample_adaptive(data,samples,predictions,no_points_new,exploration,exploitat
 
     return candidates
 
+def complete_grid(density,n_dim):
+    no_points = density**n_dim
+
+    return sample("grid",no_points,n_dim)
+
+def partial_grid(density,tot_dim,dims):
+    partial_sample = complete_grid(density,len(dims))
+
+    sample = np.zeros((partial_sample.shape[0],tot_dim))
+    sample[:,dims] = partial_sample
+
+    return sample
+
 class Halton(SamplingMethod):
     """
     Halton sampling.
@@ -164,6 +179,8 @@ class Halton(SamplingMethod):
         x = halton(nx,nt)
 
         return x
+
+
 
 samplings = {
     "halton": Halton,

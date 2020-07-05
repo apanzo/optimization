@@ -3,20 +3,14 @@ This is the visualization module.
 
 visual - scatter 2D/3D, curve, surface tri (not quad)
 """
-# Import native packages
-import os
 
 # Import pypi packages
-##import matplotlib.pyplot as plt
-from matplotlib import cm
-import matplotlib.pyplot as plt
 import numpy as np
-from pymoo.factory import get_visualization
 
-# Import custom packages
-from settings import settings
+from datamod.sampling import sample
+from visumod.plots import scatter,scatter_pymoo,curve,heatmap,pcp,surface_pymoo
 
-def plot_raw(data,name,normalized=False,**kwargs):
+def plot_raw(data,iteration,normalized=False):
     """
     Plot either a scatter, curve or surface plot.
 
@@ -27,28 +21,27 @@ def plot_raw(data,name,normalized=False,**kwargs):
 
     Raises:
         ValueError: if the visualization method is not supported
-        
-    """
-    fname = os.path.join(settings["folder"],"figures","raw")
 
+    Notes:
+        * surface plot not used
+    """
+    # Select data to plot
     if normalized:
         data_all = np.concatenate((data.input,data.output),1)
     else:
         data_all = np.concatenate((data.coordinates,data.response),1)
-    plot = get_visualization("scatter", angle=(30,-135))
-    if name == "scatter":
-        plot_type = None
-    elif name == "surface":    
-        plot_type = "other"
-    else:
-        raise ValueError("Visualization invalid / not yet supported")
-    plot.add(data_all,plot_type=plot_type,**kwargs)
-    plot.do()
-##    plot.apply(lambda ax: ax.set_xlim([0,1]))
-    plot.save(fname)
 
+##    # Select plot type
+##    if name == "scatter":
+##        plot_type = None
+##    elif name == "surface":
+##        plot_type = "other"
 
-def vis_design_space(res):
+    # Save figure
+    name = f"iteration_{iteration}_raw"
+    scatter_pymoo(data_all,name+"_1","x")
+        
+def vis_design_space(data,iteration):
     """
     Visualize the design space in design coordinates.
 
@@ -56,17 +49,9 @@ def vis_design_space(res):
         res: results object
         
     """
-    plot = get_visualization("scatter", title = "Design Space", axis_labels="x")
-    plot.add(res.X, s=30, facecolors='none', edgecolors='r')
-    plot.do()
-##    plot.apply(lambda ax: ax.set_xlim(*res.problem.ranges[0][0]))
-##    plot.apply(lambda ax: ax.set_ylim(*res.problem.ranges[0][1]))
-##    plot.apply(lambda ax: ax.grid())
-    fname = os.path.join(settings["folder"],"figures","design_space")
-    plot.save(fname)    
+    scatter_pymoo(data,f"optimization_{iteration}_design_space","x",s=30,facecolors='w',edgecolors='r')
 
-
-def vis_objective_space(res):
+def vis_objective_space(data,iteration):
     """
     Visualize the design space in objective coordinates.
 
@@ -74,46 +59,29 @@ def vis_objective_space(res):
         res: results object
         
     """
-    breakpoint()
-    if res.F.shape[-1] <= 2:
-        plot = get_visualization("scatter", title = "Objective Space", axis_labels="f")
-        plot.add(res.F, s=30, facecolors='none', edgecolors='r')
-    else:
-        plot = get_visualization("pcp", title = "Objective Space", axis_labels="f")
-        plot.add(res.F)
-    plot.do()
-##    plot.apply(lambda ax: ax.set_xlim(*res.problem.ranges[1][0]))
-##    plot.apply(lambda ax: ax.set_ylim(*res.problem.ranges[0][1]))
-##    plot.apply(lambda ax: ax.grid())
-    fname = os.path.join(settings["folder"],"figures","objective_space")
-    plot.save(fname)    
+    scatter_pymoo(data,f"optimization_{iteration}_objective_space_scatter","f",s=30,facecolors='w',edgecolors='k')
 
-def show_problem(problem):
+def vis_objective_space_pcp(data,iteration):
     """
-    Show response of the defined problem.
+    Visualize the design space in objective coordinates.
 
     Arguments:
-        problem: problem object
+        res: results object
+        
     """
-    plot = get_visualization("fitness-landscape", problem, angle=(30,-135), _type="surface", kwargs_surface = dict(cmap="coolwarm", rstride=1, cstride=1))
-##    plot.do()
-    breakpoint()
-##    plot.apply(lambda ax: ax.set_zlim([0,1]))
-    fname = os.path.join(settings["folder"],"figures","surrogate")
-    plot.save(fname)    
+    pcp(data,f"optimization_{iteration}_objective_space_pcp")
 
-def compare():
+def compare_surrogate(inputs,outputs,predict,iteration):
     """
     Plot the comparison of raw data and surrogate response.
-
-    Notes:
-        NOT USED
     """
-    plt.scatter(model.surrogate.train_in,model.surrogate.train_out)
-    plt.plot(model.data.input,model.surrogate.predict_values(model.data.input),"k")
-    plt.show()
+    data_all = np.stack((outputs.flatten(),predict(inputs).flatten()),1)
+##    plt.plot([-1,1],[-1,1])
+##    plt.xlabel("Training data")
+##    plt.ylabel("Surrogate prediction")
+    scatter(data_all,f"iteration_{iteration}_surrogate",compare=True)
 
-def sample_size_convergence(metric,name):
+def sample_size_convergence(metrics,name):
     """
     Plot the sample size convergence.
 
@@ -121,14 +89,15 @@ def sample_size_convergence(metric,name):
         model: model object
         
     """
-    plt.plot(metric)
-    plt.title(name)
-##    plt.ylim(ymin=0)
-    fname = os.path.join(settings["folder"],"figures","sample_size_convergence")
-    plt.savefig(fname)
+    curve(metrics,f"ssd_metric_{name}")
 
-def plot_2d_sample():
-    pass
-##    import matplotlib.pyplot as plt
-##    plt.scatter(model.data.input[:,0],model.data.input[:,1])
-##    plt.show()
+def correlation_heatmap(predict,ranges):
+    x = sample("grid",1000,ranges.shape[0])
+    y = predict(x)
+    data = np.concatenate((x,y),1)
+    cor = np.corrcoef(data,rowvar=False)
+    heatmap(cor)
+
+def surrogate_response(inputs,outputs,dimensions):
+    data_all = np.concatenate((inputs,outputs),1)
+    surface_pymoo(data_all)

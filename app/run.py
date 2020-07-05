@@ -35,7 +35,7 @@ def optimize():
         optimization.verify()
         
 # Choose problem to solve
-problem_id = 4
+problem_id = 3
 
 # Initialize the settings
 update_settings(problem_id)
@@ -65,4 +65,12 @@ elif build_surrogate and perform_optimization:
 else:
     print("There is nothing to perform within this model")
 
+if build_surrogate:
+    surrogate.save()
+##    surrogate.plot_response(inputs=[1,2],output=1,constants=[1])
+##    surrogate.plot_response(inputs=[3],output=1,constants=[1,1])
+
 input("Ended")
+
+
+
