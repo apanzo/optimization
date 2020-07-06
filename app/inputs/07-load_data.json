@@ -1,0 +1,20 @@
+{
+ "data": {
+ "problem": "kursawe",
+ "evaluator": "load"
+ },
+
+ "surrogate": {
+ "surrogate": "kriging",
+ "validation": "kfold",
+ "validation_param": 5,
+ "selection_metric": "r2",
+ },
+
+ "optimization": {
+ "algorithm": "default",
+ "termination": "default",
+ "constrained": true,
+ "error_limit": 50000
+ }
+}

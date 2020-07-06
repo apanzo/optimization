@@ -9,10 +9,10 @@ from datamod import get_data, load_problem, scale
 from datamod.evaluator import EvaluatorBenchmark, EvaluatorANSYS
 from datamod.results import make_data_file, make_response_files, append_verification_to_database
 from datamod.sampling import determine_samples, resample_static, resample_adaptive, complete_grid
-from metamod import train_surrogates, select_best_surrogate, check_convergence, verify_results
+from metamod import train_surrogates, select_best_surrogate, check_convergence, verify_results, reload_info
 from metamod.deploy import get_partial_input
 from optimod import set_optimization, set_problem, solve_problem
-from settings import dump_object, settings
+from settings import dump_json, dump_object, load_json, load_object, settings
 from visumod import plot_raw, vis_design_space, vis_objective_space, sample_size_convergence, vis_objective_space_pcp
 from visumod import compare_surrogate, correlation_heatmap, surrogate_response
 
@@ -32,7 +32,9 @@ class Model:
         """
 
         # Obtain problem information 
-        if settings["data"]["evaluator"] == "benchmark":
+        if settings["surrogate"]["surrogate"] == "load":
+            self.range_in, self.dim_in, self.dim_out, self.n_const = reload_info()
+        elif settings["data"]["evaluator"] == "benchmark":
             self.system, self.range_in, self.dim_in, self.dim_out, self.n_const = load_problem(settings["data"]["problem"])
             self.evaluator = EvaluatorBenchmark(self.system,self.n_const)
         elif settings["data"]["evaluator"] == "ansys":
@@ -65,6 +67,11 @@ class Surrogate:
         # Make response files
         self.file, self.verification_file = make_response_files(settings["folder"],self.model.dim_in,self.model.n_obj,self.model.n_const)
 
+        # Initialize log
+        if not settings["surrogate"]["surrogate"] == "load":
+            initial_log = {"surrogate_trained":False,"range_in":self.model.range_in.tolist(),"dim_in":self.model.dim_in,"dim_out":self.model.dim_out,"n_const":self.model.n_const}
+            dump_json(os.path.join(settings["folder"],"status"),initial_log )
+        
     def sample(self):
         """
         Wrapper function to obtrain the new sample points.
@@ -188,6 +195,29 @@ class Surrogate:
             self.surrogate.model.save(os.path.join(settings["folder"],"logs","ann"))
         else:
             dump_object("meta",self.surrogate)
+
+        status = load_json(os.path.join(settings["folder"],"status"))
+        to_update = {"surrogate_trained":True,"range_out":self.surrogate.range_out.tolist()}
+        status.update(to_update)
+        dump_json(os.path.join(settings["folder"],"status"),status)
+
+    def reload(self):
+        status = load_json(os.path.join(settings["folder"],"status"))
+
+        if "ann" in os.listdir(os.path.join(settings["folder"],"logs")):
+            from metamod.ANN import ANN ############################################
+            import tensorflow as tf ############################################
+            
+            interp = ANN()
+            interp.nx = status["dim_in"]
+            interp.ny = status["dim_out"]
+            interp.model = tf.keras.models.load_model(os.path.join(settings["folder"],"logs","ann"))
+            interp.range_out = np.array(status["range_out"])
+            interp.options["print_global"] = False
+            self.surrogate = interp
+        else:
+            self.surrogate = load_object("meta")[0]
+
         
 class Optimization:
     """
@@ -213,7 +243,7 @@ class Optimization:
             self.ranges = [np.array(settings["optimization"]["ranges"]),None]
             self.function = self.model.evaluator.evaluate
         else:
-            self.ranges = [self.model.range_in,surrogate.data.range_out]
+            self.ranges = [self.model.range_in,self.surrogate.surrogate.range_out]
             self.function = self.surrogate.surrogate.predict_values
 
         self.converged = False
@@ -271,12 +301,14 @@ class Optimization:
             else:
                 self.iterations += 1
                 self.surrogate.trained = False
-
-##            return idx
+                if settings["surrogate"]["append_verification"]:
+                    self.surrogate.append_verification()
+                    
         else:
             self.iterations += 1
             self.surrogate.trained = False
+            if settings["surrogate"]["append_verification"]:
+                self.surrogate.append_verification()
 
-##            return None
 
         ##len([step["delta_f"] for step in model.res.algorithm.display.term.metrics])

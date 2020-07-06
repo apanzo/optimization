@@ -9,7 +9,7 @@
  },
 
  "surrogate": {
- "surrogate": ["ann","kriging","rbf"],
+ "surrogate": ["ann","kriging","rbf","load"],
  "validation": ["kfold","holdout","rlt"],
  "selection_metric": ["r2","mse","max_error","medae","mae"],
  "append_verification": [true,false]

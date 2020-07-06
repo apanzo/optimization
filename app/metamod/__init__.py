@@ -33,6 +33,7 @@ def train_surrogates(data):
     Note:
         the indices are shuffled
         for pretraining, holout with 0.2 assumed
+        ranges left for reloading
     
     """
     # Unpack settings
@@ -66,7 +67,7 @@ def train_surrogates(data):
         if name == "ann":
             interp.set_validation_values(interp.test_in,interp.test_out)
         interp.train()
-##        interp.ranges = [data.range_in,data.range_out]
+        interp.range_out = data.range_out
         interp.metric = evaluate_metrics(interp.test_in,interp.test_out,interp.predict_values,["mae","r2"])
         surrogates.append(interp)
 
@@ -107,6 +108,14 @@ def set_surrogate(name,dim_in,dim_out,no_points):
     surrogate.options["print_global"] = False
     
     return surrogate
+
+def reload_info():
+    status = load_json(os.path.join(settings["folder"],"status"))
+    if status["surrogate_trained"]:
+        range_in, dim_in, dim_out, n_const = np.array(status["range_in"]), status["dim_in"], status["dim_out"], status["n_const"]
+        return range_in, dim_in, dim_out, n_const
+    else:
+        raise Exception("There is no surrogate to load")
 
 available = {
     "rbf": RBF,

@@ -1,0 +1,16 @@
+{
+ "data": {
+ "problem": "kursawe"
+ },
+
+ "surrogate": {
+ "surrogate": "load"
+ },
+
+ "optimization": {
+ "algorithm": "default",
+ "termination": "default",
+ "constrained": true,
+ "error_limit": 50000
+ }
+}

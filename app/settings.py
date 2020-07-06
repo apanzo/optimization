@@ -10,10 +10,17 @@ def load_json(file):
     """
     Read a JSON file.
     """
-    with open(file+".json") as f:
+    with open(file+".json","r") as f:
          data = json.load(f)
 
     return data
+
+def dump_json(file,data):
+    """
+    Writes a JSON file.
+    """
+    with open(file+".json","w") as f:
+          json.dump(data, f)
 
 def get_input_from_id(problem_id,problem_folder):
     """
@@ -43,8 +50,7 @@ def check_valid_settings():
     valid = load_json(path)
     for i in valid.keys():
         for j in valid[i].keys():
-            if not (settings[i][j] in valid[i][j]):
-                breakpoint()
+            if j in settings[i].keys() and not (settings[i][j] in valid[i][j]):
                 raise Exception(f"Invalid setting for {j}, valid keys are: [{', '.join(valid[i][j])}]")
 
 def update_settings(problem_id):
@@ -66,9 +72,15 @@ def update_settings(problem_id):
     settings["id"] = problem_id
     restart_check(settings["id"],file)
 
-    copyfile(file+".json",os.path.join(settings["folder"],"input.json"))
 
 def restart_check(id_current,file):
+    """
+    Notes:
+        For load surrogate, only checking that the problem name is the same
+    """
+    # Overwrite by default
+    fresh = True
+    
     # List defined problems
     data_folder, all_result_folders = get_results_folders()
 
@@ -76,11 +88,13 @@ def restart_check(id_current,file):
 
     # If ID has already results, decide whether to overwrite
     if len(matching_folders) > 0:
+        
         if len(matching_folders) > 1:
             raise Exception("Too many matching folders")
-
+        else:
+            path = os.path.join(data_folder,matching_folders[0])
         # Check whether the stored input file is identic
-        stored_input_path = os.path.join(data_folder,matching_folders[0],"input")
+        stored_input_path = os.path.join(path,"input")
         
         new_input = load_json(file)
         stored_input = load_json(stored_input_path)
@@ -89,18 +103,21 @@ def restart_check(id_current,file):
 
         if same_inputs:
             breakpoint()
-            if new_input["surrogate"]["surrogate"] is None:
-                ask_to_overwrite(id_current,"restarting is not supported for direct optimization")
+            if settings["surrogate"]["surrogate"] is None:
+                ask_to_overwrite(path,id_current,"restarting is not supported for direct optimization")
             elif False: # Check whether the result is converged
-                ask_to_overwrite(id_current,"the model is converged")
+                ask_to_overwrite(path,id_current,"the model is converged")
             else:
                 # Restart
-                ask_to_overwrite(id_current,"restarting not implemented yet") ############
+                ask_to_overwrite(path,id_current,"restarting not implemented yet") ############
+        elif settings["surrogate"]["surrogate"] == "load":
+            fresh = False
+            print("Loading surrogate, no ovewritting")
         else:
-            ask_to_overwrite(id_current,"the inputs are different")
+            ask_to_overwrite(path,id_current,"the inputs are different")
 
     # Make workfolder
-    settings["folder"] = make_workfolder()
+    settings["folder"] = make_workfolder(file,fresh)
 
 def get_results_folders():
     """
@@ -111,7 +128,7 @@ def get_results_folders():
     
     return data_folder, all_result_folders
 
-def make_workfolder():
+def make_workfolder(file,fresh):
     """
     Initialize the workdirectory.
 
@@ -122,10 +139,14 @@ def make_workfolder():
     figures_path = os.path.join(folder_path,"figures")
     logs_path = os.path.join(folder_path,"logs")
 
-    # Create folder, if not done yet
-    Path(folder_path).mkdir(parents=True,exist_ok=True) # parents in fact not needed   
-    Path(figures_path).mkdir(parents=True,exist_ok=True) # parents in fact not needed  
-    Path(logs_path).mkdir(parents=True,exist_ok=True) # parents in fact not needed    
+    if fresh:
+        # Create folder, if not done yet
+        Path(folder_path).mkdir(parents=True,exist_ok=True) # parents in fact not needed   
+        Path(figures_path).mkdir(parents=True,exist_ok=True) # parents in fact not needed  
+        Path(logs_path).mkdir(parents=True,exist_ok=True) # parents in fact not needed
+
+        # Copy the inputs file
+        copyfile(file+".json",os.path.join(folder_path,"input.json"))
 
     return folder_path
 
@@ -143,7 +164,7 @@ def load_object(name):
 
     return obj
 
-def ask_to_overwrite(id_current,text):
+def ask_to_overwrite(path,id_current,text):
     # Ask what to do
     while True:
         response = input(f"ID {id_current} has already results and {text}. Do you want to overwrite results? [y/n]")
@@ -151,11 +172,11 @@ def ask_to_overwrite(id_current,text):
             overwrite = True if response=="y" else False
             break
         else:
-            print("Invalid input")    
+            print("Invalid input")
 
-    # Either overwrite or abort
+    # Either remove old folder or abort
     if overwrite:
-        rmtree(os.path.join(data_folder,folder))
+        rmtree(path)
     else:
         raise Exception(f"ID {id_current} already defined")
 
