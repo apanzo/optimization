@@ -3,6 +3,8 @@ This is the sampling module.
 
 This module provides sampling methods
 """
+from math import ceil
+
 # Import pypi packages
 import numpy as np
 from smt.sampling_methods import FullFactorial, LHS, Random
@@ -22,7 +24,7 @@ def determine_samples(no_samples,dim_in):
         if settings["data"]["resampling"] == "linear":
             no_new_samples = settings["data"]["resampling_param"]*dim_in
         elif settings["data"]["resampling"] == "geometric":
-            no_new_samples  = int(settings["data"]["resampling_param"]*no_samples)
+            no_new_samples  = ceil((settings["data"]["resampling_param"]-1)*no_samples)
         else:
             raise Exception("Error should have been caught on initialization")
 

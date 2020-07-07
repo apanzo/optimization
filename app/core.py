@@ -138,7 +138,7 @@ class Surrogate:
         STUFF
         """
         # Train the surrogates
-        self.surrogates = train_surrogates(self.data)
+        self.surrogates = train_surrogates(self.data,self.sampling_iterations)
 
         # Select the best model
         self.surrogate = select_best_surrogate(self.surrogates)
@@ -206,12 +206,12 @@ class Surrogate:
 
         if "ann" in os.listdir(os.path.join(settings["folder"],"logs")):
             from metamod.ANN import ANN ############################################
-            import tensorflow as tf ############################################
+            from tensorflow.keras.models import load_model as load_keras_model ############################################
             
             interp = ANN()
             interp.nx = status["dim_in"]
             interp.ny = status["dim_out"]
-            interp.model = tf.keras.models.load_model(os.path.join(settings["folder"],"logs","ann"))
+            interp.model = load_keras_model(os.path.join(settings["folder"],"logs","ann"))
             interp.range_out = np.array(status["range_out"])
             interp.options["print_global"] = False
             self.surrogate = interp
@@ -252,15 +252,9 @@ class Optimization:
         """
         Wrapper function to perform optimization.
 
-        STUFF
+        Notes: direct optimization does not normalize
         """
         print("###### Optimization #######")
-
-        # Define the problem using the surogate
-##        if settings["surrogate"]["surrogate"]:
-##            self.problem = set_problem(self.function,self.ranges,self.model.n_obj,self.model.n_const)
-##        else:
-##            self.problem = set_problem(self.model.evaluator.evaluate,self.ranges,self.model.n_obj,self.model.n_const)
 
         self.problem = set_problem(self.function,self.ranges,self.model.n_obj,self.model.n_const)
 

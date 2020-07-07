@@ -53,6 +53,7 @@ def check_convergence(metrics):
        if direction(metrics[-1],threshold):
                 trained = True
 
+    print("###### Evaluating sample size convergence ######")
     print(f"Sample size convergence metric: {settings['data']['convergence']} - {metrics[-1]}")
 
     return trained

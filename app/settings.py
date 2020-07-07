@@ -31,7 +31,7 @@ def get_input_from_id(problem_id,problem_folder):
     if len(matching_ids) == 1:
         file_name = matching_ids[0].replace(".json","")
     elif len(matching_ids) == 0:
-        raise Exception(f"ID {problem_id} input undefined")
+        raise Exception(f"Input for ID {problem_id} undefined")
     else:
         raise Exception(f"ID {problem_id} input multiple defined")
 
@@ -102,10 +102,12 @@ def restart_check(id_current,file):
         same_inputs = Counter(new_input) == Counter(stored_input)
 
         if same_inputs:
-            breakpoint()
+            status = load_json(os.path.join(path,"status"))
+
+            
             if settings["surrogate"]["surrogate"] is None:
                 ask_to_overwrite(path,id_current,"restarting is not supported for direct optimization")
-            elif False: # Check whether the result is converged
+            elif status["surrogate_trained"]:
                 ask_to_overwrite(path,id_current,"the model is converged")
             else:
                 # Restart
@@ -144,6 +146,8 @@ def make_workfolder(file,fresh):
         Path(folder_path).mkdir(parents=True,exist_ok=True) # parents in fact not needed   
         Path(figures_path).mkdir(parents=True,exist_ok=True) # parents in fact not needed  
         Path(logs_path).mkdir(parents=True,exist_ok=True) # parents in fact not needed
+        if settings["surrogate"]["surrogate"] == "ann":
+              Path(os.path.join(figures_path,"ann")).mkdir(parents=True,exist_ok=True) # parents in fact not needed  
 
         # Copy the inputs file
         copyfile(file+".json",os.path.join(folder_path,"input.json"))

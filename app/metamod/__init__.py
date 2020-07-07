@@ -17,7 +17,7 @@ from settings import load_json, settings
 # ANN is imported in set_surrogate only if it is need
 
 
-def train_surrogates(data):
+def train_surrogates(data,iteration):
     """
     Train the defined surrogate on the provided data.
 
@@ -45,7 +45,7 @@ def train_surrogates(data):
     split = set_validation(validation,validation_param)
     no_points = data.input.shape[0]
 
-    print(f"Training using {name} on {len(data.input)} examples")
+    print(f"###### Training using {name} on {len(data.input)} examples ######")
 
     # Pretrain
     if name == "ann":
@@ -59,13 +59,16 @@ def train_surrogates(data):
         pretrain.set_validation_values(pretrain.test_in,pretrain.test_out)
         pretrain.pretrain()
     
-    for train, test in split.split(data.input):
+    for idx, (train, test) in enumerate(split.split(data.input)):
+        progress = [iteration,idx+1,split.get_n_splits()]
+        print(f"### Training model {progress[1]}/{progress[2]} ###")
         interp = set_surrogate(name,data.dim_in,data.dim_out,no_points)
         interp.train_in, interp.train_out = data.input[train], data.output[train]
         interp.test_in, interp.test_out = data.input[test], data.output[test]
         interp.set_training_values(interp.train_in,interp.train_out)
         if name == "ann":
             interp.set_validation_values(interp.test_in,interp.test_out)
+            interp.progress = progress
         interp.train()
         interp.range_out = data.range_out
         interp.metric = evaluate_metrics(interp.test_in,interp.test_out,interp.predict_values,["mae","r2"])

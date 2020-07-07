@@ -101,6 +101,29 @@ def surface_pymoo(data):
 ##        save_figure(name+f"_{angle+1}",plot)
         plot.show()
 
+def learning_curves(training_loss,validation_loss,data,prediction,progress):
+    plt.figure()
+    plt.suptitle(f"Iteration {progress[0]}, model {progress[1]}")
+    plt.subplot(1, 2, 1)
+    plt.title('Learning Curves')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.plot(training_loss, "k-", label='train')
+    plt.plot(validation_loss, "r--", label='val')
+    plt.ylim(bottom=0)
+    plt.legend()
+    
+    plt.subplot(1, 2, 2)
+    plt.scatter(data.flatten(),prediction.flatten())
+    plt.plot([-1,1],[-1,1])
+    plt.title('Prediction correletation')
+    plt.xlabel('Data')
+    plt.ylabel('Prediction')
+    plt.xlim([-1,1])
+    plt.ylim([-1,1])
+    name = os.path.join("ann",f"model_{progress[0]}_{progress[1]}")
+    save_figure(name)
+
 def get_plot_args(data,label):
     n_dim = data.shape[1]
     plot_args = {}

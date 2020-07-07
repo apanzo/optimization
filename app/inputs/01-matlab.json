@@ -1,11 +1,11 @@
 {
  "data": {
- "problem": "carside",
+ "problem": "matlab_peaks",
  "evaluator": "benchmark",
  "sampling": "halton",
  "default_sample_coef": 10,
- "resampling": "linear",
- "resampling_param": 3,
+ "resampling": "geometric",
+ "resampling_param": 1.2,
  "adaptive": null,
  "convergence": "r2",
  "convergence_relative": false,
@@ -13,16 +13,18 @@
  },
 
  "surrogate": {
- "surrogate": "kriging",
+ "surrogate": "ann",
  "validation": "kfold",
  "validation_param": 5,
- "selection_metric": "r2"
+ "selection_metric": "r2",
+ "append_verification": false
+
  },
 
  "optimization": {
  "algorithm": "default",
  "termination": "default",
- "constrained": true,
- "error_limit": 10
+ "constrained": false,
+ "error_limit": 5
  }
 }

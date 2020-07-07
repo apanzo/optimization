@@ -39,7 +39,7 @@ def optimize():
         optimization.verify()
         
 # Choose problem to solve
-problem_id = 6
+problem_id = 1
 
 # Initialize the settings
 update_settings(problem_id)
@@ -53,18 +53,23 @@ load_surrogate = settings["surrogate"]["surrogate"] == "load"
 perform_optimization = bool(settings["optimization"]["algorithm"])
 
 # Perform computation
+# Surrogate only
 if build_surrogate and not perform_optimization:
     surrogate = Surrogate(model)
     train_surrogate()
+# Direct optimization
 elif perform_optimization and not build_surrogate:
     optimization = Optimization(model,None)
     optimize()
+# Surrogate based optimization
 elif build_surrogate and perform_optimization:
+    # Using trained surrogate
     if load_surrogate:
         surrogate = Surrogate(model)
         reload_surrogate()
         optimization = Optimization(model,surrogate)
         optimize()
+    # Make surrogate and then optimize
     else:
         surrogate = Surrogate(model)
         train_surrogate()
@@ -76,12 +81,11 @@ elif build_surrogate and perform_optimization:
 else:
     print("There is nothing to perform within this model")
 
+# Save trained suttogate
 if build_surrogate and not load_surrogate:
     surrogate.save()
+
 ##    surrogate.plot_response(inputs=[1,2],output=1,constants=[1])
 ##    surrogate.plot_response(inputs=[3],output=1,constants=[1,1])
 
 input("Ended")
-
-
-
