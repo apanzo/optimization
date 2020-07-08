@@ -39,7 +39,7 @@ def optimize():
         optimization.verify()
         
 # Choose problem to solve
-problem_id = 1
+problem_id = 5
 
 # Initialize the settings
 update_settings(problem_id)
@@ -89,3 +89,6 @@ if build_surrogate and not load_surrogate:
 ##    surrogate.plot_response(inputs=[3],output=1,constants=[1,1])
 
 input("Ended")
+
+
+# Write which model was selected, train the final ann on all data for a few random runs

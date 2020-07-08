@@ -22,6 +22,7 @@ from tensorflow_model_optimization.sparsity import keras as sparsity
 # Import custom packages
 from settings import load_json, settings
 from visumod.plots import learning_curves
+from .kerastuner.bayesian_custom import BayesianOptimizationCustom
         
 class ANN(SurrogateModel):
     """
@@ -181,7 +182,8 @@ class ANN(SurrogateModel):
 
         return callbacks
 
-    def pretrain(self):
+    def pretrain(self,inputs,outputs):
+        print("### Performing Keras Tuner optimization of the ANN###")
         # Select hyperparameters to tune
         hp = HyperParameters()
         valid_entries = ["activation","neurons","layers","learning_rate","regularization","sparsity"]
@@ -191,42 +193,44 @@ class ANN(SurrogateModel):
         if "activation" in self["optimize"]:
             hp.Choice("activation_function",["sigmoid","relu","swish","tanh"],default=self["activation"])
         if "neurons" in self["optimize"]:
-            hp.Int("no_neurons",5,50,step=2,default=self["no_neurons"])
+            hp.Int("no_neurons",6,20,step=2,default=self["no_neurons"])
         if "layers" in self["optimize"]:
-            hp.Int("no_hid_layers",1,3,default=self["no_layers"])
+            hp.Int("no_hid_layers",6,12,default=self["no_layers"])
         if "learning_rate" in self["optimize"]:
             hp.Float("learning_rate",0.001,0.1,sampling="log",default=self["learning_rate"])
         if "regularization" in self["optimize"]:
-            hp.Float("regularization",0.001,1,sampling="log",default=self["kernel_regularizer"])
+            hp.Float("regularization",0.0001,0.01,sampling="log",default=self["kernel_regularizer"])
         if "sparsity" in self["optimize"]:
             hp.Float("sparsity",0.3,0.9,default=self["sparsity"])
 
         no_hps = len(hp._space)
         
         # Load tuner
-##        max_trials = self["max_trials"]
-        max_trials = 10*no_hps
-        
+        max_trials = max(self["max_trials"]*no_hps,1)
+        executions_per_trial = 1
+
         path_tf_format = "logs"
-        if self["tuner"] == "random":
-            tuner = RandomSearch(self.build_hypermodel,objective="val_mse",hyperparameters=hp,
-                                 max_trials=max_trials,executions_per_trial=1,directory="logs",overwrite=True)
-        elif self["tuner"] == "bayesian":
-            tuner = BayesianOptimization(self.build_hypermodel,objective="val_mae",hyperparameters=hp,
-                                 max_trials=max_trials,executions_per_trial=1,directory="logs",num_initial_points=3*len(hp._space),
-                                         overwrite=True,tune_new_entries=False)
-        
+##        if self["tuner"] == "random":
+##            tuner = RandomSearch(self.build_hypermodel,objective="val_mse",hyperparameters=hp,
+##                                 max_trials=max_trials,executions_per_trial=1,directory="logs",overwrite=True)
+##        elif self["tuner"] == "bayesian":
+##            tuner = BayesianOptimization(self.build_hypermodel,objective="val_mae",hyperparameters=hp,
+##                                 max_trials=max_trials,executions_per_trial=1,directory="logs",num_initial_points=3*len(hp._space),
+##                                         overwrite=False,tune_new_entries=False,project_name="opt")
+        tuner = BayesianOptimizationCustom(self.build_hypermodel,objective="val_mae",hyperparameters=hp,
+                                 max_trials=max_trials,executions_per_trial=executions_per_trial,directory="logs",num_initial_points=3*no_hps,
+                                         overwrite=True,tune_new_entries=False,project_name="opt")
         # Load data and callbacks
-        train_in, train_out = self.training_points[None][0]
-        test_in, test_out = self.validation_points[None][0]
+##        train_in, train_out = self.training_points[None][0]
+##        test_in, test_out = self.validation_points[None][0]
         callbacks_all = self.get_callbacks()
 
         # Remove early stopping
         callbacks = [call for call in callbacks_all if not isinstance(call,keras.callbacks.EarlyStopping)]
 
         # Optimize
-        tuner.search(train_in, train_out, batch_size = train_in.shape[0],
-            epochs=self["tuner_epochs"], validation_data = (test_in, test_out), verbose=0, shuffle=True, callbacks=callbacks)
+        tuner.search(inputs,outputs, 
+            epochs=self["tuner_epochs"], verbose=0, shuffle=True, callbacks=callbacks)
 
         # Retrieve and save best model
         best_hp = tuner.get_best_hyperparameters()[0]
@@ -239,8 +243,7 @@ class ANN(SurrogateModel):
         for idx,entry in enumerate(hps):
             entry["score"] = scores[idx]
 
-        table = tabulate(hps,headers="keys")
-        print(table)
+        self.write_stats(hps,"ann_tuner_stats")
 
     def _train(self):
         """
@@ -278,7 +281,8 @@ class ANN(SurrogateModel):
         mae = history['val_mean_absolute_error'][-1]
         print(f'MSE: {mse:.3f}, RMSE: {rmse:.3f}')
         print(f"MAE: {mae:.3f}")
-        self.write_stats(mse,rmse,mae)
+        stats = [{"MSE":mse,"RMSE":rmse,"MAE":mae}]
+        self.write_stats(stats,"ann_training_stats")
 ##        print(f"MAPE: {history['val_mean_absolute_percentage_error'][-1]:.0f}")
 
         return mse
@@ -309,13 +313,16 @@ class ANN(SurrogateModel):
         else:
             raise Exception("Can't plot, the ANN is not trained yet")
 
-    def write_stats(self,mse,rmse,mae):
-        path = os.path.join(settings["folder"],"logs","ann_error_stats.txt")
-        if self.progress[0] == 1 and self.progress[1] == 1:
-            with open(path, "w") as file:
-                lines = tabulate([["MSE","RMSE","MAE"]],tablefmt="jira")
-                file.write(lines)
-                file.write("\n")
+    def write_stats(self,dictionary_as_list,name):
+        path = os.path.join(settings["folder"],"logs",name+".txt")
+        kwargs = {"headers":"keys"}
+        if name == "ann_training_stats":
+            kwargs.update({"floatfmt":".3f"})
+            if self.progress[1] != 1:
+                del kwargs["headers"]
+
+        table = tabulate(dictionary_as_list,tablefmt="jira",**kwargs)
+        
         if self.progress[1] == 1:
             with open(path, "a") as file:
                 file.write("-------------------------")
@@ -325,9 +332,27 @@ class ANN(SurrogateModel):
                 file.write("-------------------------")
                 file.write("\n")
         with open(path, "a") as file:
-            lines = tabulate([[mse,rmse,mae]],tablefmt="jira", floatfmt=".3f")
-            file.write(lines)
+            file.write(table)
             file.write("\n")
+##    def write_stats(self,mse,rmse,mae):
+##        path = os.path.join(settings["folder"],"logs","ann_error_stats.txt")
+##        if self.progress[0] == 1 and self.progress[1] == 1:
+##            with open(path, "w") as file:
+##                lines = tabulate([["MSE","RMSE","MAE"]],tablefmt="jira")
+##                file.write(lines)
+##                file.write("\n")
+##        if self.progress[1] == 1:
+##            with open(path, "a") as file:
+##                file.write("-------------------------")
+##                file.write("\n")
+##                file.write(f"       Iteration {self.progress[0]}      ")
+##                file.write("\n")
+##                file.write("-------------------------")
+##                file.write("\n")
+##        with open(path, "a") as file:
+##            lines = tabulate([[mse,rmse,mae]],tablefmt="jira", floatfmt=".3f")
+##            file.write(lines)
+##            file.write("\n")
 
     def set_validation_values(self, xt, yt, name=None):
         """

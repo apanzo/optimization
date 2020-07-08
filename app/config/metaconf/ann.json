@@ -1,8 +1,8 @@
 {
- "no_layers": 2,
- "no_neurons": 20,
+ "no_layers": 10,
+ "no_neurons": 7,
  "activation": "swish",
- "no_epochs": 1000,
+ "no_epochs": 500,
  "init": "he_normal",
  "bias_init": "zeros",
  "kernel_regularizer": "l1",
@@ -11,15 +11,15 @@
  "sparsity": 0.50,
  "pruning_frequency": 10,
  "optimizer": "adam",
- "learning_rate": 0.01,
+ "learning_rate": 0.001,
  "loss": "mse",
- "stopping": true,
+ "stopping": false,
  "stopping_delta": 0.0001,
  "stopping_patience": 20,
  "tensorboard": false,
  "plot_history": true,
  "tuner": "bayesian",
- "max_trials": 6,
- "tuner_epochs": 10,
- "optimize": ["neurons","layers","learning_rate"]
+ "max_trials": 0,
+ "tuner_epochs": 50,
+ "optimize": ["neurons","layers"]
 }

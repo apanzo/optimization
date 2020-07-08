@@ -49,15 +49,16 @@ def train_surrogates(data,iteration):
 
     # Pretrain
     if name == "ann":
-        pretrain_split = set_validation("holdout",0.2)
-        train, test = next(pretrain_split.split(data.input))
+##        pretrain_split = set_validation("holdout",0.2)
+##        train, test = next(pretrain_split.split(data.input))
 
         pretrain = set_surrogate(name,data.dim_in,data.dim_out,no_points)
-        pretrain.train_in, pretrain.train_out = data.input[train], data.output[train]
-        pretrain.test_in, pretrain.test_out = data.input[test], data.output[test]
-        pretrain.set_training_values(pretrain.train_in, pretrain.train_out)
-        pretrain.set_validation_values(pretrain.test_in,pretrain.test_out)
-        pretrain.pretrain()
+##        pretrain.train_in, pretrain.train_out = data.input[train], data.output[train]
+##        pretrain.test_in, pretrain.test_out = data.input[test], data.output[test]
+##        pretrain.set_training_values(pretrain.train_in, pretrain.train_out)
+##        pretrain.set_validation_values(pretrain.test_in,pretrain.test_out)
+        pretrain.progress = [iteration,1]
+        pretrain.pretrain(data.input,data.output)
     
     for idx, (train, test) in enumerate(split.split(data.input)):
         progress = [iteration,idx+1,split.get_n_splits()]
@@ -70,7 +71,7 @@ def train_surrogates(data,iteration):
             interp.set_validation_values(interp.test_in,interp.test_out)
             interp.progress = progress
         interp.train()
-        interp.range_out = data.range_out
+##        interp.range_out = data.range_out
         interp.metric = evaluate_metrics(interp.test_in,interp.test_out,interp.predict_values,["mae","r2"])
         surrogates.append(interp)
 
