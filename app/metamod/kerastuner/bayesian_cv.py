@@ -6,7 +6,7 @@ from sklearn import exceptions
 from sklearn import gaussian_process
 
 from kerastuner.engine import hyperparameters as hp_module
-from . import multi_execution_tuner_custom
+from . import multi_execution_tuner_cv
 from kerastuner.engine import oracle as oracle_module
 from kerastuner.engine import trial as trial_lib
 
@@ -270,7 +270,7 @@ class BayesianOptimizationOracle(oracle_module.Oracle):
         return np.array(bounds)
 
 
-class BayesianOptimizationCustom(multi_execution_tuner_custom.MultiExecutionTunerCustom):
+class BayesianOptimizationCV(multi_execution_tuner_cv.MultiExecutionTunerCV):
     """BayesianOptimization tuning with Gaussian process.
 
     # Arguments:
@@ -325,6 +325,6 @@ class BayesianOptimizationCustom(multi_execution_tuner_custom.MultiExecutionTune
             hyperparameters=hyperparameters,
             tune_new_entries=tune_new_entries,
             allow_new_entries=allow_new_entries)
-        super(BayesianOptimizationCustom, self, ).__init__(oracle=oracle,
+        super(BayesianOptimizationCV, self, ).__init__(oracle=oracle,
                                                      hypermodel=hypermodel,
                                                      **kwargs)

@@ -39,7 +39,7 @@ def optimize():
         optimization.verify()
         
 # Choose problem to solve
-problem_id = 5
+problem_id = 8
 
 # Initialize the settings
 update_settings(problem_id)
@@ -91,4 +91,4 @@ if build_surrogate and not load_surrogate:
 input("Ended")
 
 
-# Write which model was selected, train the final ann on all data for a few random runs
+

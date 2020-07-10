@@ -73,10 +73,10 @@ def verify_results(results,surrogate):
 
     return idx
 
-def evaluate_metrics(test_in,test_out,evaluate,requested):
+def evaluate_metrics(inputs,outputs,predict,requested):
     metrics = {}
     for measure in requested:
-        metrics[measure] = defined_metrics[measure](test_out,evaluate(test_in))
+        metrics[measure] = defined_metrics[measure](outputs,predict(inputs))
 
     return metrics
 

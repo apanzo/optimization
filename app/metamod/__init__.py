@@ -40,44 +40,38 @@ def train_surrogates(data,iteration):
     name = settings["surrogate"]["surrogate"]
     validation = settings["surrogate"]["validation"]
     validation_param = settings["surrogate"]["validation_param"]
-    
+
+    # Initialize training setup    
     surrogates = []
     split = set_validation(validation,validation_param)
-    no_points = data.input.shape[0]
+    no_splits = split.get_n_splits()
 
     print(f"###### Training using {name} on {len(data.input)} examples ######")
 
-    # Pretrain
+    # Pretrain ANN
     if name == "ann":
-##        pretrain_split = set_validation("holdout",0.2)
-##        train, test = next(pretrain_split.split(data.input))
-
-        pretrain = set_surrogate(name,data.dim_in,data.dim_out,no_points)
-##        pretrain.train_in, pretrain.train_out = data.input[train], data.output[train]
-##        pretrain.test_in, pretrain.test_out = data.input[test], data.output[test]
-##        pretrain.set_training_values(pretrain.train_in, pretrain.train_out)
-##        pretrain.set_validation_values(pretrain.test_in,pretrain.test_out)
+        pretrain = set_surrogate(name,data.dim_in,data.dim_out)
         pretrain.progress = [iteration,1]
-        pretrain.pretrain(data.input,data.output)
-    
+        pretrain.pretrain(data.input,data.output,iteration)
+
+    # Train
     for idx, (train, test) in enumerate(split.split(data.input)):
-        progress = [iteration,idx+1,split.get_n_splits()]
-        print(f"### Training model {progress[1]}/{progress[2]} ###")
-        interp = set_surrogate(name,data.dim_in,data.dim_out,no_points)
+        print(f"### Training model {idx+1}/{no_splits} ###")
+        interp = set_surrogate(name,data.dim_in,data.dim_out)
         interp.train_in, interp.train_out = data.input[train], data.output[train]
         interp.test_in, interp.test_out = data.input[test], data.output[test]
         interp.set_training_values(interp.train_in,interp.train_out)
         if name == "ann":
             interp.set_validation_values(interp.test_in,interp.test_out)
-            interp.progress = progress
+            interp.progress = [iteration,idx+1,no_splits]
         interp.train()
-##        interp.range_out = data.range_out
+        interp.range_out = data.range_out
         interp.metric = evaluate_metrics(interp.test_in,interp.test_out,interp.predict_values,["mae","r2"])
         surrogates.append(interp)
 
     return surrogates
 
-def set_surrogate(name,dim_in,dim_out,no_points):
+def set_surrogate(name,dim_in,dim_out):
     """
     Select the desired surrogate model.
 
@@ -95,19 +89,26 @@ def set_surrogate(name,dim_in,dim_out,no_points):
 
     Todo:
         * genn - not working
-        * initial parameters for rbg, krig
+        * nopoints actually not needed
     """
+    # Obtain default settings
     setup = load_json(os.path.join(settings["root"],"app","config","metaconf",name))
+
+    # Optionaly update with settinf specified by the input file
     if "setup" in settings["surrogate"].keys():
         setup.update(settings["surrogate"]["setup"])
 
+    # If the ANN surrogate is used, add it to available options
     if name=="ann":
         from metamod.ANN import ANN         ### import only when actually used, its slow due to tensorflow
         available.update({"ann": ANN})
-        setup.update({"no_points":no_points,"dims":(dim_in,dim_out)})
+        setup.update({"dims":(dim_in,dim_out)})
+##        setup.update({"no_points":no_points,"dims":(dim_in,dim_out)})
 
+    # Load the actual surrogate
     surrogate = available[name](**setup)
 
+    # Disable printing during using
     surrogate.options["print_prediction"] = False
     surrogate.options["print_global"] = False
     

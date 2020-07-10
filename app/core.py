@@ -156,6 +156,7 @@ class Surrogate:
 
         if self.trained:
             print("Surrogate converged")
+            self.surrogate.range_out = self.data.range_out
             # Plot the sample size convergence
             sample_size_convergence(self.surrogate_metrics,criterion)
             correlation_heatmap(self.surrogate.predict_values,self.model.range_in)
@@ -297,7 +298,6 @@ class Optimization:
                 self.surrogate.trained = False
                 if settings["surrogate"]["append_verification"]:
                     self.surrogate.append_verification()
-                    
         else:
             self.iterations += 1
             self.surrogate.trained = False

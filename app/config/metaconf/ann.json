@@ -19,7 +19,8 @@
  "tensorboard": false,
  "plot_history": true,
  "tuner": "bayesian",
- "max_trials": 0,
- "tuner_epochs": 50,
+ "max_trials": 1,
+ "executions_per_trial": 2,
+ "tuner_epochs": 20,
  "optimize": ["neurons","layers"]
 }

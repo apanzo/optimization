@@ -10,7 +10,7 @@ from tabulate import tabulate
 import os
 
 # Import pypi packages
-from kerastuner.tuners import RandomSearch, BayesianOptimization
+##from kerastuner.tuners import RandomSearch, BayesianOptimization
 from kerastuner.engine.hyperparameters import HyperParameters
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,8 +21,9 @@ from tensorflow_model_optimization.sparsity import keras as sparsity
 
 # Import custom packages
 from settings import load_json, settings
-from visumod.plots import learning_curves
-from .kerastuner.bayesian_custom import BayesianOptimizationCustom
+from .kerastuner.bayesian_cv import BayesianOptimizationCV
+from .kerastuner.randomsearch_cv import RandomSearchCV
+from visumod import plot_training_history
         
 class ANN(SurrogateModel):
     """
@@ -57,7 +58,7 @@ class ANN(SurrogateModel):
         self.log_dir = os.path.join(settings["folder"],"logs","ann")
 
         self.validation_points = defaultdict(dict)
-
+        
         self.optimized = False
         self._is_trained = False
         
@@ -87,7 +88,7 @@ class ANN(SurrogateModel):
             stopping_patience: number of iterations to wait before stopping
             plot_history: whether to plot the training history
         """
-##        # Set default values
+        # Set default values
         declare = self.options.declare
         for param in self.tbd:
             declare(param, None)
@@ -103,14 +104,13 @@ class ANN(SurrogateModel):
         # Initiallze model
         model = keras.Sequential()
         
-        # Initialize hyperparameters        
+        # Initialize hyperparameters as fixed    
         neurons_hyp = hp.Fixed("no_neurons",self["no_neurons"])
         layers_hyp = hp.Fixed("no_hid_layers",self["no_layers"])
         lr_hyp = hp.Fixed("learning_rate",self["learning_rate"])
         activation_hyp = hp.Fixed("activation_function", self["activation"])
         regularization_hyp = hp.Fixed("regularization",self["kernel_regularizer_param"])
         sparsity_hyp = hp.Fixed("sparsity",self["sparsity"])
-        #
 
         # Load regularizer
         if self["kernel_regularizer"] == "l1":
@@ -142,7 +142,7 @@ class ANN(SurrogateModel):
         if self["prune"]:
             model = self.prune_model(model,sparsity_hyp)
 
-        model.compile(optimizer,self["loss"],metrics=["mse","mae","mape"])
+        model.compile(optimizer,self["loss"],metrics=["mse","mae",keras.metrics.RootMeanSquaredError()])
 
         return model
 
@@ -152,11 +152,9 @@ class ANN(SurrogateModel):
         * Only constant sparsity active
         """
         if True:
-            model = sparsity.prune_low_magnitude(model, sparsity.ConstantSparsity(target_sparsity, 0, frequency=10)        )
+            model = sparsity.prune_low_magnitude(model, sparsity.ConstantSparsity(target_sparsity, 0, frequency=10))
         else:
-            end_step = np.ceil(self["no_points"]/self["batch_size"]*self["no_epochs"])
-            print(f"End step: {end_step}")
-            model = sparsity.prune_low_magnitude(model, sparsity.PolynomialSparsity(0,target_sparsity, 0, end_step, frequency=10)        )
+            model = sparsity.prune_low_magnitude(model, sparsity.PolynomialSparsity(0,target_sparsity, 0, self["epochs"], frequency=10))
 
         return model
 
@@ -182,7 +180,7 @@ class ANN(SurrogateModel):
 
         return callbacks
 
-    def pretrain(self,inputs,outputs):
+    def pretrain(self,inputs,outputs,iteration):
         print("### Performing Keras Tuner optimization of the ANN###")
         # Select hyperparameters to tune
         hp = HyperParameters()
@@ -204,46 +202,57 @@ class ANN(SurrogateModel):
             hp.Float("sparsity",0.3,0.9,default=self["sparsity"])
 
         no_hps = len(hp._space)
+
+        # In case none are chosen, only 1 run for fixed setting
+        if no_hps == 0:
+            hp.Fixed("no_neurons",self["no_neurons"])
         
         # Load tuner
-        max_trials = max(self["max_trials"]*no_hps,1)
-        executions_per_trial = 1
-
+        max_trials = self["max_trials"]*no_hps
         path_tf_format = "logs"
-##        if self["tuner"] == "random":
-##            tuner = RandomSearch(self.build_hypermodel,objective="val_mse",hyperparameters=hp,
-##                                 max_trials=max_trials,executions_per_trial=1,directory="logs",overwrite=True)
-##        elif self["tuner"] == "bayesian":
-##            tuner = BayesianOptimization(self.build_hypermodel,objective="val_mae",hyperparameters=hp,
-##                                 max_trials=max_trials,executions_per_trial=1,directory="logs",num_initial_points=3*len(hp._space),
-##                                         overwrite=False,tune_new_entries=False,project_name="opt")
-        tuner = BayesianOptimizationCustom(self.build_hypermodel,objective="val_mae",hyperparameters=hp,
-                                 max_trials=max_trials,executions_per_trial=executions_per_trial,directory="logs",num_initial_points=3*no_hps,
-                                         overwrite=True,tune_new_entries=False,project_name="opt")
-        # Load data and callbacks
-##        train_in, train_out = self.training_points[None][0]
-##        test_in, test_out = self.validation_points[None][0]
-        callbacks_all = self.get_callbacks()
 
-        # Remove early stopping
+        tuner_args = {"objective":"val_mae","hyperparameters":hp,"max_trials":max_trials,
+                      "executions_per_trial":self["executions_per_trial"],"directory":path_tf_format,
+                      "overwrite":True,"tune_new_entries":False,"project_name":"opt"}
+
+        if self["tuner"] == "random" or no_hps==0:
+##            tuner_args["objective"] = "loss"
+            tuner = RandomSearchCV(self.build_hypermodel,**tuner_args)            
+        elif self["tuner"] == "bayesian":
+            tuner = BayesianOptimizationCV(self.build_hypermodel,num_initial_points=3*no_hps,**tuner_args)
+
+        # Load callbacks and remove early stopping
+        callbacks_all = self.get_callbacks()
         callbacks = [call for call in callbacks_all if not isinstance(call,keras.callbacks.EarlyStopping)]
 
         # Optimize
-        tuner.search(inputs,outputs, 
-            epochs=self["tuner_epochs"], verbose=0, shuffle=True, callbacks=callbacks)
+        tuner.search(inputs,outputs, epochs=self["tuner_epochs"], verbose=0, shuffle=True, callbacks=callbacks, iteration_no=iteration)
 
         # Retrieve and save best model
         best_hp = tuner.get_best_hyperparameters()[0]
+        self.write_stats([best_hp.values],"ann_best_models")
         untrained_model = tuner.hypermodel.build(best_hp)
         untrained_model.save(self.log_dir+"_untrained")
 
+        # Make a table of tuner stats
         scores = [tuner.oracle.trials[trial].score for trial in tuner.oracle.trials]
         hps = [tuner.oracle.trials[trial].hyperparameters.values for trial in tuner.oracle.trials]
-
         for idx,entry in enumerate(hps):
             entry["score"] = scores[idx]
-
         self.write_stats(hps,"ann_tuner_stats")
+
+##        # Get metrics of the best model
+##        best_trial = tuner.oracle.get_best_trials()[0]
+##        metrics = best_trial.metrics.get_config()["metrics"]
+##        self.metrics = {metric:metrics[metric]["observations"][0]["value"][0] for metric in metrics.keys()}
+##
+##        self.evaluation(self.metrics)
+##
+##        # Delete unnecessary learning curves
+##        figures = os.listdir(os.path.join(settings["folder"],"figures","ann"))
+##        to_delete = [i for i in figures if i[6:14]==best_trial.trial_id[:8] and int(i[15]) == iteration]
+##        for i in to_delete:
+##            os.remove(os.path.join(settings["folder"],"figures","ann",i))
 
     def _train(self):
         """
@@ -264,10 +273,9 @@ class ANN(SurrogateModel):
             epochs=self["no_epochs"], validation_data = (test_in, test_out), verbose=0, shuffle=True, callbacks=callbacks)
 
         # Evaluate the model
-        self.validation_metric = self.evaluation(histor.history)
+##        self.validation_metric = self.evaluation(histor.history)
         self._is_trained = True
-        if self.options["plot_history"]:
-            self.plot_training_history(histor,train_in,train_out,self.model.predict)
+        plot_training_history(histor,train_in,train_out,test_in,test_out,self.model.predict,self.progress)
        
     def evaluation(self,history):
         """
@@ -276,15 +284,15 @@ class ANN(SurrogateModel):
         Returns:
             error: validation metric
         """
-        mse = history["val_mean_squared_error"][-1]
-        rmse = np.sqrt(mse)
-        mae = history['val_mean_absolute_error'][-1]
+        breakpoint()
+        mse = history["val_mse"]
+        rmse = history["val_root_mean_squared_error"]
+        mae = history['val_mae']
         print(f'MSE: {mse:.3f}, RMSE: {rmse:.3f}')
         print(f"MAE: {mae:.3f}")
         stats = [{"MSE":mse,"RMSE":rmse,"MAE":mae}]
         self.write_stats(stats,"ann_training_stats")
-##        print(f"MAPE: {history['val_mean_absolute_percentage_error'][-1]:.0f}")
-
+        
         return mse
 
     def _predict_values(self, x):
@@ -296,30 +304,13 @@ class ANN(SurrogateModel):
         """
         return self.model.predict(x)
 
-
-    def plot_training_history(self,history,inputs,outputs,predict):
-        """
-        Plot the evolution of the training and testing error.
-
-        Arguments:
-            history: training history object
-
-        Raises:
-            ValueError: if the surrogate has not been trained yet
-            
-        """
-        if self._is_trained:
-            learning_curves(history.history['loss'],history.history['val_loss'],outputs,predict(inputs),self.progress)
-        else:
-            raise Exception("Can't plot, the ANN is not trained yet")
-
     def write_stats(self,dictionary_as_list,name):
         path = os.path.join(settings["folder"],"logs",name+".txt")
         kwargs = {"headers":"keys"}
         if name == "ann_training_stats":
             kwargs.update({"floatfmt":".3f"})
-            if self.progress[1] != 1:
-                del kwargs["headers"]
+##            if self.progress[1] != 1:
+##                del kwargs["headers"]
 
         table = tabulate(dictionary_as_list,tablefmt="jira",**kwargs)
         
@@ -334,25 +325,6 @@ class ANN(SurrogateModel):
         with open(path, "a") as file:
             file.write(table)
             file.write("\n")
-##    def write_stats(self,mse,rmse,mae):
-##        path = os.path.join(settings["folder"],"logs","ann_error_stats.txt")
-##        if self.progress[0] == 1 and self.progress[1] == 1:
-##            with open(path, "w") as file:
-##                lines = tabulate([["MSE","RMSE","MAE"]],tablefmt="jira")
-##                file.write(lines)
-##                file.write("\n")
-##        if self.progress[1] == 1:
-##            with open(path, "a") as file:
-##                file.write("-------------------------")
-##                file.write("\n")
-##                file.write(f"       Iteration {self.progress[0]}      ")
-##                file.write("\n")
-##                file.write("-------------------------")
-##                file.write("\n")
-##        with open(path, "a") as file:
-##            lines = tabulate([[mse,rmse,mae]],tablefmt="jira", floatfmt=".3f")
-##            file.write(lines)
-##            file.write("\n")
 
     def set_validation_values(self, xt, yt, name=None):
         """

@@ -101,9 +101,12 @@ def surface_pymoo(data):
 ##        save_figure(name+f"_{angle+1}",plot)
         plot.show()
 
-def learning_curves(training_loss,validation_loss,data,prediction,progress):
+def learning_curves(training_loss,validation_loss,data_train,prediction_train,data_test,prediction_test,progress,trial_id):
     plt.figure()
-    plt.suptitle(f"Iteration {progress[0]}, model {progress[1]}")
+    if len(progress) == 3:
+        plt.suptitle(f"Iteration {progress[0]}, model {progress[1]}/{progress[2]}")
+    else:
+        plt.suptitle(f"Iteration {progress[0]}, model {progress[1]}/{progress[2]}, run {progress[3]}/{progress[4]}")
     plt.subplot(1, 2, 1)
     plt.title('Learning Curves')
     plt.xlabel('Epoch')
@@ -114,14 +117,18 @@ def learning_curves(training_loss,validation_loss,data,prediction,progress):
     plt.legend()
     
     plt.subplot(1, 2, 2)
-    plt.scatter(data.flatten(),prediction.flatten())
+    plt.scatter(data_train.flatten(),prediction_train.flatten(),c="k")
+    plt.scatter(data_test.flatten(),prediction_test.flatten(),c="r")
     plt.plot([-1,1],[-1,1])
     plt.title('Prediction correletation')
     plt.xlabel('Data')
     plt.ylabel('Prediction')
     plt.xlim([-1,1])
     plt.ylim([-1,1])
-    name = os.path.join("ann",f"model_{progress[0]}_{progress[1]}")
+    if len(progress) == 3:
+        name = os.path.join("ann",f"model_{progress[0]}_{progress[1]}")
+    else:
+        name = os.path.join("ann",f"model_{trial_id[:8]}_{progress[0]}_{progress[1]}_{progress[3]}")
     save_figure(name)
 
 def get_plot_args(data,label):

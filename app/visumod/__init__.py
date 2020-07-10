@@ -8,7 +8,7 @@ visual - scatter 2D/3D, curve, surface tri (not quad)
 import numpy as np
 
 from datamod.sampling import sample
-from visumod.plots import scatter,scatter_pymoo,curve,heatmap,pcp,surface_pymoo
+from visumod.plots import scatter,scatter_pymoo,curve,heatmap,pcp,surface_pymoo,learning_curves
 
 def plot_raw(data,iteration,normalized=False):
     """
@@ -102,5 +102,15 @@ def surrogate_response(inputs,outputs,dimensions):
     data_all = np.concatenate((inputs,outputs),1)
     surface_pymoo(data_all)
 
+def plot_training_history(history,train_in,train_out,test_in,test_out,predict,progress,trial_id=None):
+    """
+    Plot the evolution of the training and testing error.
 
+    Arguments:
+        history: training history object
 
+    Raises:
+        ValueError: if the surrogate has not been trained yet
+        
+    """
+    learning_curves(history.history['loss'],history.history['val_loss'],train_out,predict(train_in),test_out,predict(test_in),progress,trial_id)

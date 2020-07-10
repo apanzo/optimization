@@ -30,8 +30,9 @@ from tensorflow import keras
 ###
 from metamod.preproc import set_validation
 from settings import settings
+from visumod import plot_training_history
 
-class MultiExecutionTunerCustom(tuner_module.Tuner):
+class MultiExecutionTunerCV(tuner_module.Tuner):
     """A Tuner class that averages multiple runs of the process.
 
     Args:
@@ -57,7 +58,7 @@ class MultiExecutionTunerCustom(tuner_module.Tuner):
                  hypermodel,
                  executions_per_trial=1,
                  **kwargs):
-        super(MultiExecutionTunerCustom, self).__init__(
+        super(MultiExecutionTunerCV, self).__init__(
             oracle, hypermodel, **kwargs)
         if isinstance(oracle.objective, list):
             raise ValueError(
@@ -85,6 +86,7 @@ class MultiExecutionTunerCustom(tuner_module.Tuner):
             mode=self.oracle.objective.direction,
             save_best_only=True,
             save_weights_only=True)
+        
         original_callbacks = fit_kwargs.pop('callbacks', [])
         
         metrics = collections.defaultdict(list)
@@ -92,8 +94,11 @@ class MultiExecutionTunerCustom(tuner_module.Tuner):
         validation = settings["surrogate"]["validation"]
         validation_param = settings["surrogate"]["validation_param"]
         cv_split = set_validation(validation,validation_param)
-        
-        for train_indices, test_indices in cv_split.split(X):
+
+        no_splits = cv_split.get_n_splits()
+        iteration = fit_kwargs.pop("iteration_no")
+
+        for idx, (train_indices, test_indices) in enumerate(cv_split.split(X)):
             X_train = X[train_indices]
             y_train = y[train_indices]
             X_test = X[test_indices]
@@ -110,7 +115,11 @@ class MultiExecutionTunerCustom(tuner_module.Tuner):
                 copied_fit_kwargs['callbacks'] = callbacks
 
                 model = self.hypermodel.build(trial.hyperparameters)
-                history = model.fit(X_train,y_train,*fit_args,validation_data = (X_test, y_test),batch_size = X_train.shape[0],**copied_fit_kwargs) ### Check which data is used
+                history = model.fit(X_train,y_train,*fit_args,validation_data = (X_test, y_test),
+                                    batch_size = X_train.shape[0],**copied_fit_kwargs)
+
+##                progress = [iteration,idx+1,no_splits,execution+1,self.executions_per_trial]
+##                plot_training_history(history,X,y,model.predict,progress,trial.trial_id)
 
                 for metric, epoch_values in history.history.items():
                     if self.oracle.objective.direction == 'min':
@@ -120,12 +129,8 @@ class MultiExecutionTunerCustom(tuner_module.Tuner):
                     metrics_avg[metric].append(best_value)
 
             # Average the results across executions and send to the Oracle.
-##            averaged_metrics = {}
             for metric, execution_values in metrics_avg.items():
                 metrics[metric].append(np.mean(execution_values))
-
-##            self.oracle.update_trial(
-##                trial.trial_id, metrics=averaged_metrics, step=self._reported_step)
 ##########
 
         trial_metrics = {name: np.mean(values) for name, values in metrics.items()}
