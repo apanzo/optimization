@@ -143,7 +143,7 @@ def set_problem(function,ranges,n_obj,n_constr):
         prob: problem object
 
     Notes:
-        Assumes a [-1,1] range
+        Assumes a [-1,1] range if not specified
     """
     n_var = ranges[0].shape[0]
     if ranges[1] is None:

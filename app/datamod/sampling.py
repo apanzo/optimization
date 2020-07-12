@@ -85,7 +85,6 @@ def sample(name,points,n_dim):
         NameError: if the sampling is not defined
 
     Notes:
-        Assumes that data is on the [-1,1] range
         Grid actually doesnt make full grid
     """
 

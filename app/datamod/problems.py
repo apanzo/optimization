@@ -12,7 +12,7 @@ class Custom(Problem):
     Class for custom built problems using a surrogate.
 
     Note:
-        data should be always normalized
+        data should be always normalized - check: semms that not necesarilly
     """
     def __init__(self, function, xl, xu, n_obj, n_constr):
         """Constructor.

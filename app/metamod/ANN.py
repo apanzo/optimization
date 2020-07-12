@@ -282,7 +282,7 @@ class ANN(SurrogateModel):
         Evaluate the generalization error.
 
         Returns:
-            error: validation metric
+            mse: mean squared error
         """
         breakpoint()
         mse = history["val_mse"]

@@ -24,7 +24,7 @@ def make_data_file(file,dim_in,n_obj,n_constr):
         dim_in: number of input dimensions
 
     Todo:
-        * column names
+        * write correct column names
     """
 
     # Set results file

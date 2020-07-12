@@ -2,7 +2,7 @@
  "no_layers": 10,
  "no_neurons": 7,
  "activation": "swish",
- "no_epochs": 500,
+ "no_epochs": 3,
  "init": "he_normal",
  "bias_init": "zeros",
  "kernel_regularizer": "l1",
@@ -17,10 +17,9 @@
  "stopping_delta": 0.0001,
  "stopping_patience": 20,
  "tensorboard": false,
- "plot_history": true,
  "tuner": "bayesian",
  "max_trials": 1,
- "executions_per_trial": 2,
+ "executions_per_trial": 1,
  "tuner_epochs": 20,
- "optimize": ["neurons","layers"]
+ "optimize": []
 }

@@ -9,8 +9,9 @@ from datamod import get_data, load_problem, scale
 from datamod.evaluator import EvaluatorBenchmark, EvaluatorANSYS
 from datamod.results import make_data_file, make_response_files, append_verification_to_database
 from datamod.sampling import determine_samples, resample_static, resample_adaptive, complete_grid
-from metamod import train_surrogates, select_best_surrogate, check_convergence, verify_results, reload_info
+from metamod import train_surrogates, reload_info
 from metamod.deploy import get_partial_input
+from metamod.postproc import check_convergence, select_best_surrogate, verify_results
 from optimod import set_optimization, set_problem, solve_problem
 from settings import dump_json, dump_object, load_json, load_object, settings
 from visumod import plot_raw, vis_design_space, vis_objective_space, sample_size_convergence, vis_objective_space_pcp
@@ -273,36 +274,37 @@ class Optimization:
     def verify(self):
         """
         Wrapper function to verify the optimized solutions.
-
-        Todo - optimization error logic
-        """
-        
-        if self.res is not None:        
-            idx = verify_results(self.res.X, self.surrogate)
+        """        
+        if self.res is not None:
+            # Evaluate randomly selected samples using surrogate
+            no_verificiations = verify_results(self.res.X, self.surrogate)
 
             # Calculate error
-            response_F = self.surrogate.verification.response[:,:-self.problem.n_constr or None][-len(idx):,:]
-            self.error = (100*(response_F-self.res.F[idx])/response_F)
+            response_F_all = self.surrogate.verification.response[:,:-self.problem.n_constr or None]
+            response_F = response_F_all[-len(no_verificiations):,:]
+            self.error = np.abs((100*(response_F-self.res.F[no_verificiations])/response_F))
 
-            self.error_max = np.max(np.abs(self.error))
-            self.error_mean = np.mean(self.error,0)
+            # Evaluate selected measure
+            measure = settings["optimization"]["error"]
+            if measure == "max":
+                self.error_measure = np.max(self.error)
+            elif measure == "mean":
+                self.error_measure = np.mean(self.error,0)
 
-            print("Maximal percentage optimization error: %.2f " % (self.error_max))
+            print(f"Optimization {measure} percent error: {self.error_max:.2f}")
             
-            if self.error_max < settings["optimization"]["error_limit"]:
+            if self.error_measure <= settings["optimization"]["error_limit"]:
                 self.converged = True
                 print("\n############ Optimization finished ############")
-                print("Total number of samples: %.0f" %(self.surrogate.no_samples))
-            else:
-                self.iterations += 1
-                self.surrogate.trained = False
-                if settings["surrogate"]["append_verification"]:
-                    self.surrogate.append_verification()
-        else:
-            self.iterations += 1
-            self.surrogate.trained = False
-            if settings["surrogate"]["append_verification"]:
+                print(f"Total number of samples: {self.surrogate.no_samples:.0f}")
+
+                return
+
+        # If the model has not converged yet
+        self.surrogate.trained = False
+        self.iterations += 1
+        if settings["surrogate"]["append_verification"]:
                 self.surrogate.append_verification()
 
-
+        return
         ##len([step["delta_f"] for step in model.res.algorithm.display.term.metrics])

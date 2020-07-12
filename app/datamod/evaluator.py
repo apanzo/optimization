@@ -140,7 +140,7 @@ class EvaluatorANSYS(Evaluator):
         Docstring
 
         Notes:
-            * arg not used
+            * arg "minimal_amount" not used
         """
         license_status = self.check_licenses()
 

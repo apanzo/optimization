@@ -30,30 +30,33 @@ def select_best_surrogate(surrogates):
     
     # Store the metric for sample size determination
     best_surrogate.metric["variance"] = np.var(metrics)
+    best_surrogate.metric["mean"] = np.mean(metrics)
 
     return best_surrogate
 
 ##
 def check_convergence(metrics):
+    print("###### Evaluating sample size convergence ######")
     trained = False
 
     _, direction = maximize_minimize()
     threshold = settings["data"]["convergence_limit"]
     
     if settings["data"]["convergence_relative"]:
+        window_size = 1 ###########
         if len(metrics) < 2:
             return False
         else:
             diff = np.diff(metrics)
 
-            if direction(diff[-1],0):
-                if abs(diff[-1]) < threshold:
+            if direction(np.mean(diff[-window_size:]),0):
+                if abs(np.mean(diff[-window_size:])) < threshold:
                     trained = True
     else:
        if direction(metrics[-1],threshold):
                 trained = True
+    breakpoint()
 
-    print("###### Evaluating sample size convergence ######")
     print(f"Sample size convergence metric: {settings['data']['convergence']} - {metrics[-1]}")
 
     return trained
@@ -64,6 +67,8 @@ def verify_results(results,surrogate):
     no_results = results.shape[0]
     verification_ratio = 0.2
     no_verifications = ceil(no_results*verification_ratio)
+
+    # Randomly select a verification sample
     idx =  np.random.default_rng().choice(no_results,size=(no_verifications),replace=False)
     surrogate.samples = results[idx]
     
@@ -71,7 +76,7 @@ def verify_results(results,surrogate):
     surrogate.evaluate(verify=True) 
     surrogate.load_results(verify=True)
 
-    return idx
+    return len(idx)
 
 def evaluate_metrics(inputs,outputs,predict,requested):
     metrics = {}

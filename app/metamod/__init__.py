@@ -11,7 +11,7 @@ import os
 from smt.surrogate_models import RBF, KRG, GENN
 
 # Import custom packages
-from metamod.postproc import check_convergence, select_best_surrogate, verify_results, evaluate_metrics
+from metamod.postproc import evaluate_metrics
 from metamod.preproc import set_validation
 from settings import load_json, settings
 # ANN is imported in set_surrogate only if it is need
@@ -31,10 +31,7 @@ def train_surrogates(data,iteration):
         variance: metrics of surrogate variances for sample size determination
 
     Note:
-        the indices are shuffled
-        for pretraining, holout with 0.2 assumed
-        ranges left for reloading
-    
+        the indices are shuffled    
     """
     # Unpack settings
     name = settings["surrogate"]["surrogate"]
@@ -49,7 +46,7 @@ def train_surrogates(data,iteration):
     print(f"###### Training using {name} on {len(data.input)} examples ######")
 
     # Pretrain ANN
-    if name == "ann":
+    if name == "ann" and iteration == 1:
         pretrain = set_surrogate(name,data.dim_in,data.dim_out)
         pretrain.progress = [iteration,1]
         pretrain.pretrain(data.input,data.output,iteration)
@@ -65,7 +62,7 @@ def train_surrogates(data,iteration):
             interp.set_validation_values(interp.test_in,interp.test_out)
             interp.progress = [iteration,idx+1,no_splits]
         interp.train()
-        interp.range_out = data.range_out
+##        interp.range_out = data.range_out
         interp.metric = evaluate_metrics(interp.test_in,interp.test_out,interp.predict_values,["mae","r2"])
         surrogates.append(interp)
 
