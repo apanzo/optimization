@@ -6,7 +6,7 @@ import numpy as np
 
 # Import custom packages
 from datamod import get_data, load_problem, scale
-from datamod.evaluator import EvaluatorBenchmark, EvaluatorANSYS
+from datamod.evaluator import EvaluatorBenchmark, EvaluatorANSYS, EvaluatorData
 from datamod.results import make_data_file, make_response_files, append_verification_to_database
 from datamod.sampling import determine_samples, resample_static, resample_adaptive, complete_grid
 from metamod import train_surrogates, reload_info
@@ -28,8 +28,8 @@ class Model:
 
         Arguments:
 
-        Todo:
-            * real problem information
+        Notes:
+            * Need to specify ranges if direct
         """
 
         # Obtain problem information 
@@ -41,12 +41,13 @@ class Model:
         elif settings["data"]["evaluator"] == "ansys":
             self.evaluator = EvaluatorANSYS()
             self.range_in, self.dim_in, self.dim_out, self.n_const = self.evaluator.get_info()
+        elif settings["data"]["evaluator"] == "data":
+            self.evaluator = EvaluatorData()
+            self.range_in, self.dim_in, self.dim_out, self.n_const = self.evaluator.get_info()
         else:
             raise Exception("Error should have been caught on initialization")
 
         self.n_obj = self.dim_out - self.n_const
-
-        # Need to specify ranges if direct
         
 class Surrogate:
     
@@ -143,6 +144,7 @@ class Surrogate:
 
         # Select the best model
         self.surrogate = select_best_surrogate(self.surrogates)
+        self.surrogate.range_out = self.data.range_out
         self.surrogate.metric["max_iterations"] = self.sampling_iterations
 
         # Plot the surrogate response
@@ -157,7 +159,6 @@ class Surrogate:
 
         if self.trained:
             print("Surrogate converged")
-            self.surrogate.range_out = self.data.range_out
             # Plot the sample size convergence
             sample_size_convergence(self.surrogate_metrics,criterion)
             correlation_heatmap(self.surrogate.predict_values,self.model.range_in)

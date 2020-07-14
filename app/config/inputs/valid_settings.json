@@ -1,6 +1,6 @@
 {
  "data": {
- "evaluator": ["benchmark","ansys"],
+ "evaluator": ["benchmark","ansys","data"],
  "sampling": ["random","halton","lhs","grid"],
  "resampling": ["linear","geometric"],
  "adaptive": [null,"eason"],

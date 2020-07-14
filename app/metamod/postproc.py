@@ -23,7 +23,7 @@ def select_best_surrogate(surrogates):
 
     metrics = np.array([sur.metric[settings["surrogate"]["selection_metric"]] for sur in surrogates])
 
-    argbest, _ = maximize_minimize()
+    argbest = maximize_minimize()
     select_best = argbest(metrics)
 
     best_surrogate = surrogates[select_best]
@@ -39,7 +39,7 @@ def check_convergence(metrics):
     print("###### Evaluating sample size convergence ######")
     trained = False
 
-    _, direction = maximize_minimize()
+    direction = convergence_operator()
     threshold = settings["data"]["convergence_limit"]
     
     if settings["data"]["convergence_relative"]:
@@ -93,6 +93,9 @@ def maximize_minimize():
     else:
         raise Exception("Error should have been caught on initialization")
 
+    return target
+
+def convergence_operator():
     if settings["data"]["convergence"] in ["mae","mse","medae","max_error"]:
         op = operator.lt
     elif settings["data"]["convergence"] in ["r2","max_iterations"]:
@@ -100,7 +103,7 @@ def maximize_minimize():
     else:
         raise Exception("Error should have been caught on initialization")
 
-    return target, op
+    return op
 
 defined_metrics = {
     "r2": R2,

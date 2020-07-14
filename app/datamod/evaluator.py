@@ -8,7 +8,7 @@ from time import sleep
 import numpy as np
 
 # Import custom packages
-from datamod.results import write_results
+from datamod.results import load_results,write_results
 from settings import load_json, settings
 
 class Evaluator:
@@ -52,6 +52,39 @@ class EvaluatorBenchmark(Evaluator):
         response = np.concatenate([response_all[column] for column in response_all if column in self.results], axis=1)
 
         return response
+
+class EvaluatorData(Evaluator):
+    """
+    Docstring
+    """
+
+    def __init__(self):
+        super().__init__()
+        path = os.path.join(settings["root"],"data","external")
+        matching_files = [file for file in os.listdir(path) if file.startswith(settings["data"]["problem"])]
+
+        if len(matching_files) == 0:
+            raise Exception("Results file not found")
+        elif len(matching_files) > 1:
+            raise Exception("Ambiguous results file in folder")
+
+        self.source_file = os.path.join(path,matching_files[0])
+
+    def generate_results(self,database_file):
+        """
+        Overwrites
+        """
+        self.save_results(database_file,self.inputs,self.outputs)
+
+    def get_info(self):
+        dim_in,names,data = load_results(self.source_file)
+        dim_out = len(names) - dim_in
+        n_constr = dim_out-len([name for name in names if name.startswith("objective")])
+        self.inputs = data[:,:dim_in]
+        self.outputs = data[:,dim_in:]
+        range_in = np.stack((np.min(self.inputs,0),np.max(self.inputs,0))).T
+
+        return range_in, dim_in, dim_out, n_constr
 
 class EvaluatorANSYS(Evaluator):
     """

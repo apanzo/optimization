@@ -103,7 +103,6 @@ def restart_check(id_current,file):
 
         if same_inputs:
             status = load_json(os.path.join(path,"status"))
-
             
             if settings["surrogate"]["surrogate"] is None:
                 ask_to_overwrite(path,id_current,"restarting is not supported for direct optimization")

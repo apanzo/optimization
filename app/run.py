@@ -16,17 +16,23 @@ from settings import settings,update_settings
 ##    warnings.simplefilter("ignore")
 
 
-def train_surrogate():
+def train_surrogate(from_data):
     """
     Docstring.
     """    
     # Train surrogate
-    while not surrogate.trained:
-        surrogate.sample()
-        surrogate.evaluate()
+    if from_data:
+        surrogate.model.evaluator.generate_results(surrogate.file)
+        surrogate.sampling_iterations += 1
         surrogate.load_results()
         surrogate.train()
-        surrogate.surrogate_convergence()
+    else:
+        while not surrogate.trained:
+            surrogate.sample()
+            surrogate.evaluate()
+            surrogate.load_results()
+            surrogate.train()
+            surrogate.surrogate_convergence()
 
 def reload_surrogate():
     """
@@ -42,11 +48,11 @@ def optimize(surrogate):
     optimization.optimize(surrogate)
 
     # Verify whether the optimization result agrees with original model
-    if build_surrogate and not load_surrogate:
+    if build_surrogate and not (load_surrogate or from_data):
         optimization.verify()
         
 # Choose problem to solve
-problem_id = 10
+problem_id = 23
 
 # Initialize the settings
 update_settings(problem_id)
@@ -57,13 +63,14 @@ model = Model()
 # Check computation setup
 build_surrogate = bool(settings["surrogate"]["surrogate"])
 load_surrogate = settings["surrogate"]["surrogate"] == "load"
+from_data = settings["data"]["evaluator"] == "data"
 perform_optimization = bool(settings["optimization"]["algorithm"])
 
 # Perform computation
 # Surrogate only
 if build_surrogate and not perform_optimization:
     surrogate = Surrogate(model)
-    train_surrogate()
+    train_surrogate(from_data)
 # Direct optimization
 elif perform_optimization and not build_surrogate:
     optimization = Optimization(model)
@@ -76,14 +83,20 @@ elif build_surrogate and perform_optimization:
         reload_surrogate()
         optimization = Optimization(model)
         optimize(surrogate)
+    # Using generated data
+    elif from_data:
+        surrogate = Surrogate(model)
+        train_surrogate(True)
+        optimization = Optimization(model)
+        optimize(surrogate)
     # Make surrogate and then optimize
     else:
         surrogate = Surrogate(model)
-        train_surrogate()
+        train_surrogate(False)
         optimization = Optimization(model)
         while not optimization.converged:
             if not surrogate.trained:
-                train_surrogate()
+                train_surrogate(False)
             optimize(surrogate)    
 else:
     print("There is nothing to perform within this model")
