@@ -2,6 +2,7 @@
 import datetime
 import os
 import subprocess
+from time import sleep
 
 # Import pypi packages
 import numpy as np
@@ -18,7 +19,8 @@ class Evaluator:
     def __init__(self):
         self.save_results = write_results
 
-    def generate_results(self,samples,file):
+    def generate_results(self,samples,file,iteration):
+        self.iteration = iteration
         response = self.evaluate(samples)
         self.save_results(file,samples,response)
 
@@ -79,7 +81,10 @@ class EvaluatorANSYS(Evaluator):
 
     def evaluate(self,samples):
         self.update_journal(samples)
-        self.can_run_ansys()
+        while not self.can_run_ansys():
+            waiting_time = 10
+            print(f"Waiting for {waiting_time}s before checking licenses again")
+            sleep(10)   # Wait before checking again
         self.call_ansys()
         
         return self.get_results()
@@ -87,7 +92,6 @@ class EvaluatorANSYS(Evaluator):
     def update_journal(self,samples):
         # Make journal file
         points = str([list(point) for point in samples])
-        self.iteration = 8 ###########################################
 
         # Open template
         with open(self.template, "r") as file:
@@ -153,10 +157,16 @@ class EvaluatorANSYS(Evaluator):
 
         if all(can_run) and not (now.hour in range(8,15)):
             print("Can run")
+            status = True
         elif all(can_run_peak):
             print("Can run")
+            status = True
         else:
             print("Not enough licences available: " + str(free_licenses))
+            status = False
+            status = True
+
+        return status
 
     def get_results(self):
         # read  results
@@ -165,6 +175,7 @@ class EvaluatorANSYS(Evaluator):
         names = list(np.loadtxt(file,skiprows=1,max_rows=1,dtype=str,delimiter=",")[1:])
         nodim = len(names)
         columns = [names.index(name) for name in names if not name in settings["data"]["input_names"]]
+        breakpoint()
         data = np.loadtxt(file,skiprows=7,delimiter=",",usecols=range(1,nodim+1))
 
         response = data[:,columns]

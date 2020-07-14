@@ -51,7 +51,12 @@ def resample_static(points_new,points_now,range_in):
     # Sample
     full_sample = sample(settings["data"]["sampling"],points_now+points_new,dim_in) # unit coordinates
     new_sample = full_sample[points_now:,:] # only picked those that are new
-    coordinates = scale(new_sample,range_in) # full coordinates
+
+    range_samples = 2 # because {-1,1}
+    range_target = np.ptp(range_in,1)
+    mean = np.mean(range_in,1)
+
+    coordinates = new_sample*range_target/range_samples+mean # full coordinates
 
     return coordinates
 

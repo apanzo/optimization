@@ -8,7 +8,7 @@ with the SMT Toolbox
 from collections import defaultdict
 from tabulate import tabulate
 import os
-
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 # Import pypi packages
 ##from kerastuner.tuners import RandomSearch, BayesianOptimization
 from kerastuner.engine.hyperparameters import HyperParameters

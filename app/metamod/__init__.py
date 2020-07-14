@@ -6,7 +6,7 @@ The aim of the metamod package is to produce and run a surrogate modul
 # Import native packages
 import numpy as np
 import os
-
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 # Import pypi packages
 from smt.surrogate_models import RBF, KRG, GENN
 
@@ -15,6 +15,9 @@ from metamod.postproc import evaluate_metrics
 from metamod.preproc import set_validation
 from settings import load_json, settings
 # ANN is imported in set_surrogate only if it is need
+
+##import ctypes
+##hllDll = ctypes.WinDLL("C:\\Users\\antonin.panzo\\Downloads\\cudart64\\cudart64_100.dll")
 
 
 def train_surrogates(data,iteration):

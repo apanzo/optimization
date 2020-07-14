@@ -108,7 +108,7 @@ class Surrogate:
         else:
             file = self.file
 
-        self.model.evaluator.generate_results(self.samples,file)
+        self.model.evaluator.generate_results(self.samples,file,self.sampling_iterations)
 
     def append_verification(self):
         # Add verification results to database

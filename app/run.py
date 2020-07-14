@@ -15,6 +15,7 @@ from settings import settings,update_settings
 ##if not sys.warnoptions:
 ##    warnings.simplefilter("ignore")
 
+
 def train_surrogate():
     """
     Docstring.
@@ -45,7 +46,7 @@ def optimize(surrogate):
         optimization.verify()
         
 # Choose problem to solve
-problem_id = 41
+problem_id = 10
 
 # Initialize the settings
 update_settings(problem_id)

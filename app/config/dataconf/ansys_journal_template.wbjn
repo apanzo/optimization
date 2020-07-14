@@ -17,8 +17,10 @@ Open(FilePath=project_folder+workbench_project)
 
 # clear design points
 for dp in Parameters.GetAllDesignPoints():
-   if dp.Name != "0":
+   try:
       dp.Delete()
+   except:
+      pass
 
 # define new points
 no_dp = len(points)
@@ -34,12 +36,15 @@ input_param = [Parameters.GetParameter(Name=param) for param in input_param_name
 # set sample points
 for index, point in enumerate(points):
    if index == 0:
-      dp = Parameters.GetDesignPoint(Name="0")
+      dp = Parameters.GetAllDesignPoints()[0]
    else:
       dp = Parameters.CreateDesignPoint()    
    for idx,param in enumerate(input_param):
       parameter_current = str(dp.GetParameterValue(param))
-      parameter_new = " ".join([str(point[idx]),parameter_current.split()[1]]) # same units are used
+      if " " in parameter_current:
+        parameter_new = " ".join([str(point[idx]),parameter_current.split()[1]]) # same units are used
+      else:
+        parameter_new = str(point[idx])
 
       dp.SetParameterExpression(
         Parameter=param,
