@@ -55,7 +55,7 @@ def check_convergence(metrics):
     else:
        if direction(metrics[-1],threshold):
                 trained = True
-    breakpoint()
+##    breakpoint()
 
     print(f"Sample size convergence metric: {settings['data']['convergence']} - {metrics[-1]}")
 
@@ -76,7 +76,7 @@ def verify_results(results,surrogate):
     surrogate.evaluate(verify=True) 
     surrogate.load_results(verify=True)
 
-    return len(idx)
+    return idx
 
 def evaluate_metrics(inputs,outputs,predict,requested):
     metrics = {}
@@ -101,7 +101,7 @@ def maximize_minimize():
         raise Exception("Error should have been caught on initialization")
 
     return target, op
-          
+
 defined_metrics = {
     "r2": R2,
     "mse": MSE,

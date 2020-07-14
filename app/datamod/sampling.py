@@ -3,7 +3,9 @@ This is the sampling module.
 
 This module provides sampling methods
 """
+# Import native packages
 from math import ceil
+import os
 
 # Import pypi packages
 import numpy as np
@@ -15,7 +17,7 @@ from .external.halton import halton
 
 # Import custom packages
 from datamod import scale
-from settings import settings
+from settings import load_json, settings
 
 def determine_samples(no_samples,dim_in):
     if no_samples == 0:
@@ -96,7 +98,7 @@ def sample(name,points,n_dim):
 
     return sampling(points)
 
-def sample_adaptive(data,samples,predictions,no_points_new,exploration,exploitation):
+def sample_adaptive(data,samples,predictions,no_points_new):
     """
     Sampling using an adaptive DOE
 
@@ -181,7 +183,7 @@ class Halton(SamplingMethod):
 
         return x
 
-
+adaptive_methods = load_json(os.path.join(settings["root"],"app","config","dataconf","adaptive"))
 
 samplings = {
     "halton": Halton,

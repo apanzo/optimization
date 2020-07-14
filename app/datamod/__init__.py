@@ -3,9 +3,6 @@ Data handling module.
 
 The aim of the datamod package is to handle the data
 """
-# Import native packages
-import json
-import os
 
 # Import pypi packages
 import numpy as np
@@ -14,9 +11,6 @@ from pymoo.factory import get_problem
 # Import custom packages
 from datamod.problems import problems
 from datamod.results import load_results
-from settings import load_json, settings
-
-adaptive_methods = load_json(os.path.join(settings["root"],"app","config","dataconf","adaptive"))
     
 class get_data:
     """

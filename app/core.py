@@ -225,12 +225,12 @@ class Optimization:
     """
     Docstring
     """
-    def __init__(self,model,surrogate):
+    def __init__(self,model):
 
         self.model = model
-        self.surrogate = surrogate
 
         self.iterations = 0
+        self.converged = False
 
         # Obtain optimization setup
         self.algorithm, self.termination = set_optimization(model.n_obj)
@@ -240,17 +240,8 @@ class Optimization:
             self.n_const = 0
 
         self.direct = not bool(settings["surrogate"]["surrogate"])
-        if self.direct:
-            # Specify range
-            self.ranges = [np.array(settings["optimization"]["ranges"]),None]
-            self.function = self.model.evaluator.evaluate
-        else:
-            self.ranges = [self.model.range_in,self.surrogate.surrogate.range_out]
-            self.function = self.surrogate.surrogate.predict_values
 
-        self.converged = False
-            
-    def optimize(self):
+    def optimize(self,surrogate):
         """
         Wrapper function to perform optimization.
 
@@ -258,6 +249,15 @@ class Optimization:
         """
         print("###### Optimization #######")
 
+        if self.direct:
+            # Specify range
+            self.ranges = [np.array(settings["optimization"]["ranges"]),None]
+            self.function = self.model.evaluator.evaluate
+        else:
+            self.surrogate = surrogate
+            self.ranges = [self.model.range_in,self.surrogate.surrogate.range_out]
+            self.function = self.surrogate.surrogate.predict_values
+            
         self.problem = set_problem(self.function,self.ranges,self.model.n_obj,self.model.n_const)
 
         self.res = solve_problem(self.problem,self.algorithm,self.termination,self.direct)
@@ -277,12 +277,12 @@ class Optimization:
         """        
         if self.res is not None:
             # Evaluate randomly selected samples using surrogate
-            no_verificiations = verify_results(self.res.X, self.surrogate)
+            verificiation_idx = verify_results(self.res.X, self.surrogate)
 
             # Calculate error
             response_F_all = self.surrogate.verification.response[:,:-self.problem.n_constr or None]
-            response_F = response_F_all[-len(no_verificiations):,:]
-            self.error = np.abs((100*(response_F-self.res.F[no_verificiations])/response_F))
+            response_F = response_F_all[-len(verificiation_idx):,:]
+            self.error = np.abs((100*(response_F-self.res.F[verificiation_idx])/response_F))
 
             # Evaluate selected measure
             measure = settings["optimization"]["error"]
@@ -291,7 +291,7 @@ class Optimization:
             elif measure == "mean":
                 self.error_measure = np.mean(self.error,0)
 
-            print(f"Optimization {measure} percent error: {self.error_max:.2f}")
+            print(f"Optimization {measure} percent error: {self.error_measure:.2f}")
             
             if self.error_measure <= settings["optimization"]["error_limit"]:
                 self.converged = True
