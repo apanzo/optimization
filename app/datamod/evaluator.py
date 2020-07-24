@@ -70,11 +70,13 @@ class EvaluatorData(Evaluator):
 
         self.source_file = os.path.join(path,matching_files[0])
 
-    def generate_results(self,database_file):
+    def evaluate(self,samples):
         """
-        Overwrites
+        Dosctring
         """
-        self.save_results(database_file,self.inputs,self.outputs)
+        response = self.outputs[self.idx_start:self.idx_end,:]
+        
+        return response
 
     def get_info(self):
         dim_in,names,data = load_results(self.source_file)
@@ -85,6 +87,14 @@ class EvaluatorData(Evaluator):
         range_in = np.stack((np.min(self.inputs,0),np.max(self.inputs,0))).T
 
         return range_in, dim_in, dim_out, n_constr
+
+    def get_samples(self,no_samples,no_new_samples):
+        self.idx_start = no_samples
+        self.idx_end = no_samples+no_new_samples
+
+        samples = self.inputs[self.idx_start:self.idx_end,:]
+
+        return samples
 
 class EvaluatorANSYS(Evaluator):
     """

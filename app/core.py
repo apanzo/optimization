@@ -90,7 +90,10 @@ class Surrogate:
         no_new_samples = determine_samples(self.no_samples,self.model.dim_in)
         
         # Obtain new samples
-        if self.no_samples == 0 or not settings["data"]["adaptive"]: ## So if non-adaptive sampling is used, adaptive must be set to None
+        
+        if isinstance(self.model.evaluator,EvaluatorData):
+            self.samples = self.model.evaluator.get_samples(self.no_samples,no_new_samples)
+        elif self.no_samples == 0 or not settings["data"]["adaptive"]: ## So if non-adaptive sampling is used, adaptive must be set to None
             self.samples = resample_static(no_new_samples,self.no_samples,self.model.range_in)
         else:
             self.samples = resample_adaptive(no_new_samples,self.surrogates,self.data)

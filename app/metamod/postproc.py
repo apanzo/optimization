@@ -36,9 +36,12 @@ def select_best_surrogate(surrogates):
 
 ##
 def check_convergence(metrics):
+    """
+    Need to add convergence if data is loaded and there is no more data to load
+    """
     print("###### Evaluating sample size convergence ######")
     trained = False
-
+##    breakpoint()
     direction = convergence_operator()
     threshold = settings["data"]["convergence_limit"]
     
