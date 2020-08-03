@@ -8,7 +8,7 @@ from time import sleep
 import numpy as np
 
 # Import custom packages
-from datamod.results import load_results,write_results
+from datamod.results import load_results, write_results
 from settings import load_json, settings
 
 class Evaluator:
@@ -26,7 +26,7 @@ class Evaluator:
 
 class EvaluatorBenchmark(Evaluator):
     """
-    Evaluate a benchmark problem on the given sample and write the results in a results finle.
+    Evaluate a benchmark problem on the given sample and write the results in a results file.
 
     Arguments:
         problem: problem object

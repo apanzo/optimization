@@ -9,14 +9,14 @@
  },
 
  "surrogate": {
- "surrogate": ["ann","kriging","rbf","load"],
+ "surrogate": ["ann","kriging","rbf","load",null],
  "validation": ["kfold","holdout","rlt"],
  "selection_metric": ["r2","mse","max_error","medae","mae"],
  "append_verification": [true,false]
  },
 
  "optimization": {
- "algorithm": ["default","nsga2","nsga3"],
+ "algorithm": ["default","nsga2","nsga3",null],
  "termination": ["default","f_tol","n_gen"],
  "constrained": [true,false],
  "error": ["max","mean"]

@@ -7,12 +7,13 @@ import numpy as np
 # Import custom packages
 from datamod import get_data, load_problem, scale
 from datamod.evaluator import EvaluatorBenchmark, EvaluatorANSYS, EvaluatorData
+from datamod.problems import Custom
 from datamod.results import make_data_file, make_response_files, append_verification_to_database
 from datamod.sampling import determine_samples, resample_static, resample_adaptive, complete_grid
 from metamod import train_surrogates, reload_info
 from metamod.deploy import get_partial_input
 from metamod.postproc import check_convergence, select_best_surrogate, verify_results
-from optimod import set_optimization, set_problem, solve_problem
+from optimod import set_optimization, solve_problem
 from settings import dump_json, dump_object, load_json, load_object, settings
 from visumod import plot_raw, vis_design_space, vis_objective_space, sample_size_convergence, vis_objective_space_pcp
 from visumod import compare_surrogate, correlation_heatmap, surrogate_response
@@ -78,7 +79,9 @@ class Surrogate:
         """
         Wrapper function to obtrain the new sample points.
 
-        Note: be careful with geometric, grows fast
+        Note:
+            - be careful with geometric, grows fast
+            - if non-adaptive sampling is used, adaptive must be set to None
         """
 
         # Track iteration number
@@ -93,7 +96,7 @@ class Surrogate:
         
         if isinstance(self.model.evaluator,EvaluatorData):
             self.samples = self.model.evaluator.get_samples(self.no_samples,no_new_samples)
-        elif self.no_samples == 0 or not settings["data"]["adaptive"]: ## So if non-adaptive sampling is used, adaptive must be set to None
+        elif self.no_samples == 0 or not settings["data"]["adaptive"]:
             self.samples = resample_static(no_new_samples,self.no_samples,self.model.range_in)
         else:
             self.samples = resample_adaptive(no_new_samples,self.surrogates,self.data)
@@ -129,10 +132,10 @@ class Surrogate:
         STUFFs
         """
         if verify:
-            self.verification = get_data(self.verification_file,self.model.range_in)
+            self.verification = get_data(self.verification_file)
         else:
             # Read database
-            self.data = get_data(self.file,self.model.range_in)
+            self.data = get_data(self.file)
             # Plot the input data
             plot_raw(self.data,self.sampling_iterations)
 
@@ -147,7 +150,7 @@ class Surrogate:
 
         # Select the best model
         self.surrogate = select_best_surrogate(self.surrogates)
-        self.surrogate.range_out = self.data.range_out
+##        self.surrogate.range_out = self.data.range_out
         self.surrogate.metric["max_iterations"] = self.sampling_iterations
 
         # Plot the surrogate response
@@ -186,7 +189,7 @@ class Surrogate:
         output = output - 1
 
         # Get response        
-        input_norm = get_partial_input(density,inputs,self.model.dim_in,self.data.norm_fact,**kwargs)
+        input_norm = get_partial_input(density,inputs,self.model.dim_in,self.data.input_abs_max,**kwargs)
         output_norm = self.surrogate.predict_values(input_norm)
 
         # Unormalize
@@ -240,14 +243,16 @@ class Optimization:
         self.algorithm, self.termination = set_optimization(model.n_obj)
         
         # Deactivate constrains if not set otherwise
-        if not settings["optimization"]["constrained"]:
+        if settings["optimization"]["constrained"]:
+            self.n_const = self.model.n_const
+        else:
             self.n_const = 0
 
         self.direct = not bool(settings["surrogate"]["surrogate"])
 
-    def optimize(self,surrogate):
+    def set_problem(self,surrogate):
         """
-        Wrapper function to perform optimization.
+        Wrapper function to set the problem.
 
         Notes: direct optimization does not normalize
         """
@@ -255,14 +260,23 @@ class Optimization:
 
         if self.direct:
             # Specify range
-            self.ranges = [np.array(settings["optimization"]["ranges"]),None]
+            self.range_in = np.array(settings["optimization"]["ranges"])
             self.function = self.model.evaluator.evaluate
         else:
             self.surrogate = surrogate
-            self.ranges = [self.model.range_in,self.surrogate.surrogate.range_out]
+            self.range_in = self.surrogate.data.range_in
             self.function = self.surrogate.surrogate.predict_values
-            
-        self.problem = set_problem(self.function,self.ranges,self.model.n_obj,self.model.n_const)
+
+        self.problem = Custom(self.function,self.range_in.T[0],self.range_in.T[1],self.model.n_obj,self.n_const)
+
+        if not self.direct:
+            self.problem.norm_in = self.surrogate.data.norm_in
+            self.problem.norm_out = self.surrogate.data.norm_out
+        
+    def optimize(self):
+        """
+        Wrapper function to perform optimization.
+        """
 
         self.res = solve_problem(self.problem,self.algorithm,self.termination,self.direct)
 
@@ -274,7 +288,7 @@ class Optimization:
             vis_objective_space(self.res.F,self.iterations)
             if self.model.n_obj > 1:
                 vis_objective_space_pcp(self.res.F,self.iterations)
-    
+
     def verify(self):
         """
         Wrapper function to verify the optimized solutions.
@@ -284,9 +298,10 @@ class Optimization:
             verificiation_idx = verify_results(self.res.X, self.surrogate)
 
             # Calculate error
-            response_F_all = self.surrogate.verification.response[:,:-self.problem.n_constr or None]
-            response_F = response_F_all[-len(verificiation_idx):,:]
-            self.error = np.abs((100*(response_F-self.res.F[verificiation_idx])/response_F))
+            response_F = self.surrogate.verification.response[:,:-self.problem.n_constr or None]
+            self.optimum_model = response_F[-len(verificiation_idx):,:]
+            self.optimum_surrogate = self.res.F[verificiation_idx]
+            self.error = np.abs((100*(self.optimum_model-self.optimum_surrogate)/self.optimum_model))
 
             # Evaluate selected measure
             measure = settings["optimization"]["error"]
@@ -311,4 +326,22 @@ class Optimization:
                 self.surrogate.append_verification()
 
         return
+
+    def report(self):
+        path = os.path.join(settings["folder"],"logs",f"optimizatoin_iteration_{self.iterations}.txt")
+
+        with open(path, "a") as file:
+            file.write("======= F ========\n")
+            np.savetxt(file,self.res.F,fmt='%.6g')
+            file.write("\n======= X ========\n")
+            np.savetxt(file,self.res.X,fmt='%.6g')
+            if not self.direct:
+                file.write("\n======= VERIFICATION ========\n")
+                stats = np.concatenate((self.optimum_model,self.optimum_surrogate),1)
+                np.savetxt(file,stats,fmt='%.6g')
+                file.write("\n======= ERROR ========\n")
+                np.savetxt(file,self.error,fmt='%.6g')
+            file.write("\n")
+            
         ##len([step["delta_f"] for step in model.res.algorithm.display.term.metrics])
+

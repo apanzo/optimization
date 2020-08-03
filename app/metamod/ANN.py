@@ -8,7 +8,8 @@ with the SMT Toolbox
 from collections import defaultdict
 from tabulate import tabulate
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+from packaging import version
+
 # Import pypi packages
 ##from kerastuner.tuners import RandomSearch, BayesianOptimization
 from kerastuner.engine.hyperparameters import HyperParameters
@@ -18,6 +19,7 @@ from smt.surrogate_models.surrogate_model import SurrogateModel
 from smt.utils.checks import check_2d_array
 from tensorflow import keras
 from tensorflow_model_optimization.sparsity import keras as sparsity
+import tensorflow as tf   
 
 # Import custom packages
 from settings import load_json, settings
@@ -353,3 +355,7 @@ class ANN(SurrogateModel):
         self.ny = yt.shape[1]
         kx = 0
         self.validation_points[name][kx] = [np.array(xt), np.array(yt)]
+
+# Turn off warnings
+if version.parse(tf.__version__) >= version.parse("2.2"):
+    tf.get_logger().setLevel('ERROR')

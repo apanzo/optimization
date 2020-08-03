@@ -7,6 +7,7 @@ The aim of the datamod package is to handle the data
 # Import pypi packages
 import numpy as np
 from pymoo.factory import get_problem
+from sklearn.preprocessing import normalize
 
 # Import custom packages
 from datamod.problems import problems
@@ -18,7 +19,7 @@ class get_data:
 
     """
     
-    def __init__(self,file,ranges):
+    def __init__(self,file):
         """
         Constructor method.
 
@@ -33,7 +34,7 @@ class get_data:
             response: sample response
             
         """
-        self.norm_fact = np.max(np.abs(ranges),1)
+        # Load results
         self.dim_in, self.col_names, data = load_results(file)
         if len(data.shape) == 1:
             data = np.atleast_2d(data)
@@ -42,11 +43,16 @@ class get_data:
         elif len(data.shape) > 2:
             raise Exception("Too many data dimensions")
         self.dim_out = data.shape[1]-self.dim_in
+
+        # Separate inputs and outputs
         self.coordinates = data[:,:self.dim_in]
         self.response = data[:,self.dim_in:]
-        self.input, _ = normalize(self.coordinates,self.norm_fact)
-        self.output, self.range_out = normalize(self.response)
 
+        # Normalize data
+        self.input, self.norm_in = normalize(self.coordinates, norm='max',axis=0,return_norm=True)
+        self.output, self.norm_out = normalize(self.response, norm='max',axis=0,return_norm=True)
+        self.range_in = get_range(self.input)
+##        self.range_out = get_range(self.output)
 
 def load_problem(name):
     """
@@ -79,30 +85,9 @@ def load_problem(name):
     
     return problem, range_in, dim_in, dim_out, n_constr
 
-def normalize(data,maxima=None):
-    """
-    Normalize data to [-1,1] range.
-
-    Arguments:
-        data: data to normalize
-
-    Returns:
-        data_norm: normalized data
-        ranges: normalization ranges
-        s
-    """
-
-    if maxima is None:
-        data_norm = data/np.max(np.abs(data),0)
-    else:
-        data_norm = data/maxima
-    ranges = np.stack((np.amin(data,0),np.amax(data,0)),1)
-    
-    return data_norm, ranges
-
 def scale(data,ranges):
     """
-    Scale data from [-1,1] range to desired range.
+    Scale data from [-1,1] range to original range.
 
     Arguments:
         data: data to scale
@@ -111,6 +96,13 @@ def scale(data,ranges):
     Returns:
         data_scale: scaled data
     """
-    data_scale = data*np.max(np.abs(ranges),1)
+    data_scale = data*ranges
     
     return data_scale
+
+def get_range(data):
+    lower = np.amin(data,0)
+    upper = np.amax(data,0)
+    ranges = np.stack((lower,upper),1)
+
+    return ranges

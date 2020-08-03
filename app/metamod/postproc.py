@@ -6,6 +6,7 @@ preprocessing stuff
 # Import native packages
 import operator
 from math import ceil
+import os
 
 # Import pypi packages
 import numpy as np
@@ -32,6 +33,16 @@ def select_best_surrogate(surrogates):
     best_surrogate.metric["variance"] = np.var(metrics)
     best_surrogate.metric["mean"] = np.mean(metrics)
 
+    path = os.path.join(settings["folder"],"logs","surrogate_CV.txt")
+
+    with open(path, "a") as file:
+        np.savetxt(file,metrics,newline=" ",fmt='%.5f')
+        file.write("\t")
+        file.write(str(select_best))
+        file.write("\t")
+        file.write("%.5f"%metrics[select_best])
+        file.write("\n")    
+        
     return best_surrogate
 
 ##

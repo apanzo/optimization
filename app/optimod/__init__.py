@@ -15,7 +15,7 @@ from pymoo.optimize import minimize
 
 # Import custom packages
 from datamod import scale
-from datamod.problems import Custom
+
 from optimod.termination import default_termination
 from settings import load_json, settings
 
@@ -36,20 +36,18 @@ def solve_problem(problem,algorithm,termination,direct):
         * save_history will work with ANN surrogate from Tensorflow only if line 290 in site-packages\pymoo\model\algorithm is changed from deepcopy to copy
         * optional seed not implemented
     """
-    res_nor = minimize(problem,
-                   algorithm,
-                   termination,
-##                   save_history=True,
-                   verbose=True)
 
-    if not direct:
-        if res_nor.F is not None:
-            # Unnormalize the results
-            res = unnormalize_res(res_nor,problem.ranges)
+    res_norm = minimize(problem,algorithm,termination,verbose=True)
+
+    # Unnormalize the results
+    if direct:
+        res = res_norm
+    else:
+        if res_norm.F is not None:
+            res = unnormalize_res(res_norm,problem.norm_in,problem.norm_out)
         else:
             res = None
-    else:
-        res = res_nor
+
     return res
 
 def set_optimization(no_obj):
@@ -93,7 +91,7 @@ def set_optimization(no_obj):
         algortihm_args["n_offsprings"] = setup["n_offsprings"]  
     if "pop_size" in setup:
         algortihm_args["pop_size"] = setup["pop_size"]
-        
+
     alg = get_algorithm(name,eliminate_duplicates=True,**algortihm_args)
     
     # Get termination criterion
@@ -105,10 +103,10 @@ def set_optimization(no_obj):
         term = default_termination(no_obj,setup_term)
     else:
         term = get_termination(termination, *setup["termination_val"])
-    
+
     return alg, term
 
-def unnormalize_res(res,ranges):
+def unnormalize_res(res,norm_in,norm_out):
     """
     Unnormliazes results.
 
@@ -125,35 +123,10 @@ def unnormalize_res(res,ranges):
     res.X_norm = res.X
     res.F_norm = res.F
 
-    res.X = scale(np.atleast_2d(res.X),ranges[0])
-    res.F = scale(np.atleast_2d(res.F),ranges[1][:res.F.shape[-1],:]) # slicing to exclude constraints
+    res.X = scale(np.atleast_2d(res.X),norm_in)
+    res.F = scale(np.atleast_2d(res.F),norm_out[:res.F.shape[-1]]) # slicing to exclude constraints
 
     return res
-
-def set_problem(function,ranges,n_obj,n_constr):
-    """
-    define the problem from Custom class.
-
-    Arguments:
-        surrogate: trained surrogate response
-        ranges: ranges of the problem
-        n_constr: number of constrains
-
-    Returns:
-        prob: problem object
-
-    Notes:
-        Assumes a [-1,1] range if not specified
-    """
-    n_var = ranges[0].shape[0]
-    if ranges[1] is None:
-        ranges = np.array(ranges).T
-        prob = Custom(function,ranges[0].T[0],ranges[0].T[1],n_obj,n_constr)
-    else:
-        prob = Custom(function,[-1]*n_var,[1]*n_var,n_obj,n_constr)
-        prob.ranges = ranges
-    
-    return prob
 
 def get_operator(name,setup):
     """
@@ -161,9 +134,9 @@ def get_operator(name,setup):
     """
     
     if name == "mutation":
-        operator = get_mutation(**setup[operator])
+        operator = get_mutation(**setup["operators"][name])
     elif name == "crossover":
-        operator = get_crossover(**setup[operator])
+        operator = get_crossover(**setup["operators"][name])
     else:
         raise Exception("Invalid operator requested")
 

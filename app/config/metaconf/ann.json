@@ -1,22 +1,28 @@
 {
- "no_layers": 10,
- "no_neurons": 7,
+ "no_layers": 8,
+ "no_neurons": 40,
  "activation": "swish",
- "no_epochs": 1000,
  "init": "he_normal",
  "bias_init": "zeros",
  "kernel_regularizer": "l1",
  "kernel_regularizer_param": 0.000,
+
  "prune": false,
  "sparsity": 0.50,
  "pruning_frequency": 20,
+
  "optimizer": "adam",
  "learning_rate": 0.01,
+ "no_epochs": 1000,
+
  "loss": "mse",
+
  "stopping": true,
  "stopping_delta": 0.0001,
  "stopping_patience": 50,
+
  "tensorboard": false,
+
  "tuner": "bayesian",
  "max_trials": 10,
  "executions_per_trial": 1,

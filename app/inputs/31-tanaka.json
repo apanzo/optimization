@@ -1,0 +1,19 @@
+{
+ "data": {
+ "problem": "tnk",
+ "evaluator": "benchmark"
+ },
+
+ "surrogate": {
+ "surrogate": null
+ },
+
+ "optimization": {
+ "algorithm": "default",
+ "termination": "default",
+ "constrained": true,
+ "error_limit": 5,
+ "error": "max",
+ "ranges": [[0,3.14],[0,3.14]]
+ }
+}

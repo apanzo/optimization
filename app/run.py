@@ -6,15 +6,8 @@ Notes:
     * keras tuner logs are not stored in data due to max path length issues in kerastuner
 """
 # Import custom packages
-from core import Model,Surrogate,Optimization
-from settings import settings,update_settings
-
-##import sys
-##import warnings
-##
-##if not sys.warnoptions:
-##    warnings.simplefilter("ignore")
-
+from core import Model, Surrogate, Optimization
+from settings import settings, update_settings
 
 def train_surrogate():
     """
@@ -39,16 +32,20 @@ def optimize(surrogate):
     Docstring.
     """
     # Solve the optimiaztion problem
-    optimization.optimize(surrogate)
+    optimization.set_problem(surrogate)
+    optimization.optimize()
 
     # Verify whether the optimization result agrees with original model
-    if build_surrogate and not (load_surrogate or from_data):
+    if build_surrogate and not (load_surrogate or train_from_data):
         optimization.verify()
     else:
         optimization.converged = True
+
+    # Write
+    optimization.report()
         
 # Choose problem to solve
-problem_id = 24
+problem_id = 64
 
 # Initialize the settings
 update_settings(problem_id)
@@ -59,32 +56,43 @@ model = Model()
 # Check computation setup
 build_surrogate = bool(settings["surrogate"]["surrogate"])
 load_surrogate = settings["surrogate"]["surrogate"] == "load"
-from_data = settings["data"]["evaluator"] == "data"
+train_from_data = settings["data"]["evaluator"] == "data"
 perform_optimization = bool(settings["optimization"]["algorithm"])
+
+# Initialize
+if build_surrogate:
+    surrogate = Surrogate(model)
+if perform_optimization:
+    optimization = Optimization(model)
+
 
 # Perform computation
 # Surrogate only
 if build_surrogate and not perform_optimization:
-    surrogate = Surrogate(model)
     train_surrogate()
+
 # Direct optimization
 elif perform_optimization and not build_surrogate:
-    optimization = Optimization(model)
     optimize(None)
+
 # Surrogate based optimization
 elif build_surrogate and perform_optimization:
+
     # Using trained surrogate
-    surrogate = Surrogate(model)
     if load_surrogate:
         reload_surrogate()
+
     # Make surrogate and then optimize
     else:
         train_surrogate()        
-    optimization = Optimization(model)
+
+    # Optimize
     while not optimization.converged:
         if not surrogate.trained:
             train_surrogate()
         optimize(surrogate)    
+
+# Otherwise
 else:
     print("There is nothing to perform within this model")
 
