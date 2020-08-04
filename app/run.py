@@ -7,7 +7,7 @@ Notes:
 """
 # Import custom packages
 from core import Model, Surrogate, Optimization
-from settings import settings, update_settings
+from core.settings import settings, update_settings
 
 def train_surrogate():
     """
@@ -16,10 +16,10 @@ def train_surrogate():
     # Train surrogate
     while not surrogate.trained:
         surrogate.sample()
-        surrogate.evaluate()
+        surrogate.evaluate_samples()
         surrogate.load_results()
         surrogate.train()
-        surrogate.surrogate_convergence()
+        surrogate.check_convergence()
 
 def reload_surrogate():
     """
@@ -45,7 +45,7 @@ def optimize(surrogate):
     optimization.report()
         
 # Choose problem to solve
-problem_id = 64
+problem_id = 93
 
 # Initialize the settings
 update_settings(problem_id)

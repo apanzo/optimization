@@ -17,34 +17,30 @@ from sklearn.metrics import median_absolute_error as MedAE
 from sklearn.metrics import r2_score as R2
 
 # Import custom packages
-from settings import settings
+from core.settings import settings
 
 # Functions
-def select_best_surrogate(surrogates):
+def surrogate_performance(surrogates):
+    criterion = settings["data"]["convergence"]
+    metrics = np.array([model.metric[criterion] for model in surrogates])
 
-    metrics = np.array([sur.metric[settings["surrogate"]["selection_metric"]] for sur in surrogates])
-
-    argbest = maximize_minimize()
-    select_best = argbest(metrics)
-
-    best_surrogate = surrogates[select_best]
-    
     # Store the metric for sample size determination
-    best_surrogate.metric["variance"] = np.var(metrics)
-    best_surrogate.metric["mean"] = np.mean(metrics)
+    variance = np.var(metrics)
+    mean = np.mean(metrics)
 
+    # Output
     path = os.path.join(settings["folder"],"logs","surrogate_CV.txt")
 
     with open(path, "a") as file:
         np.savetxt(file,metrics,newline=" ",fmt='%.5f')
         file.write("\t")
-        file.write(str(select_best))
+        file.write("mean")
         file.write("\t")
-        file.write("%.5f"%metrics[select_best])
+        file.write("%.5f"%mean)
         file.write("\n")    
-        
-    return best_surrogate
 
+    return {"mean":mean,"variance":variance}
+    
 ##
 def check_convergence(metrics):
     """
@@ -87,7 +83,7 @@ def verify_results(results,surrogate):
     surrogate.samples = results[idx]
     
     # Evaluate the samples and load the results
-    surrogate.evaluate(verify=True) 
+    surrogate.evaluate_samples(verify=True) 
     surrogate.load_results(verify=True)
 
     return idx
@@ -98,16 +94,6 @@ def evaluate_metrics(inputs,outputs,predict,requested):
         metrics[measure] = defined_metrics[measure](outputs,predict(inputs))
 
     return metrics
-
-def maximize_minimize():
-    if settings["surrogate"]["selection_metric"] in ["mae","mse","medae","max_error"]:
-        target = np.argmin
-    elif settings["surrogate"]["selection_metric"] in ["r2"]:
-        target = np.argmax
-    else:
-        raise Exception("Error should have been caught on initialization")
-
-    return target
 
 def convergence_operator():
     if settings["data"]["convergence"] in ["mae","mse","medae","max_error"]:

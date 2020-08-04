@@ -184,5 +184,5 @@ def ask_to_overwrite(path,id_current,text):
         raise Exception(f"ID {id_current} already defined")
 
 # Initialize setting with the path to the root folder
-settings = {"root": os.path.split(os.path.split(__file__)[0])[0]}
+settings = {"root": os.path.split(__file__.split("app")[0])[0]}
 

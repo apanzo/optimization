@@ -8,8 +8,10 @@ from time import sleep
 import numpy as np
 
 # Import custom packages
+from core.settings import load_json, settings
+from datamod import load_problem
 from datamod.results import load_results, write_results
-from settings import load_json, settings
+from metamod import reload_info
 
 class Evaluator:
     """
@@ -41,10 +43,14 @@ class EvaluatorBenchmark(Evaluator):
         * return values is wrongly implemented in pymoo
     """
 
-    def __init__(self,problem,n_constr):
+    def __init__(self):
         super().__init__()
+
+    def get_info(self):
+        self.problem, range_in, dim_in, dim_out, n_constr = load_problem(settings["data"]["problem"])
         self.results = ["F","G"] if n_constr else ["F"]
-        self.problem = problem
+        
+        return range_in, dim_in, dim_out, n_constr
 
     def evaluate(self,samples):
         # Evaluate
@@ -224,3 +230,20 @@ class EvaluatorANSYS(Evaluator):
         response = data[:,columns]
 
         return response
+
+
+class RealoadNotAnEvaluator(Evaluator):
+    """
+    Just reload
+
+    Notes:
+        Just a programming convenience, doesnt evaluate anything in fact
+    """
+
+    def __init__(self):
+        pass
+
+    def get_info(self):
+        range_in, dim_in, dim_out, n_constr = reload_info()
+        
+        return range_in, dim_in, dim_out, n_constr

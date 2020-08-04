@@ -22,7 +22,7 @@ from tensorflow_model_optimization.sparsity import keras as sparsity
 import tensorflow as tf   
 
 # Import custom packages
-from settings import load_json, settings
+from core.settings import load_json, settings
 from .kerastuner.bayesian_cv import BayesianOptimizationCV
 from .kerastuner.randomsearch_cv import RandomSearchCV
 from visumod import plot_training_history
@@ -267,17 +267,24 @@ class ANN(SurrogateModel):
         
         # Load data and callbacks
         train_in, train_out = self.training_points[None][0]
-        test_in, test_out = self.validation_points[None][0]
         callbacks = self.get_callbacks()
 
         # Train the ANN
-        histor = self.model.fit(train_in, train_out, batch_size = train_in.shape[0],
-            epochs=self["no_epochs"], validation_data = (test_in, test_out), verbose=0, shuffle=True, callbacks=callbacks)
+        if self.CV:
+            test_in, test_out = self.validation_points[None][0]
+            histor = self.model.fit(train_in, train_out, batch_size = train_in.shape[0],
+                epochs=self["no_epochs"], validation_data = (test_in, test_out), verbose=0, shuffle=True, callbacks=callbacks)
+            plot_training_history(histor,train_in,train_out,test_in,test_out,self.model.predict,self.progress)
+        else:
+            callbacks = [call for call in callbacks if not isinstance(call,keras.callbacks.EarlyStopping)]
+            histor = self.model.fit(train_in, train_out, batch_size = train_in.shape[0],
+                epochs=settings["surrogate"]["early_stop"], verbose=0, shuffle=True, callbacks=callbacks)
+
+        self._is_trained = True
+        self.early_stop = histor.epoch[-1]+1
 
         # Evaluate the model
 ##        self.validation_metric = self.evaluation(histor.history)
-        self._is_trained = True
-        plot_training_history(histor,train_in,train_out,test_in,test_out,self.model.predict,self.progress)
        
     def evaluation(self,history):
         """

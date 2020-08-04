@@ -5,7 +5,7 @@ import os
 import numpy as np
 
 # Import custom packages
-from settings import settings
+from core.settings import settings
 
 def make_response_files(folder,dim_in,n_obj,n_constr):
     files = []

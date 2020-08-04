@@ -1,0 +1,29 @@
+{
+ "data": {
+ "problem": "tnk",
+ "evaluator": "benchmark",
+ "sampling": "halton",
+ "default_sample_coef": 1000,
+ "resampling": "geometric",
+ "resampling_param": 1.2,
+ "adaptive": null,
+ "convergence": "r2",
+ "convergence_relative": false,
+ "convergence_limit": 0.9
+ },
+
+ "surrogate": {
+ "surrogate": "rbf",
+ "validation": "kfold",
+ "validation_param": 5,
+ "append_verification": false
+ },
+
+ "optimization": {
+ "algorithm": "default",
+ "termination": "default",
+ "constrained": true,
+ "error_limit": 5,
+ "error": "max"
+ }
+}

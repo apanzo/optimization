@@ -17,7 +17,7 @@ from pymoo.optimize import minimize
 from datamod import scale
 
 from optimod.termination import default_termination
-from settings import load_json, settings
+from core.settings import load_json, settings
 
 def solve_problem(problem,algorithm,termination,direct):
     """

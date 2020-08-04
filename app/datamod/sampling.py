@@ -17,7 +17,7 @@ from .external.halton import halton
 
 # Import custom packages
 from datamod import scale
-from settings import load_json, settings
+from core.settings import load_json, settings
 
 def determine_samples(no_samples,dim_in):
     if no_samples == 0:

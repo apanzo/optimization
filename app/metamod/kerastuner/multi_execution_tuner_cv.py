@@ -29,7 +29,7 @@ from tensorflow import keras
 
 ###
 from metamod.preproc import set_validation
-from settings import settings
+from core.settings import settings
 from visumod import plot_training_history
 
 class MultiExecutionTunerCV(tuner_module.Tuner):

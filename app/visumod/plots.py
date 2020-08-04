@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from pymoo.factory import get_visualization
 
 # Import custom packages
-from settings import settings
+from core.settings import settings
 
 def scatter_pymoo(data,name,label=None,**kwargs):
     """

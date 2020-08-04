@@ -81,7 +81,7 @@ def compare_surrogate(inputs,outputs,predict,iteration):
 ##    plt.ylabel("Surrogate prediction")
     scatter(data_all,f"iteration_{iteration}_surrogate",compare=True)
 
-def sample_size_convergence(metrics,name):
+def sample_size_convergence(metrics):
     """
     Plot the sample size convergence.
 
@@ -89,7 +89,7 @@ def sample_size_convergence(metrics,name):
         model: model object
         
     """
-    curve(metrics,f"ssd_metric_{name}")
+    curve(metrics["values"],f"ssd_metric_{metrics['name']}")
 
 def correlation_heatmap(predict,ranges):
     x = sample("grid",1000,ranges.shape[0])
