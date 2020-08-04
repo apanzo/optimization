@@ -24,6 +24,6 @@
  "termination": "default",
  "constrained": true,
  "error_limit": 5,
- "error": "max"
+ "error": "mean"
  }
 }

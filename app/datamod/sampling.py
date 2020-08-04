@@ -163,8 +163,6 @@ class Halton(SamplingMethod):
             raise Exception("Halton sampling performs poor for no_dim > 8")
 
     def _initialize(self):
-##        self.options.declare("weights", values=[None], types=[list, np.ndarray])
-##        self.options.declare("clip", types=bool)
         pass
 
     def _compute(self, nt):

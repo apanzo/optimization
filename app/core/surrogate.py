@@ -8,12 +8,11 @@ import numpy as np
 from core.settings import dump_json, dump_object, load_json, load_object, settings
 from datamod import get_data, scale
 from datamod.results import make_response_files, append_verification_to_database
-from datamod.sampling import determine_samples, resample_static, resample_adaptive, complete_grid
-from metamod import train_surrogates
+from datamod.sampling import determine_samples, resample_static, resample_adaptive
+from metamod import cross_validate, optimize_hyperparameters, train_surrogate
 from metamod.deploy import get_partial_input
-from metamod.postproc import check_convergence, surrogate_performance
-from visumod import plot_raw, sample_size_convergence
-from visumod import compare_surrogate, correlation_heatmap, surrogate_response
+from metamod.performance import check_convergence, retrieve_metric
+from visumod import compare_surrogate, correlation_heatmap, plot_raw, sample_size_convergence, surrogate_response
 
 class Surrogate:
     
@@ -24,13 +23,14 @@ class Surrogate:
 
         # Training status
         self.trained = False
+        self.hp_optimized = False
         
         # Initialize sampling
         self.no_samples = 0
         self.sampling_iterations = 0
 
         # Initialize metrics
-        self.surrogate_metrics = {"name":settings["data"]["convergence"],"values":[]}
+        self.convergence_metric = {"name":settings["data"]["convergence"],"values":[]}
 
         # Make response files
         self.file, self.verification_file = make_response_files(settings["folder"],self.model.dim_in,self.model.n_obj,self.model.n_const)
@@ -74,11 +74,13 @@ class Surrogate:
 
         STUFF
         """
+        # Select target file
         if verify:
             file = self.verification_file
         else:
             file = self.file
 
+        # Evaluate the samples
         self.model.evaluator.generate_results(self.samples,file,self.sampling_iterations)
 
     def append_verification(self):
@@ -110,38 +112,40 @@ class Surrogate:
 
         STUFF
         """
+        if not self.hp_optimized:
+            if settings["surrogate"]["surrogate"] == "name" and iteration == 1:
+                self.hp_optimized = optimize_hyperparameters(self.data,self.sampling_iterations)
+            else:
+                self.hp_optimized = True
+        
         # Train the surrogates
-        self.surrogates = train_surrogates(self.data,self.sampling_iterations)
+        self.surrogates = cross_validate(self.data,self.sampling_iterations)
 
         # Select the best model
-        from metamod import train_all
-        self.surrogate = train_all(self.data)
+        self.surrogate = train_surrogate(self.data)
 
         # Plot the surrogate response
         compare_surrogate(self.data.input,self.data.output,self.surrogate.predict_values,self.sampling_iterations)
-            
+
     def check_convergence(self):
         # Determine metrics
-        self.surrogate.metric = surrogate_performance(self.surrogates)
+        self.surrogate.metric = retrieve_metric(self.surrogates)
 
         # Append convergence metric
-        self.surrogate_metrics["values"].append(self.surrogate.metric["mean"])
+        self.convergence_metric["values"].append(self.surrogate.metric["mean"])
 
         # Check convergence
-        self.trained = check_convergence(self.surrogate_metrics["values"])
+        self.trained = check_convergence(self.convergence_metric["values"])
+
+    def report(self):
+        sample_size_convergence(self.convergence_metric)
+        dump_object("stats",self.convergence_metric["values"],self.sampling_iterations)
 
         if self.trained:
             print("Surrogate converged")
             # Plot the sample size convergence
-            sample_size_convergence(self.surrogate_metrics)
-            correlation_heatmap(self.surrogate.predict_values,self.model.range_in)
+            correlation_heatmap(self.surrogate.predict_values,self.model.dim_in)
 
-        dump_object("stats",self.surrogate_metrics["values"],self.sampling_iterations)
-
-##    def response_grid(self):
-##        self.grid = complete_grid(10,self.model.dim_in)
-##        self.response = self.surrogate.predict_values(self.grid)
-        
     def plot_response(self,inputs,output,density=10,**kwargs):
         if len(inputs) > 2:
             raise Exception("Too many input dimensions requested for a plot")

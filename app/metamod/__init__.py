@@ -12,8 +12,8 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 from smt.surrogate_models import RBF, KRG
 
 # Import custom packages
-from metamod.postproc import evaluate_metrics
-from metamod.preproc import set_validation
+from metamod.performance import evaluate_metrics
+from metamod.validation import set_validation
 from core.settings import load_json, settings
 # ANN is imported in set_surrogate only if it is need
 from metamod.ANN_pt import ANN_pt
@@ -22,7 +22,19 @@ from metamod.ANN_pt import ANN_pt
 ##hllDll = ctypes.WinDLL("C:\\Users\\antonin.panzo\\Downloads\\cudart64\\cudart64_100.dll")
 
 
-def train_surrogates(data,iteration):
+def optimize_hyperparameters(data,iteration):
+    """
+    Train the defined surrogate on the provided data.
+    """
+    name = settings["surrogate"]["surrogate"]
+
+    model = set_surrogate(name,data.dim_in,data.dim_out)
+##    model.progress = [iteration,1]
+    model.pretrain(data.input,data.output,iteration)
+
+    return True
+
+def cross_validate(data,iteration):
     """
     Train the defined surrogate on the provided data.
 
@@ -50,44 +62,38 @@ def train_surrogates(data,iteration):
 
     print(f"###### Training using {name} on {len(data.input)} examples ######")
 
-    # Pretrain ANN
-    if name == "ann" and iteration == 1:
-        pretrain = set_surrogate(name,data.dim_in,data.dim_out)
-        pretrain.progress = [iteration,1]
-        pretrain.pretrain(data.input,data.output,iteration)
-
     # Train
     for idx, (train, test) in enumerate(split.split(data.input)):
         print(f"### Training model {idx+1}/{no_splits} ###")
-        interp = set_surrogate(name,data.dim_in,data.dim_out)
-        interp.train_in, interp.train_out = data.input[train], data.output[train]
-        interp.test_in, interp.test_out = data.input[test], data.output[test]
-        interp.set_training_values(interp.train_in,interp.train_out)
+        model = set_surrogate(name,data.dim_in,data.dim_out)
+        model.train_in, model.train_out = data.input[train], data.output[train]
+        model.test_in, model.test_out = data.input[test], data.output[test]
+        model.set_training_values(model.train_in,model.train_out)
         if name == "ann" or name == "ann_pt":
-            interp.set_validation_values(interp.test_in,interp.test_out)
-            interp.progress = [iteration,idx+1,no_splits]
-            interp.CV = True
-        interp.train()
-##        interp.range_out = data.range_out
-        interp.metric = evaluate_metrics(interp.test_in,interp.test_out,interp.predict_values,["mae","r2"])
-        interp.metric["max_iterations"] = iteration
-        surrogates.append(interp)
+            model.set_validation_values(model.test_in,model.test_out)
+            model.progress = [iteration,idx+1,no_splits]
+            model.CV = True
+        model.train()
+##        model.range_out = data.range_out
+        model.metric = evaluate_metrics(model.test_in,model.test_out,model.predict_values,["mae","r2"])
+        model.metric["max_iterations"] = iteration
+        surrogates.append(model)
 
     if name == "ann" or name == "ann_pt":
         settings["surrogate"]["early_stop"] = int(np.mean([ann.early_stop for ann in surrogates]))
 
     return surrogates
 
-def train_all(data):
+def train_surrogate(data):
     name = settings["surrogate"]["surrogate"]
 
-    interp = set_surrogate(name,data.dim_in,data.dim_out)
-    interp.set_training_values(data.input,data.output)
+    model = set_surrogate(name,data.dim_in,data.dim_out)
+    model.set_training_values(data.input,data.output)
     if name == "ann" or name == "ann_pt":
-        interp.CV = False
-    interp.train()
+        model.CV = False
+    model.train()
 
-    return interp
+    return model
 
 def set_surrogate(name,dim_in,dim_out):
     """
@@ -108,7 +114,7 @@ def set_surrogate(name,dim_in,dim_out):
     # Obtain default settings
     setup = load_json(os.path.join(settings["root"],"app","config","metaconf",name))
 
-    # Optionaly update with settinf specified by the input file
+    # Optionaly update with setting specified by the input file
     if "setup" in settings["surrogate"].keys():
         setup.update(settings["surrogate"]["setup"])
 

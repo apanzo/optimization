@@ -28,8 +28,8 @@ import os
 from tensorflow import keras
 
 ###
-from metamod.preproc import set_validation
 from core.settings import settings
+from metamod.validation import set_validation
 from visumod import plot_training_history
 
 class MultiExecutionTunerCV(tuner_module.Tuner):

@@ -20,6 +20,7 @@ def train_surrogate():
         surrogate.load_results()
         surrogate.train()
         surrogate.check_convergence()
+        surrogate.report()
 
 def reload_surrogate():
     """
@@ -104,6 +105,3 @@ if build_surrogate and not load_surrogate:
 ##    surrogate.plot_response(inputs=[3],output=1,constants=[1,1])
 
 input("Ended")
-
-
-

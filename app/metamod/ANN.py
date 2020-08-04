@@ -154,9 +154,9 @@ class ANN(SurrogateModel):
         * Only constant sparsity active
         """
         if True:
-            model = sparsity.prune_low_magnitude(model, sparsity.ConstantSparsity(target_sparsity, 0, frequency=10))
+            model = sparsity.prune_low_magnitude(model,sparsity.ConstantSparsity(target_sparsity,0,frequency=10))
         else:
-            model = sparsity.prune_low_magnitude(model, sparsity.PolynomialSparsity(0,target_sparsity, 0, self["epochs"], frequency=10))
+            model = sparsity.prune_low_magnitude(model,sparsity.PolynomialSparsity(0,target_sparsity,0,self["epochs"], frequency=10))
 
         return model
 
@@ -176,13 +176,17 @@ class ANN(SurrogateModel):
             callbacks.append(keras.callbacks.TensorBoard(log_dir=os.path.join(self.log_dir,"tensorboard"), histogram_freq=20))
         if self["stopping"]:
             if True:
-                callbacks.append(keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=self["stopping_delta"], patience=self["stopping_patience"], verbose=1,restore_best_weights=True))
+                callbacks.append(keras.callbacks.EarlyStopping(monitor='val_loss',min_delta=self["stopping_delta"],patience=self["stopping_patience"],verbose=1,restore_best_weights=True))
             else:
-                callbacks.append(keras.callbacks.MyStopping(monitor='val_loss', target=5, patience=stopping_patience, verbose=1,restore_best_weights=True))
+                callbacks.append(keras.callbacks.MyStopping(monitor='val_loss',target=5,patience=stopping_patience,verbose=1,restore_best_weights=True))
 
         return callbacks
 
     def pretrain(self,inputs,outputs,iteration):
+        """
+        Notes:
+            - optimization objective val_loss
+        """
         print("### Performing Keras Tuner optimization of the ANN###")
         # Select hyperparameters to tune
         hp = HyperParameters()
@@ -213,12 +217,11 @@ class ANN(SurrogateModel):
         max_trials = self["max_trials"]*no_hps
         path_tf_format = "logs"
 
-        tuner_args = {"objective":"val_mae","hyperparameters":hp,"max_trials":max_trials,
+        tuner_args = {"objective":"val_loss","hyperparameters":hp,"max_trials":max_trials,
                       "executions_per_trial":self["executions_per_trial"],"directory":path_tf_format,
                       "overwrite":True,"tune_new_entries":False,"project_name":"opt"}
 
         if self["tuner"] == "random" or no_hps==0:
-##            tuner_args["objective"] = "loss"
             tuner = RandomSearchCV(self.build_hypermodel,**tuner_args)            
         elif self["tuner"] == "bayesian":
             tuner = BayesianOptimizationCV(self.build_hypermodel,num_initial_points=3*no_hps,**tuner_args)
@@ -228,7 +231,8 @@ class ANN(SurrogateModel):
         callbacks = [call for call in callbacks_all if not isinstance(call,keras.callbacks.EarlyStopping)]
 
         # Optimize
-        tuner.search(inputs,outputs, epochs=self["tuner_epochs"], verbose=0, shuffle=True, callbacks=callbacks, iteration_no=iteration)
+        tuner.search(inputs,outputs,epochs=self["tuner_epochs"],verbose=0,shuffle=True,
+                     callbacks=callbacks,iteration_no=iteration)
 
         # Retrieve and save best model
         best_hp = tuner.get_best_hyperparameters()[0]
@@ -286,23 +290,23 @@ class ANN(SurrogateModel):
         # Evaluate the model
 ##        self.validation_metric = self.evaluation(histor.history)
        
-    def evaluation(self,history):
-        """
-        Evaluate the generalization error.
-
-        Returns:
-            mse: mean squared error
-        """
-        breakpoint()
-        mse = history["val_mse"]
-        rmse = history["val_root_mean_squared_error"]
-        mae = history['val_mae']
-        print(f'MSE: {mse:.3f}, RMSE: {rmse:.3f}')
-        print(f"MAE: {mae:.3f}")
-        stats = [{"MSE":mse,"RMSE":rmse,"MAE":mae}]
-        self.write_stats(stats,"ann_training_stats")
-        
-        return mse
+##    def evaluation(self,history):
+##        """
+##        Evaluate the generalization error.
+##
+##        Returns:
+##            mse: mean squared error
+##        """
+##        breakpoint()
+##        mse = history["val_mse"]
+##        rmse = history["val_root_mean_squared_error"]
+##        mae = history['val_mae']
+##        print(f'MSE: {mse:.3f}, RMSE: {rmse:.3f}')
+##        print(f"MAE: {mae:.3f}")
+##        stats = [{"MSE":mse,"RMSE":rmse,"MAE":mae}]
+##        self.write_stats(stats,"ann_training_stats")
+##        
+##        return mse
 
     def _predict_values(self, x):
         """

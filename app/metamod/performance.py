@@ -20,7 +20,7 @@ from sklearn.metrics import r2_score as R2
 from core.settings import settings
 
 # Functions
-def surrogate_performance(surrogates):
+def retrieve_metric(surrogates):
     criterion = settings["data"]["convergence"]
     metrics = np.array([model.metric[criterion] for model in surrogates])
 
@@ -41,14 +41,14 @@ def surrogate_performance(surrogates):
 
     return {"mean":mean,"variance":variance}
     
-##
 def check_convergence(metrics):
     """
-    Need to add convergence if data is loaded and there is no more data to load
+
+    Notes:
+    - Need to add convergence if data is loaded and there is no more data to load
     """
     print("###### Evaluating sample size convergence ######")
     trained = False
-##    breakpoint()
     direction = convergence_operator()
     threshold = settings["data"]["convergence_limit"]
     
@@ -65,7 +65,6 @@ def check_convergence(metrics):
     else:
        if direction(metrics[-1],threshold):
                 trained = True
-##    breakpoint()
 
     print(f"Sample size convergence metric: {settings['data']['convergence']} - {metrics[-1]}")
 

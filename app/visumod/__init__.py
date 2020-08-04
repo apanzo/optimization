@@ -7,6 +7,7 @@ visual - scatter 2D/3D, curve, surface tri (not quad)
 # Import pypi packages
 import numpy as np
 
+# Import custom packages
 from datamod.sampling import sample
 from visumod.plots import scatter,scatter_pymoo,curve,heatmap,pcp,surface_pymoo,learning_curves
 
@@ -91,8 +92,8 @@ def sample_size_convergence(metrics):
     """
     curve(metrics["values"],f"ssd_metric_{metrics['name']}")
 
-def correlation_heatmap(predict,ranges):
-    x = sample("grid",1000,ranges.shape[0])
+def correlation_heatmap(predict,dim_in):
+    x = sample("grid",1000,dim_in)
     y = predict(x)
     data = np.concatenate((x,y),1)
     cor = np.corrcoef(data,rowvar=False)

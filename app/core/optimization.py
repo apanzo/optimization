@@ -7,7 +7,7 @@ import numpy as np
 # Import custom packages
 from core.settings import settings
 from datamod.problems import Custom
-from metamod.postproc import verify_results
+from metamod.performance import verify_results
 from optimod import set_optimization, solve_problem
 from visumod import vis_design_space, vis_objective_space, vis_objective_space_pcp
 
@@ -63,14 +63,17 @@ class Optimization:
 
         self.res = solve_problem(self.problem,self.algorithm,self.termination,self.direct)
 
-        if self.res is not None: 
-            # Plot the optimization result in design space
-            vis_design_space(self.res.X,self.iterations)
-                
-            # Plot the optimization result in objective space
-            vis_objective_space(self.res.F,self.iterations)
-            if self.model.n_obj > 1:
-                vis_objective_space_pcp(self.res.F,self.iterations)
+        if self.res is not None:
+            self.plot_results()
+
+    def plot_results(self):
+        # Plot the optimization result in design space
+        vis_design_space(self.res.X,self.iterations)
+            
+        # Plot the optimization result in objective space
+        vis_objective_space(self.res.F,self.iterations)
+        if self.model.n_obj > 1:
+            vis_objective_space_pcp(self.res.F,self.iterations)
 
     def verify(self):
         """
@@ -91,24 +94,23 @@ class Optimization:
             if measure == "max":
                 self.error_measure = np.max(self.error)
             elif measure == "mean":
-                self.error_measure = np.mean(self.error,0)
+                self.error_measure = np.max(np.mean(self.error,0))
 
             print(f"Optimization {measure} percent error: {self.error_measure:.2f}")
+
+            self.converged = self.error_measure <= settings["optimization"]["error_limit"]
+
+        else:
+            self.converged = False
             
-            if self.error_measure <= settings["optimization"]["error_limit"]:
-                self.converged = True
-                print("\n############ Optimization finished ############")
-                print(f"Total number of samples: {self.surrogate.no_samples:.0f}")
-
-                return
-
-        # If the model has not converged yet
-        self.surrogate.trained = False
-        self.iterations += 1
-        if settings["surrogate"]["append_verification"]:
-                self.surrogate.append_verification()
-
-        return
+        if self.converged:
+            print("\n############ Optimization finished ############")
+            print(f"Total number of samples: {self.surrogate.no_samples:.0f}")
+        else:
+            self.surrogate.trained = False
+            self.iterations += 1
+            if settings["surrogate"]["append_verification"]:
+                    self.surrogate.append_verification()
 
     def report(self):
         path = os.path.join(settings["folder"],"logs",f"optimizatoin_iteration_{self.iterations}.txt")

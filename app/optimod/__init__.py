@@ -3,6 +3,7 @@ Optimization package.
 
 The aim of the optimod package is to perform optimization
 """
+# Import native packages
 import os
 
 # Import pypi packages
@@ -15,7 +16,6 @@ from pymoo.optimize import minimize
 
 # Import custom packages
 from datamod import scale
-
 from optimod.termination import default_termination
 from core.settings import load_json, settings
 
@@ -62,38 +62,8 @@ def set_optimization(no_obj):
     setup = settings["optimization"]
 
     # Get optimization algorithm
-    name = setup["algorithm"]
+    alg = set_algorithm(setup["algorithm"],no_obj,setup)
 
-    if name == "default":
-        if no_obj == 1:
-            name = "ga"
-        elif no_obj > 1:
-            name = "nsga3"
-
-    # Get settings
-    setup_alg = load_json(os.path.join(settings["root"],"app","config","opticonf",name))
-    setup_gen = load_json(os.path.join(settings["root"],"app","config","opticonf","general"))
-    algortihm_args = {}
-    
-    # Get optimization settings objects
-    algortihm_args["sampling"] = get_sampling(setup_gen["sampling"])
-
-    if "operators" in setup:
-        for operator in setup["operators"]:
-            algortihm_args[operator] = get_operator(operator,setup)
-
-    # Get reference directions
-    if name == "nsga3":
-        algortihm_args["ref_dirs"] = get_reference_directions("energy", no_obj, setup_alg["ref_dirs_coef"]*no_obj)
-
-    # Modify population
-    if "n_offsprings" in setup:
-        algortihm_args["n_offsprings"] = setup["n_offsprings"]  
-    if "pop_size" in setup:
-        algortihm_args["pop_size"] = setup["pop_size"]
-
-    alg = get_algorithm(name,eliminate_duplicates=True,**algortihm_args)
-    
     # Get termination criterion
     termination = setup["termination"]
 
@@ -141,3 +111,39 @@ def get_operator(name,setup):
         raise Exception("Invalid operator requested")
 
     return operator
+
+def set_algorithm(name,no_obj,setup):
+    """
+    docstring
+    """
+    if name == "default":
+        if no_obj == 1:
+            name = "ga"
+        elif no_obj > 1:
+            name = "nsga3"
+
+    # Get settings
+    setup_gen = load_json(os.path.join(settings["root"],"app","config","opticonf","general"))
+    setup_alg = load_json(os.path.join(settings["root"],"app","config","opticonf",name))
+    algorithm_args = {}
+    
+    # Get optimization settings objects
+    algorithm_args["sampling"] = get_sampling(setup_gen["sampling"])
+
+    if "operators" in setup:
+        for operator in setup["operators"]:
+            algorithm_args[operator] = get_operator(operator,setup)
+
+    # Get reference directions
+    if name == "nsga3":
+        algorithm_args["ref_dirs"] = get_reference_directions("energy", no_obj, setup_alg["ref_dirs_coef"]*no_obj)
+
+    # Modify population
+    if "n_offsprings" in setup:
+        algorithm_args["n_offsprings"] = setup["n_offsprings"]  
+    if "pop_size" in setup:
+        algorithm_args["pop_size"] = setup["pop_size"]
+
+    algorithm = get_algorithm(name,eliminate_duplicates=True,**algorithm_args)
+
+    return algorithm
