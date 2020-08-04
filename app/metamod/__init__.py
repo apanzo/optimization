@@ -16,6 +16,7 @@ from metamod.postproc import evaluate_metrics
 from metamod.preproc import set_validation
 from core.settings import load_json, settings
 # ANN is imported in set_surrogate only if it is need
+from metamod.ANN_pt import ANN_pt
 
 ##import ctypes
 ##hllDll = ctypes.WinDLL("C:\\Users\\antonin.panzo\\Downloads\\cudart64\\cudart64_100.dll")
@@ -138,7 +139,8 @@ def reload_info():
 
 available = {
     "rbf": RBF,
-    "kriging": KRG}
+    "kriging": KRG,
+    "ann_pt": ANN_pt}
 
 
 
