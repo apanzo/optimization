@@ -29,7 +29,7 @@ def optimize_hyperparameters(data,iteration):
     name = settings["surrogate"]["surrogate"]
 
     model = set_surrogate(name,data.dim_in,data.dim_out)
-##    model.progress = [iteration,1]
+    model.progress = [iteration,1]
     model.pretrain(data.input,data.output,iteration)
 
     return True
@@ -74,7 +74,7 @@ def cross_validate(data,iteration):
             model.progress = [iteration,idx+1,no_splits]
             model.CV = True
         model.train()
-##        model.range_out = data.range_out
+        model.range_out = data.range_out
         model.metric = evaluate_metrics(model.test_in,model.test_out,model.predict_values,["mae","r2"])
         model.metric["max_iterations"] = iteration
         surrogates.append(model)

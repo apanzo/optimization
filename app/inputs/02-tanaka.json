@@ -7,24 +7,23 @@
  "resampling": "geometric",
  "resampling_param": 1.2,
  "adaptive": null,
- "convergence": "r2",
+ "convergence": "mae",
  "convergence_relative": false,
- "convergence_limit": 0.9
+ "convergence_limit": 0.002
  },
 
  "surrogate": {
  "surrogate": "ann",
  "validation": "kfold",
  "validation_param": 5,
- "selection_metric": "r2",
  "append_verification": false
  },
 
  "optimization": {
  "algorithm": "default",
  "termination": "default",
- "constrained": false,
+ "constrained": true,
  "error_limit": 5,
- "error": "max"
+ "error": "mean"
  }
 }

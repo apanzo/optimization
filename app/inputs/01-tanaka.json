@@ -3,24 +3,27 @@
  "problem": "tnk",
  "evaluator": "benchmark",
  "sampling": "halton",
- "default_sample_coef": 100,
+ "default_sample_coef": 10,
  "resampling": "geometric",
  "resampling_param": 1.2,
  "adaptive": null,
- "convergence": "r2",
+ "convergence": "mae",
  "convergence_relative": false,
- "convergence_limit": 0.9
+ "convergence_limit": 0.01
  },
 
  "surrogate": {
  "surrogate": "ann",
  "validation": "kfold",
  "validation_param": 5,
- "selection_metric": "r2",
  "append_verification": false
  },
 
  "optimization": {
- "algorithm": null
+ "algorithm": "default",
+ "termination": "default",
+ "constrained": true,
+ "error_limit": 5,
+ "error": "mean"
  }
 }

@@ -6,9 +6,10 @@ with the SMT Toolbox
 """
 # Import native packages
 from collections import defaultdict
-from tabulate import tabulate
+from datetime import datetime
 import os
 from packaging import version
+from tabulate import tabulate
 
 # Import pypi packages
 ##from kerastuner.tuners import RandomSearch, BayesianOptimization
@@ -217,9 +218,11 @@ class ANN(SurrogateModel):
         max_trials = self["max_trials"]*no_hps
         path_tf_format = "logs"
 
+        time = datetime.now().strftime("%Y%m%d_%H%M")
+
         tuner_args = {"objective":"val_loss","hyperparameters":hp,"max_trials":max_trials,
                       "executions_per_trial":self["executions_per_trial"],"directory":path_tf_format,
-                      "overwrite":True,"tune_new_entries":False,"project_name":"opt"}
+                      "overwrite":True,"tune_new_entries":False,"project_name":f"opt_{time}"}
 
         if self["tuner"] == "random" or no_hps==0:
             tuner = RandomSearchCV(self.build_hypermodel,**tuner_args)            

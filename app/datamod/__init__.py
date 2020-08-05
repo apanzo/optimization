@@ -52,7 +52,7 @@ class get_data:
         self.input, self.norm_in = normalize(self.coordinates, norm='max',axis=0,return_norm=True)
         self.output, self.norm_out = normalize(self.response, norm='max',axis=0,return_norm=True)
         self.range_in = get_range(self.input)
-##        self.range_out = get_range(self.output)
+        self.range_out = get_range(self.output)
 
 def load_problem(name):
     """

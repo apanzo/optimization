@@ -1,6 +1,6 @@
 {
- "no_layers": 8,
- "no_neurons": 40,
+ "no_layers": 3,
+ "no_neurons": 20,
  "activation": "swish",
  "init": "he_normal",
  "bias_init": "zeros",
@@ -24,8 +24,8 @@
  "tensorboard": false,
 
  "tuner": "bayesian",
- "max_trials": 10,
+ "max_trials": 100,
  "executions_per_trial": 1,
- "tuner_epochs": 20,
+ "tuner_epochs": 50,
  "optimize": []
 }

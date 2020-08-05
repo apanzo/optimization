@@ -113,7 +113,7 @@ class Surrogate:
         STUFF
         """
         if not self.hp_optimized:
-            if settings["surrogate"]["surrogate"] == "name" and iteration == 1:
+            if settings["surrogate"]["surrogate"] == "ann" and self.sampling_iterations == 1:
                 self.hp_optimized = optimize_hyperparameters(self.data,self.sampling_iterations)
             else:
                 self.hp_optimized = True

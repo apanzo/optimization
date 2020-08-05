@@ -15,7 +15,7 @@ from sklearn.metrics import mean_absolute_error as MAE
 from sklearn.metrics import mean_squared_error as MSE
 from sklearn.metrics import median_absolute_error as MedAE
 from sklearn.metrics import r2_score as R2
-
+ 
 # Import custom packages
 from core.settings import settings
 
@@ -97,7 +97,7 @@ def evaluate_metrics(inputs,outputs,predict,requested):
 def convergence_operator():
     if settings["data"]["convergence"] in ["mae","mse","medae","max_error"]:
         op = operator.lt
-    elif settings["data"]["convergence"] in ["r2","max_iterations"]:
+    elif settings["data"]["convergence"] in ["max_iterations"]:
         op = operator.gt
     else:
         raise Exception("Error should have been caught on initialization")
