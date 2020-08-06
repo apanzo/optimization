@@ -198,7 +198,7 @@ class ANN(SurrogateModel):
         if "activation" in self["optimize"]:
             hp.Choice("activation_function",["sigmoid","relu","swish","tanh"],default=self["activation"])
         if "neurons" in self["optimize"]:
-            hp.Int("no_neurons",6,30,step=2,default=self["no_neurons"])
+            hp.Int("no_neurons",6,200,sampling="log",default=self["no_neurons"])
         if "layers" in self["optimize"]:
             hp.Int("no_hid_layers",2,10,default=self["no_layers"])
         if "learning_rate" in self["optimize"]:

@@ -72,7 +72,6 @@ def cross_validate(data,iteration):
             model.progress = [iteration,idx+1,no_splits]
             model.CV = True
         model.train()
-        model.range_out = data.range_out
         model.metric = evaluate_metrics(model.test_in,model.test_out,model.predict_values,["mae","r2"])
         model.metric["max_iterations"] = iteration
         surrogates.append(model)
@@ -90,6 +89,7 @@ def train_surrogate(data):
     if name == "ann" or name == "ann_pt":
         model.CV = False
     model.train()
+    model.range_out = data.range_out
 
     return model
 
