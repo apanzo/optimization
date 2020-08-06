@@ -12,8 +12,8 @@ import os
 # Import pypi packages
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
-import torch.nn as nn
+##import torch
+##import torch.nn as nn
 from smt.surrogate_models.surrogate_model import SurrogateModel
 from smt.utils.checks import check_2d_array
 

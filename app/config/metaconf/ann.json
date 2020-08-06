@@ -1,7 +1,7 @@
 {
  "no_layers": 3,
  "no_neurons": 20,
- "activation": "swish",
+ "activation": "relu",
  "init": "he_normal",
  "bias_init": "zeros",
  "kernel_regularizer": "l1",
@@ -24,8 +24,8 @@
  "tensorboard": false,
 
  "tuner": "bayesian",
- "max_trials": 100,
+ "max_trials": 20,
  "executions_per_trial": 1,
- "tuner_epochs": 50,
- "optimize": []
+ "tuner_epochs": 150,
+ "optimize": ["neurons","layers"]
 }

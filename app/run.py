@@ -18,6 +18,7 @@ def train_surrogate():
         surrogate.sample()
         surrogate.evaluate_samples()
         surrogate.load_results()
+        surrogate.optimize_hyperparameters()
         surrogate.train()
         surrogate.check_convergence()
         surrogate.report()
@@ -46,7 +47,7 @@ def optimize(surrogate):
     optimization.report()
         
 # Choose problem to solve
-problem_id = 2
+problem_id = 4
 
 # Initialize the settings
 update_settings(problem_id)

@@ -32,8 +32,6 @@ def optimize_hyperparameters(data,iteration):
     model.progress = [iteration,1]
     model.pretrain(data.input,data.output,iteration)
 
-    return True
-
 def cross_validate(data,iteration):
     """
     Train the defined surrogate on the provided data.

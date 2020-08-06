@@ -111,7 +111,7 @@ class MultiExecutionTunerCV(tuner_module.Tuner):
                 self._configure_tensorboard_dir(callbacks, trial.trial_id, execution)
                 callbacks.append(tuner_utils.TunerCallback(self, trial))
                 # Only checkpoint the best epoch across all executions.
-                callbacks.append(model_checkpoint)
+##                callbacks.append(model_checkpoint)
                 copied_fit_kwargs['callbacks'] = callbacks
 
                 model = self.hypermodel.build(trial.hyperparameters)

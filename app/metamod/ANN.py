@@ -198,9 +198,9 @@ class ANN(SurrogateModel):
         if "activation" in self["optimize"]:
             hp.Choice("activation_function",["sigmoid","relu","swish","tanh"],default=self["activation"])
         if "neurons" in self["optimize"]:
-            hp.Int("no_neurons",6,20,step=2,default=self["no_neurons"])
+            hp.Int("no_neurons",6,30,step=2,default=self["no_neurons"])
         if "layers" in self["optimize"]:
-            hp.Int("no_hid_layers",6,12,default=self["no_layers"])
+            hp.Int("no_hid_layers",2,10,default=self["no_layers"])
         if "learning_rate" in self["optimize"]:
             hp.Float("learning_rate",0.001,0.1,sampling="log",default=self["learning_rate"])
         if "regularization" in self["optimize"]:
@@ -222,7 +222,8 @@ class ANN(SurrogateModel):
 
         tuner_args = {"objective":"val_loss","hyperparameters":hp,"max_trials":max_trials,
                       "executions_per_trial":self["executions_per_trial"],"directory":path_tf_format,
-                      "overwrite":True,"tune_new_entries":False,"project_name":f"opt_{time}"}
+                      "overwrite":True,"tune_new_entries":False,"project_name":f"opt"}
+##                      "overwrite":True,"tune_new_entries":False,"project_name":f"opt_{time}"}
 
         if self["tuner"] == "random" or no_hps==0:
             tuner = RandomSearchCV(self.build_hypermodel,**tuner_args)            

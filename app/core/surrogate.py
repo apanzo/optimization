@@ -22,8 +22,11 @@ class Surrogate:
         self.model = model
 
         # Training status
+        self.name = settings["surrogate"]["surrogate"]
         self.trained = False
         self.hp_optimized = False
+        self.optimized_to_samples = 1     #Initialized with 1 to avoid division by zero
+        self.reoptimization_ratio = settings["surrogate"]["reoptimization_ratio"]
         
         # Initialize sampling
         self.no_samples = 0
@@ -106,18 +109,33 @@ class Surrogate:
             # Plot the input data
             plot_raw(self.data,self.sampling_iterations)
 
+    def optimize_hyperparameters(self):
+        """
+        Wrapper function to optimize the surrogate.
+
+        STUFF
+        """
+        # Determine whether to optimize hyperparameters
+        reoptimize = self.no_samples/self.optimized_to_samples >= self.reoptimization_ratio
+        if reoptimize:
+            self.hp_optimized = False
+            
+        # Optimize hyperparameters
+        if not self.hp_optimized:
+            if self.name == "ann":
+                optimize_hyperparameters(self.data,self.sampling_iterations)
+                self.optimized_to_samples = self.no_samples
+            else:
+                print("No hyperparameter optimization implemented, using default hyperparameters")
+
+            self.hp_optimized = True
+        
     def train(self):
         """
         Wrapper function to (re)train the surrogate.
 
         STUFF
         """
-        if not self.hp_optimized:
-            if settings["surrogate"]["surrogate"] == "ann" and self.sampling_iterations == 1:
-                self.hp_optimized = optimize_hyperparameters(self.data,self.sampling_iterations)
-            else:
-                self.hp_optimized = True
-        
         # Train the surrogates
         self.surrogates = cross_validate(self.data,self.sampling_iterations)
 
