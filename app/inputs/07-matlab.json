@@ -1,0 +1,26 @@
+{
+ "data": {
+ "problem": "matlab_peaks",
+ "evaluator": "benchmark",
+ "sampling": "halton",
+ "default_sample_coef": 50,
+ "resampling": "geometric",
+ "resampling_param": 1.2,
+ "adaptive": null,
+ "convergence": "mae",
+ "convergence_relative": false,
+ "convergence_limit": 0.3
+ },
+
+ "surrogate": {
+ "surrogate": "ann",
+ "reoptimization_ratio": 1.5,
+ "validation": "kfold",
+ "validation_param": 5,
+ "append_verification": false
+ },
+
+ "optimization": {
+ "algorithm": null
+ }
+}

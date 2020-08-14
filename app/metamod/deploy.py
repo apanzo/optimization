@@ -20,7 +20,6 @@ def get_partial_input(density,requested_dims,dim_in,norm_fact,constants=None):
     if len(requested_dims) == dim_in:
         if constants is not None:
             print("Performing full grid, ignoring constants")
-        
             
         return complete_grid(density,dim_in)
     else:

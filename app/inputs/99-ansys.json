@@ -1,0 +1,31 @@
+{
+ "data": {
+ "problem": "framework",
+ "evaluator": "ansys",
+ "project_folder": "C:\\Users\\antonin.panzo\\Downloads\\ANSYS\\Test models\\16 - framework",
+ "input_names": ["P1"],
+ "dims": [1,1,0],
+ "lower_limits": [2],
+ "upper_limits": [4],
+ "sampling": "halton",
+ "default_sample_coef": 10,
+ "resampling": "geometric",
+ "resampling_param": 1.2,
+ "adaptive": null,
+ "convergence": "mae",
+ "convergence_relative": false,
+ "convergence_limit": 0.3
+ },
+
+ "surrogate": {
+ "surrogate": "ann",
+ "reoptimization_ratio": 1.5,
+ "validation": "kfold",
+ "validation_param": 5,
+ "append_verification": false
+ },
+
+ "optimization": {
+ "algorithm": null
+ }
+}

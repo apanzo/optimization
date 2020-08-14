@@ -11,7 +11,7 @@ from datamod.results import make_response_files, append_verification_to_database
 from datamod.sampling import determine_samples, resample_static, resample_adaptive
 from metamod import cross_validate, optimize_hyperparameters, train_surrogate
 from metamod.deploy import get_partial_input
-from metamod.performance import check_convergence, retrieve_metric
+from metamod.performance import benchmark_accuracy, check_convergence, retrieve_metric
 from visumod import compare_surrogate, correlation_heatmap, plot_raw, sample_size_convergence, surrogate_response
 
 class Surrogate:
@@ -156,7 +156,10 @@ class Surrogate:
         self.trained = check_convergence(self.convergence_metric["values"])
 
     def report(self):
+        # Plot convergence
         sample_size_convergence(self.convergence_metric)
+
+        # Save training stats
         dump_object("stats",self.convergence_metric["values"],self.sampling_iterations)
 
         if self.trained:
@@ -164,6 +167,9 @@ class Surrogate:
             # Plot the sample size convergence
             correlation_heatmap(self.surrogate.predict_values,self.model.dim_in)
 
+            if settings["data"]["evaluator"] == "benchmark":
+                self.accuracy = benchmark_accuracy(self)
+            
     def plot_response(self,inputs,output,density=10,**kwargs):
         if len(inputs) > 2:
             raise Exception("Too many input dimensions requested for a plot")
@@ -178,13 +184,13 @@ class Surrogate:
         inputs = np.array(inputs) - 1
         output = output - 1
 
-        # Get response        
-        input_norm = get_partial_input(density,inputs,self.model.dim_in,self.data.input_abs_max,**kwargs)
+        # Get response
+        input_norm = get_partial_input(density,inputs,self.model.dim_in,self.data.norm_in,**kwargs)
         output_norm = self.surrogate.predict_values(input_norm)
 
         # Unormalize
-        input_vec = scale(input_norm,self.model.range_in)
-        output_vec = scale(output_norm,self.data.range_out)
+        input_vec = scale(input_norm,self.data.norm_in)
+        output_vec = scale(output_norm,self.data.norm_out)
 
         # Make plot
         surrogate_response(input_vec[:,inputs],output_vec[:,[output]],inputs)

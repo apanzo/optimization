@@ -18,6 +18,8 @@ from sklearn.metrics import r2_score as R2
  
 # Import custom packages
 from core.settings import settings
+from datamod import load_problem, scale
+from datamod.sampling import sample
 
 # Functions
 def retrieve_metric(surrogates):
@@ -103,6 +105,36 @@ def convergence_operator():
         raise Exception("Error should have been caught on initialization")
 
     return op
+
+def benchmark_accuracy(surrogate):
+    density = 100
+    grid_normalized = sample("grid",density*surrogate.model.dim_in,surrogate.model.dim_in)
+    response_surrogate_normalized = surrogate.surrogate.predict_values(grid_normalized)
+    response_surrogate = scale(response_surrogate_normalized,surrogate.data.norm_out)
+
+    problem = load_problem(settings["data"]["problem"])[0]
+    grid = scale(grid_normalized,surrogate.data.norm_in)
+    response_original = problem.evaluate(grid)
+    diff = response_original - response_surrogate
+    diff_perc = 100*diff/response_original
+
+    diff_res = {}
+    diff_res["mean"] = np.mean(diff_perc)
+    diff_res["std"] = np.std(diff_perc)
+    diff_res["min"] = np.min(diff_perc)
+    diff_res["max"] = np.max(diff_perc)
+
+    # Output
+    path = os.path.join(settings["folder"],"logs","benchmark_accuracy.txt")
+
+    with open(path, "w") as file:
+        for stat in diff_res:
+            file.write(f"{stat}: {diff_res[stat]}")
+            file.write("\n")
+        file.write("\n")
+        np.savetxt(file,diff_perc,newline="\n",fmt='%.5f')
+
+    return diff_res
 
 defined_metrics = {
     "r2": R2,

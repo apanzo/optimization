@@ -66,6 +66,8 @@ class Optimization:
         if self.res is not None:
             self.plot_results()
 
+        self.hv = calculate_hypervolume(self.res.F)
+
     def plot_results(self):
         # Plot the optimization result in design space
         vis_design_space(self.res.X,self.iterations)
