@@ -7,9 +7,9 @@
  "resampling": "geometric",
  "resampling_param": 1.2,
  "adaptive": null,
- "convergence": "mae",
+ "convergence": "rmse",
  "convergence_relative": false,
- "convergence_limit": 0.3
+ "convergence_limit": 0.05
  },
 
  "surrogate": {

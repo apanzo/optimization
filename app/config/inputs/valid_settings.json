@@ -4,14 +4,13 @@
  "sampling": ["random","halton","lhs","grid"],
  "resampling": ["linear","geometric"],
  "adaptive": [null,"eason"],
- "convergence": ["mae","mse","medae","max_error","r2","max_iterations"],
+ "convergence": ["mae","mse","rmse","medae","max_error","r2","max_iterations"],
  "convergence_relative": [true,false]
  },
 
  "surrogate": {
  "surrogate": ["ann","ann_pt","kriging","rbf","load",null],
  "validation": ["kfold","holdout","rlt"],
- "selection_metric": ["r2","mse","max_error","medae","mae"],
  "append_verification": [true,false]
  },
 

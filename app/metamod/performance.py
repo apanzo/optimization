@@ -89,15 +89,15 @@ def verify_results(results,surrogate):
 
     return idx
 
-def evaluate_metrics(inputs,outputs,predict,requested):
+def evaluate_metrics(inputs,outputs,predict):
     metrics = {}
-    for measure in requested:
+    for measure in defined_metrics.keys():
         metrics[measure] = defined_metrics[measure](outputs,predict(inputs))
 
     return metrics
 
 def convergence_operator():
-    if settings["data"]["convergence"] in ["mae","mse","medae","max_error"]:
+    if settings["data"]["convergence"] in ["mae","mse","rmse","medae","max_error"]:
         op = operator.lt
     elif settings["data"]["convergence"] in ["max_iterations"]:
         op = operator.gt
@@ -115,30 +115,34 @@ def benchmark_accuracy(surrogate):
     problem = load_problem(settings["data"]["problem"])[0]
     grid = scale(grid_normalized,surrogate.data.norm_in)
     response_original = problem.evaluate(grid)
-    diff = response_original - response_surrogate
-    diff_perc = 100*diff/response_original
+    
+    diff = response_original-response_surrogate
 
-    diff_res = {}
-    diff_res["mean"] = np.mean(diff_perc)
-    diff_res["std"] = np.std(diff_perc)
-    diff_res["min"] = np.min(diff_perc)
-    diff_res["max"] = np.max(diff_perc)
+    diffs = {}
+    diffs["mean"] = np.mean(diff)
+    diffs["std"] = np.std(diff)
+    diffs["min"] = np.min(diff)
+    diffs["max"] = np.max(diff)
 
     # Output
     path = os.path.join(settings["folder"],"logs","benchmark_accuracy.txt")
 
     with open(path, "w") as file:
-        for stat in diff_res:
-            file.write(f"{stat}: {diff_res[stat]}")
+        for stat in diffs:
+            file.write(f"{stat}: {diffs[stat]}")
             file.write("\n")
         file.write("\n")
-        np.savetxt(file,diff_perc,newline="\n",fmt='%.5f')
+        np.savetxt(file,diff,newline="\n",fmt='%.5f')
 
-    return diff_res
+    return diffs
+
+def RMSE(*args,**kwargs):
+    return MSE(*args,squared=False,**kwargs)
 
 defined_metrics = {
     "r2": R2,
     "mse": MSE,
+    "rmse": RMSE,
     "max_error": MAX,
     "medae": MedAE,
     "mae": MAE}

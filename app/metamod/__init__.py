@@ -72,7 +72,7 @@ def cross_validate(data,iteration):
             model.progress = [iteration,idx+1,no_splits]
             model.CV = True
         model.train()
-        model.metric = evaluate_metrics(model.test_in,model.test_out,model.predict_values,["mae","r2"])
+        model.metric = evaluate_metrics(model.test_in,model.test_out,model.predict_values)
         model.metric["max_iterations"] = iteration
         surrogates.append(model)
 

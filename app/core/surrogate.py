@@ -170,7 +170,7 @@ class Surrogate:
             if settings["data"]["evaluator"] == "benchmark":
                 self.accuracy = benchmark_accuracy(self)
             
-    def plot_response(self,inputs,output,density=10,**kwargs):
+    def plot_response(self,inputs,output,density=30,**kwargs):
         if len(inputs) > 2:
             raise Exception("Too many input dimensions requested for a plot")
 
