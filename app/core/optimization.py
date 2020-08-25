@@ -86,6 +86,13 @@ class Optimization:
         if self.model.n_obj == 1:
             self.ps_error = 100*(ps_true-ps_calc)/ps_true
             self.pf_error = 100*(pf_true-pf_calc)/pf_true
+        else:
+##            np.all(ps_true==None)
+            from pymoo.factory import get_performance_indicator
+            hv = get_performance_indicator("hv", ref_point=np.array([1.2, 1.2]))
+            self.hv_calc = hv.calc(pf_calc)
+            self.hv_true = hv.calc(pf_true)
+            self.pf_error = 100*(self.hv_true-self.hv_calc)/self.hv_true
         breakpoint()
 
     def verify(self):

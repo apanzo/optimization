@@ -114,16 +114,15 @@ def benchmark_accuracy(surrogate):
 
     problem = load_problem(settings["data"]["problem"])[0]
     grid = scale(grid_normalized,surrogate.data.norm_in)
-    response_original = problem.evaluate(grid,return_as_dictionary=True)
+    response_original = surrogate.model.evaluator.evaluate(grid)
 
-    breakpoint()    
     diff = response_original-response_surrogate
 
     diffs = {}
-    diffs["mean"] = np.mean(diff)
-    diffs["std"] = np.std(diff)
-    diffs["min"] = np.min(diff)
-    diffs["max"] = np.max(diff)
+    diffs["mean"] = np.mean(diff,0)
+    diffs["std"] = np.std(diff,0)
+    diffs["min"] = np.min(diff,0)
+    diffs["max"] = np.max(diff,0)
 
     # Output
     path = os.path.join(settings["folder"],"logs","benchmark_accuracy.txt")
