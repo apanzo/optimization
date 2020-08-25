@@ -47,7 +47,7 @@ def optimize(surrogate):
     optimization.report()
         
 # Choose problem to solve
-problem_id = 7
+problem_id = 8
 
 # Initialize the settings
 update_settings(problem_id)

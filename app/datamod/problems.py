@@ -79,7 +79,18 @@ class MatlabPeaks(Problem):
         f1 = 3*(1-x)**2*np.exp(-(x**2) - (y+1)**2) - 10*(x/5 - x**3 - y**5)*np.exp(-x**2-y**2) - 1/3*np.exp(-(x+1)**2 - y**2)
 
         out["F"] = f1
-    
+
+    def _calc_pareto_front(self, flatten=True, **kwargs):
+        f = -6.55113332237566
+
+        return f
+
+    def _calc_pareto_set(self, flatten=True, **kwargs):
+        x1 = 0.22826413206603302
+        x2 = -1.625512756378189
+        
+        return [x1,x2]
+
 class Squared(Problem):
     """
     Squared function.
