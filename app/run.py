@@ -47,7 +47,7 @@ def optimize(surrogate):
     optimization.report()
         
 # Choose problem to solve
-problem_id = 8
+problem_id = 9
 
 # Initialize the settings
 update_settings(problem_id)
@@ -97,6 +97,11 @@ elif build_surrogate and perform_optimization:
 # Otherwise
 else:
     print("There is nothing to perform within this model")
+
+# Evaluate benchmark
+if settings["data"]["evaluator"] == "benchmark":
+    if perform_optimization:
+        optimization.benchmark()
 
 # Save trained surrogate
 if build_surrogate and not load_surrogate:

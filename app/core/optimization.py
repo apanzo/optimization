@@ -8,7 +8,7 @@ import numpy as np
 from core.settings import settings
 from datamod.problems import Custom
 from metamod.performance import verify_results
-from optimod import set_optimization, solve_problem
+from optimod import calculate_hypervolume, set_optimization, solve_problem
 from visumod import vis_design_space, vis_objective_space, vis_objective_space_pcp
 
 class Optimization:
@@ -66,7 +66,8 @@ class Optimization:
         if self.res is not None:
             self.plot_results()
 
-        self.hv = calculate_hypervolume(self.res.F)
+        if self.model.n_obj > 1:
+            self.hv = calculate_hypervolume(self.res.F)
 
     def plot_results(self):
         # Plot the optimization result in design space
@@ -76,6 +77,16 @@ class Optimization:
         vis_objective_space(self.res.F,self.iterations)
         if self.model.n_obj > 1:
             vis_objective_space_pcp(self.res.F,self.iterations)
+
+    def benchmark(self):
+        ps_calc = self.res.X
+        pf_calc = self.res.F
+        ps_true = self.model.evaluator.problem.pareto_set()
+        pf_true = self.model.evaluator.problem.pareto_front()
+        if self.model.n_obj == 1:
+            self.ps_error = 100*(ps_true-ps_calc)/ps_true
+            self.pf_error = 100*(pf_true-pf_calc)/pf_true
+        breakpoint()
 
     def verify(self):
         """

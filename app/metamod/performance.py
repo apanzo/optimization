@@ -114,8 +114,9 @@ def benchmark_accuracy(surrogate):
 
     problem = load_problem(settings["data"]["problem"])[0]
     grid = scale(grid_normalized,surrogate.data.norm_in)
-    response_original = problem.evaluate(grid)
-    
+    response_original = problem.evaluate(grid,return_as_dictionary=True)
+
+    breakpoint()    
     diff = response_original-response_surrogate
 
     diffs = {}
@@ -143,6 +144,6 @@ defined_metrics = {
     "r2": R2,
     "mse": MSE,
     "rmse": RMSE,
-    "max_error": MAX,
+##    "max_error": MAX,
     "medae": MedAE,
     "mae": MAE}
