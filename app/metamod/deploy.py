@@ -9,14 +9,8 @@ import numpy as np
 from datamod.sampling import complete_grid, partial_grid
 
 # Functions
-def get_partial_input(density,requested_dims,dim_in,norm_fact,constants=None):
-
-    if len(requested_dims) > dim_in:
-        raise Exception("Too many dimensions specified")
-
-    if not max(requested_dims)in range(dim_in) or not min(requested_dims)in range(dim_in):
-        raise Exception("Specified dimensions out of bounds")
-
+def get_input_coordinates(density,requested_dims,dim_in,norm_fact,constants=None):
+    
     if len(requested_dims) == dim_in:
         if constants is not None:
             print("Performing full grid, ignoring constants")

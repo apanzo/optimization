@@ -50,7 +50,7 @@ def vis_design_space(data,iteration):
         res: results object
         
     """
-    scatter_pymoo(data,f"optimization_{iteration}_design_space","x",s=30,facecolors='w',edgecolors='r')
+    scatter_pymoo(data,f"optimization_{iteration}_design_space","x",s=30,facecolors='k',edgecolors='k')
 
 def vis_objective_space(data,iteration):
     """

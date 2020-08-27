@@ -39,7 +39,7 @@ def scatter_pymoo(data,name,label=None,**kwargs):
         plot_args["angle"] = (30,-135+angle*90)
         
         plot = get_visualization("scatter",**plot_args)
-        plot.add(data,plot_type=None,**kwargs)
+        plot.add(data,plot_type=None,color="k",**kwargs)
         plot.do()
 ##        plot.apply(lambda ax: ax.set_xlim([0,1]))
 
@@ -52,24 +52,33 @@ def scatter(data,name,lower_bound=None,compare=False):
     n_dim = data.shape[1]
 
     if n_dim == 2:
-        plt.scatter(data[:,0],data[:,1])
+        plt.scatter(data[:,0],data[:,1],color="k")
     else:
         breakpoint()
     if lower_bound:
         plt.ylim(ymin=0)
     if compare:
-        plt.plot([-1,1],[-1,1])
+        plt.plot([-1,1],[-1,1],"k--")
+        plt.xlabel('Data')
+        plt.ylabel('Prediction')
     save_figure(name)
 
 def curve(data,name,lower_bound=None):
     fig = plt.figure()
-    plt.plot(data)
+    plt.plot(data,"k")
     if lower_bound:
         plt.ylim(ymin=0)
     save_figure(name)
 
 def heatmap(correlation):
-    plot = get_visualization("heatmap",labels="x",cmap="BrBG",reverse=False)
+    import numpy as np
+    import matplotlib.colors as mcolors
+    cmp1 = plt.cm.Greys_r(np.linspace(0., 1, 128))
+    cmp2 = plt.cm.Blues(np.linspace(0, 0.9, 128))
+    colors = np.vstack((cmp1, cmp2))
+    newmap = mcolors.LinearSegmentedColormap.from_list('my_colormap', colors)
+    
+    plot = get_visualization("heatmap",labels="x",cmap=newmap,reverse=False)
     plot.add(correlation,vmin=-1, vmax=1)
     save_figure("heatmap",plot)
 
@@ -112,14 +121,14 @@ def learning_curves(training_loss,validation_loss,data_train,prediction_train,da
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.plot(training_loss, "k-", label='train')
-    plt.plot(validation_loss, "r--", label='val')
+    plt.plot(validation_loss, "C0--", label='val')
     plt.ylim(bottom=0)
     plt.legend()
     
     plt.subplot(1, 2, 2)
     plt.scatter(data_train.flatten(),prediction_train.flatten(),c="k")
-    plt.scatter(data_test.flatten(),prediction_test.flatten(),c="r")
-    plt.plot([-1,1],[-1,1])
+    plt.scatter(data_test.flatten(),prediction_test.flatten(),c="C0")
+    plt.plot([-1,1],[-1,1],"k--")
     plt.title('Prediction correletation')
     plt.xlabel('Data')
     plt.ylabel('Prediction')

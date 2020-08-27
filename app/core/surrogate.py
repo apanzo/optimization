@@ -10,7 +10,7 @@ from datamod import get_data, scale
 from datamod.results import make_response_files, append_verification_to_database
 from datamod.sampling import determine_samples, resample_static, resample_adaptive
 from metamod import cross_validate, optimize_hyperparameters, train_surrogate
-from metamod.deploy import get_partial_input
+from metamod.deploy import get_input_coordinates
 from metamod.performance import benchmark_accuracy, check_convergence, retrieve_metric
 from visumod import compare_surrogate, correlation_heatmap, plot_raw, sample_size_convergence, surrogate_response
 
@@ -171,26 +171,45 @@ class Surrogate:
                 self.accuracy = benchmark_accuracy(self)
             
     def plot_response(self,inputs,output,density=30,**kwargs):
-        if len(inputs) > 2:
-            raise Exception("Too many input dimensions requested for a plot")
-
-        if not isinstance(output,int):
-            raise Exception("Too many output dimensions requested for a plot, should specify an integer")
-
-        if output > self.model.dim_out:
-            raise Exception("Output dimension out of bounds")
-        
         # Convert to 0 based indexing
         inputs = np.array(inputs) - 1
         output = output - 1
 
+        # Check correct amount of requested i/o
+        if len(inputs) > 2:
+            raise Exception("Too many input dimensions requested for a plot")
+        if not isinstance(output,int):
+            raise Exception("Too many output dimensions requested for a plot, should specify an integer")
+
+        # Check if all inputs are unique
+        if not len(np.unique(inputs)) == len(inputs):
+            raise Exception("Repeated inputs specified")
+
+        # Check requested i/o are valid
+        if not np.all(inputs < self.model.dim_in):
+            raise Exception("Invalid input dimension")
+        if output > self.model.dim_out:
+            raise Exception("Invalid output dimension")
+
+        # For 1D, only 1 input dimension allowed
+        if len(inputs) > self.model.dim_in:
+            raise Exception("Too many dimensions specified")
+
+        # Add check that constants are in valid range
+
         # Get response
-        input_norm = get_partial_input(density,inputs,self.model.dim_in,self.data.norm_in,**kwargs)
+        input_norm = get_input_coordinates(density,inputs,self.model.dim_in,self.data.norm_in,**kwargs)
         output_norm = self.surrogate.predict_values(input_norm)
 
         # Unormalize
-        input_vec = scale(input_norm,self.data.norm_in)
-        output_vec = scale(output_norm,self.data.norm_out)
+        input_vec_full = scale(input_norm,self.data.norm_in)
+        output_vec_full = scale(output_norm,self.data.norm_out)
+
+        # Filter only valid output
+        aaa = np.all(input_vec_full>=self.model.range_in[inputs,0],1)
+        bbb = np.all(input_vec_full<=self.model.range_in[inputs,1],1)
+        input_vec = input_vec_full[aaa*bbb]
+        output_vec = output_vec_full[aaa*bbb]
 
         # Make plot
         surrogate_response(input_vec[:,inputs],output_vec[:,[output]],inputs)

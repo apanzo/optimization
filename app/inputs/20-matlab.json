@@ -1,22 +1,22 @@
 {
  "data": {
- "problem": "dtlz7",
+ "problem": "matlab_peaks",
  "evaluator": "benchmark",
- "sampling": "lhs",
- "default_sample_coef": 50,
+ "sampling": "halton",
+ "default_sample_coef": 10,
  "resampling": "geometric",
  "resampling_param": 1.2,
  "adaptive": null,
  "convergence": "rmse",
  "convergence_relative": false,
- "convergence_limit": 0.5
+ "convergence_limit": 0.05
  },
 
  "surrogate": {
- "surrogate": "kriging",
+ "surrogate": "ann",
  "reoptimization_ratio": 1.5,
- "validation": "holdout",
- "validation_param": 0.2,
+ "validation": "kfold",
+ "validation_param": 5,
  "append_verification": false
  },
 

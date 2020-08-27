@@ -27,5 +27,5 @@
  "max_trials": 20,
  "executions_per_trial": 1,
  "tuner_epochs": 150,
- "optimize": ["neurons","layers"]
+ "optimize": []
 }

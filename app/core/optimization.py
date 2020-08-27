@@ -30,10 +30,13 @@ class Optimization:
             self.n_const = self.model.n_const
         else:
             self.n_const = 0
-
+        
         self.direct = not bool(settings["surrogate"]["surrogate"])
 
-        self.ref_point = np.array([1,1,7])
+        try:
+            self.ref_point = np.array(ref_points[settings["data"]["problem"]])
+        except:
+            self.ref_point = None
 
     def set_problem(self,surrogate):
         """
@@ -85,14 +88,26 @@ class Optimization:
         pf_calc = self.res.F
         ps_true = self.model.evaluator.problem.pareto_set()
         pf_true = self.model.evaluator.problem.pareto_front()
-        if self.model.n_obj == 1:
-            self.ps_error = 100*(ps_true-ps_calc)/ps_true
-            self.pf_error = 100*(pf_true-pf_calc)/pf_true
-        else:
-##            np.all(ps_true==None)
-            self.hv_calc = calculate_hypervolume(pf_calc,self.ref_point)
-            self.hv_true = calculate_hypervolume(pf_true,self.ref_point)
-            self.pf_error = 100*(self.hv_true-self.hv_calc)/self.hv_true
+        self.optimization_stats = {}
+        if not np.all(ps_true==None):
+            if self.model.n_obj == 1:
+                self.optimization_stats["ps_error"] = 100*(ps_true-ps_calc)/ps_true
+        if not np.all(pf_true==None):
+            if self.model.n_obj == 1:
+                self.optimization_stats["pf_error"] = 100*(pf_true-pf_calc)/pf_true
+            else:
+                self.optimization_stats["hv_calc"] = calculate_hypervolume(pf_calc,self.ref_point)
+                self.optimization_stats["hv_true"] = calculate_hypervolume(pf_true,self.ref_point)
+                self.optimization_stats["pf_error"] = 100*(self.optimization_stats["hv_true"]-self.optimization_stats["hv_calc"])/self.optimization_stats["hv_true"]
+
+        # Output
+        if bool(self.optimization_stats):
+            path = os.path.join(settings["folder"],"logs","optimization_benchmark.txt")
+
+            with open(path, "w") as file:
+                for stat in self.optimization_stats:
+                    file.write(f"{stat}: {self.optimization_stats[stat]}")
+                    file.write("\n")
 
     def verify(self):
         """
@@ -149,3 +164,4 @@ class Optimization:
             
         ##len([step["delta_f"] for step in model.res.algorithm.display.term.metrics])
 
+ref_points = {"tnk":[1.2,1.2],"dtlz7":[1,1,7]}

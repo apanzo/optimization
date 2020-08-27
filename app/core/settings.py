@@ -102,15 +102,18 @@ def restart_check(id_current,file):
         same_inputs = Counter(new_input) == Counter(stored_input)
 
         if same_inputs:
-            status = load_json(os.path.join(path,"status"))
-            
-            if settings["surrogate"]["surrogate"] is None:
-                ask_to_overwrite(path,id_current,"restarting is not supported for direct optimization")
-            elif status["surrogate_trained"]:
-                ask_to_overwrite(path,id_current,"the model is converged")
+            try:
+                status = load_json(os.path.join(path,"status"))
+            except:
+                    ask_to_overwrite(path,id_current,"status file not found")
             else:
-                # Restart
-                ask_to_overwrite(path,id_current,"restarting not implemented yet") ############
+                if settings["surrogate"]["surrogate"] is None:
+                    ask_to_overwrite(path,id_current,"restarting is not supported for direct optimization")
+                elif status["surrogate_trained"]:
+                    ask_to_overwrite(path,id_current,"the model is converged")
+                else:
+                    # Restart
+                    ask_to_overwrite(path,id_current,"restarting not implemented yet") ############
         elif settings["surrogate"]["surrogate"] == "load":
             fresh = False
             print("Loading surrogate, no ovewritting")

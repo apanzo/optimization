@@ -24,8 +24,8 @@
  "tensorboard": false,
 
  "tuner": "bayesian",
- "max_trials": 20,
+ "max_trials": 10,
  "executions_per_trial": 1,
- "tuner_epochs": 150,
- "optimize": []
+ "tuner_epochs": 100,
+ "optimize": ["neurons","layers"]
 }
