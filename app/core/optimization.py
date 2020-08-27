@@ -33,6 +33,8 @@ class Optimization:
 
         self.direct = not bool(settings["surrogate"]["surrogate"])
 
+        self.ref_point = np.array([1,1,7])
+
     def set_problem(self,surrogate):
         """
         Wrapper function to set the problem.
@@ -66,8 +68,8 @@ class Optimization:
         if self.res is not None:
             self.plot_results()
 
-        if self.model.n_obj > 1:
-            self.hv = calculate_hypervolume(self.res.F)
+##        if self.model.n_obj > 1:
+##            self.hv = calculate_hypervolume(self.res.F)
 
     def plot_results(self):
         # Plot the optimization result in design space
@@ -88,12 +90,9 @@ class Optimization:
             self.pf_error = 100*(pf_true-pf_calc)/pf_true
         else:
 ##            np.all(ps_true==None)
-            from pymoo.factory import get_performance_indicator
-            hv = get_performance_indicator("hv", ref_point=np.array([1.2, 1.2]))
-            self.hv_calc = hv.calc(pf_calc)
-            self.hv_true = hv.calc(pf_true)
+            self.hv_calc = calculate_hypervolume(pf_calc,self.ref_point)
+            self.hv_true = calculate_hypervolume(pf_true,self.ref_point)
             self.pf_error = 100*(self.hv_true-self.hv_calc)/self.hv_true
-        breakpoint()
 
     def verify(self):
         """

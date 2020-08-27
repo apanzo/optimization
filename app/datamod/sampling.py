@@ -16,7 +16,6 @@ from smt.sampling_methods.sampling_method import SamplingMethod
 from .external.halton import halton
 
 # Import custom packages
-from datamod import scale
 from core.settings import load_json, settings
 
 def determine_samples(no_samples,dim_in):

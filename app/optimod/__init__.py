@@ -149,8 +149,8 @@ def set_algorithm(name,no_obj,setup):
 
     return algorithm
 
-def calculate_hypervolume(data):
-    hv = get_performance_indicator("hv", ref_point=np.array([100, 100]))
+def calculate_hypervolume(data,ref_point):
+    hv = get_performance_indicator("hv", ref_point=ref_point)
     hv = hv.calc(data)
     
     return hv
