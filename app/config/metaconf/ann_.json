@@ -1,6 +1,7 @@
 {
+ "type": "sparse",
  "no_layers": 3,
- "no_neurons": 20,
+ "no_neurons": 9,
  "activation": "relu",
  "init": "he_normal",
  "bias_init": "zeros",
@@ -13,19 +14,19 @@
 
  "optimizer": "adam",
  "learning_rate": 0.01,
- "no_epochs": 1000,
+ "no_epochs": 3000,
 
  "loss": "mse",
 
  "stopping": true,
- "stopping_delta": 0.0001,
+ "stopping_delta": 0.000001,
  "stopping_patience": 50,
 
  "tensorboard": false,
 
  "tuner": "bayesian",
- "max_trials": 20,
+ "max_trials": 10,
  "executions_per_trial": 1,
- "tuner_epochs": 150,
- "optimize": []
+ "tuner_epochs": 100,
+ "optimize": ["neurons","layers"]
 }

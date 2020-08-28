@@ -122,7 +122,8 @@ def learning_curves(training_loss,validation_loss,data_train,prediction_train,da
     plt.ylabel('Loss')
     plt.plot(training_loss, "k-", label='train')
     plt.plot(validation_loss, "C0--", label='val')
-    plt.ylim(bottom=0)
+    plt.ylim([0,0.2])
+##    plt.ylim(bottom=0)
     plt.legend()
     
     plt.subplot(1, 2, 2)

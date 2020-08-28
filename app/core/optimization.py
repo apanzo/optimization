@@ -164,4 +164,4 @@ class Optimization:
             
         ##len([step["delta_f"] for step in model.res.algorithm.display.term.metrics])
 
-ref_points = {"tnk":[1.2,1.2],"dtlz7":[1,1,7]}
+ref_points = {"tnk":[1.2,1.2],"dtlz7":[1,1,7],"osy":[-50,100]}

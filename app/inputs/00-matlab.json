@@ -1,12 +1,12 @@
 {
  "data": {
- "problem": "tnk",
+ "problem": "matlab_peaks",
  "evaluator": "benchmark",
  "sampling": "halton",
  "default_sample_coef": 10,
  "resampling": "geometric",
  "resampling_param": 1.2,
- "adaptive": null,
+ "adaptive": "eason",
  "convergence": "rmse",
  "convergence_relative": false,
  "convergence_limit": 0.05
@@ -25,6 +25,7 @@
  "termination": "default",
  "constrained": true,
  "error_limit": 5,
- "error": "mean"
+ "error": "mean",
+ "verification_ratio": 0.2
  }
 }

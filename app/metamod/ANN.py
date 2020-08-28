@@ -116,7 +116,7 @@ class ANN(SurrogateModel):
                                                      kernel_initializer=self["init"],
                                                      bias_initializer=self["bias_init"],
                                                      kernel_regularizer=kernel_regularizer)(dense)
-            outputs = keras.layers.Dense(out_dim,activation="linear",use_bias=False)(dense)
+            outputs = keras.layers.Dense(1,activation="linear",use_bias=True)(dense)
             output_layer_list.append(outputs)
 
         # Get overall output layer
@@ -148,7 +148,7 @@ class ANN(SurrogateModel):
                                                  kernel_initializer=self["init"],
                                                  bias_initializer=self["bias_init"],
                                                  kernel_regularizer=kernel_regularizer))
-        model.add(keras.layers.Dense(out_dim,activation="linear",use_bias=False))
+        model.add(keras.layers.Dense(out_dim,activation="linear",use_bias=True))
 
         return model
 
@@ -250,9 +250,9 @@ class ANN(SurrogateModel):
         if "activation" in self["optimize"]:
             hp.Choice("activation_function",["sigmoid","relu","swish","tanh"],default=self["activation"])
         if "neurons" in self["optimize"]:
-            hp.Int("no_neurons",6,200,sampling="log",default=self["no_neurons"])
+            hp.Int("no_neurons",3,20,sampling="log",default=self["no_neurons"])
         if "layers" in self["optimize"]:
-            hp.Int("no_hid_layers",2,10,default=self["no_layers"])
+            hp.Int("no_hid_layers",1,6,default=self["no_layers"])
         if "learning_rate" in self["optimize"]:
             hp.Float("learning_rate",0.001,0.1,sampling="log",default=self["learning_rate"])
         if "regularization" in self["optimize"]:

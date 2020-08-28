@@ -76,7 +76,7 @@ def verify_results(results,surrogate):
     # Set the optimal solutions as new sample
     results = np.atleast_2d(results)
     no_results = results.shape[0]
-    verification_ratio = 0.2
+    verification_ratio = settings["optimization"]["verification_ratio"]
     no_verifications = ceil(no_results*verification_ratio)
 
     # Randomly select a verification sample
