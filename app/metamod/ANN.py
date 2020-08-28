@@ -96,6 +96,62 @@ class ANN(SurrogateModel):
         for param in self.tbd:
             declare(param, None)
 
+    def build_sparse_model(self,neurons_hyp,activation_hyp,kernel_regularizer,in_dim,layers_hyp,out_dim):
+        """
+        Learn outpus one by one.
+
+        """
+        # Initialize input layer
+        inputs = keras.Input(shape=(in_dim,))
+
+        # Make output layer for each input
+        output_layer_list = []
+        for _ in range(out_dim):
+            dense = keras.layers.Dense(neurons_hyp, activation=activation_hyp,
+                                     kernel_initializer=self["init"],
+                                     bias_initializer=self["bias_init"],
+                                     kernel_regularizer=kernel_regularizer)(inputs)
+            for _ in range(layers_hyp-1):
+                dense = keras.layers.Dense(neurons_hyp, activation=activation_hyp,
+                                                     kernel_initializer=self["init"],
+                                                     bias_initializer=self["bias_init"],
+                                                     kernel_regularizer=kernel_regularizer)(dense)
+            outputs = keras.layers.Dense(out_dim,activation="linear",use_bias=False)(dense)
+            output_layer_list.append(outputs)
+
+        # Get overall output layer
+        if len(output_layer_list)>1:
+            outputs = keras.layers.concatenate(output_layer_list)
+        else:
+            outputs = output_layer_list[0]
+
+        #Make a model
+        model = keras.Model(inputs=inputs, outputs=outputs)
+##        model.summary()
+
+        return model        
+
+    def build_dense_model(self,neurons_hyp,activation_hyp,kernel_regularizer,in_dim,layers_hyp,out_dim):
+        """
+        A fully connected model.
+
+        """
+        model = keras.Sequential()
+        # Add layers        
+        model.add(keras.layers.Dense(neurons_hyp, activation=activation_hyp,
+                                             kernel_initializer=self["init"],
+                                             bias_initializer=self["bias_init"],
+                                             kernel_regularizer=kernel_regularizer,
+                                             input_shape=(in_dim,)))
+        for _ in range(layers_hyp-1):
+            model.add(keras.layers.Dense(neurons_hyp, activation=activation_hyp,
+                                                 kernel_initializer=self["init"],
+                                                 bias_initializer=self["bias_init"],
+                                                 kernel_regularizer=kernel_regularizer))
+        model.add(keras.layers.Dense(out_dim,activation="linear",use_bias=False))
+
+        return model
+
     def build_hypermodel(self,hp):
         """
         General claass to build the ANN using tensorflow with autokeras hyperparameters defined
@@ -104,8 +160,8 @@ class ANN(SurrogateModel):
             * hyperparameters initialized using default values in config file
             * bias deactivated in output layer as it is centered around 0
         """
-        # Initiallze model
-        model = keras.Sequential()
+
+        model_type = self["type"]
         
         # Initialize hyperparameters as fixed    
         neurons_hyp = hp.Fixed("no_neurons",self["no_neurons"])
@@ -123,19 +179,15 @@ class ANN(SurrogateModel):
         else:
             raise Exception("Invalid regularized specified")
         
-        # Add layers        
-        in_dim, out_dim = self["dims"]
-        model.add(keras.layers.Dense(neurons_hyp, activation=activation_hyp,
-                                             kernel_initializer=self["init"],
-                                             bias_initializer=self["bias_init"],
-                                             kernel_regularizer=kernel_regularizer,
-                                             input_shape=(in_dim,)))
-        for _ in range(layers_hyp-1):
-            model.add(keras.layers.Dense(neurons_hyp, activation=activation_hyp,
-                                                 kernel_initializer=self["init"],
-                                                 bias_initializer=self["bias_init"],
-                                                 kernel_regularizer=kernel_regularizer))
-        model.add(keras.layers.Dense(out_dim,activation="linear",use_bias=False))
+        # Initiallze model
+        in_dim, out_dim = self["dims"]        
+
+        if model_type == "dense":
+            model = self.build_dense_model(neurons_hyp,activation_hyp,kernel_regularizer,in_dim,layers_hyp,out_dim)
+        elif model_type == "sparse":
+            model = self.build_sparse_model(neurons_hyp,activation_hyp,kernel_regularizer,in_dim,layers_hyp,out_dim)
+        else:
+            raise Exception("Invalid model type")
 
         # Train
         optimizer = keras.optimizers.get(self["optimizer"])
