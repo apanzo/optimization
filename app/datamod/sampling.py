@@ -69,7 +69,7 @@ def resample_adaptive(points_new,surrogates,data):
     multiplier_proposed = 100
     np_proposed_points = data.input.shape[0]*multiplier_proposed
     
-    proposed_samples = sample(settings["data"]["sampling"],np_proposed_points,data.dim_in)
+    proposed_samples = sample("random",np_proposed_points,data.dim_in)
     predictions_list = [sur.predict_values(proposed_samples) for sur in surrogates]
     predictions = np.array(predictions_list)
 
@@ -119,7 +119,7 @@ def sample_adaptive(data,samples,predictions,no_points_new):
         raise Exception("Exploration method not implemented")
 
     if exploitation == "variance":
-        exploitation_metric = np.var(predictions,axis=0)[:,0]
+        exploitation_metric = np.max(np.var(predictions,axis=0),1)
     else:
         raise Exception("Exploitation method not implemented")
 
