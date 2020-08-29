@@ -84,7 +84,7 @@ class Surrogate:
             file = self.file
 
         # Evaluate the samples
-        self.model.evaluator.generate_results(self.samples,file,self.sampling_iterations)
+        self.model.evaluator.generate_results(self.samples,file,self.sampling_iterations,verify)
 
     def append_verification(self):
         """

@@ -21,9 +21,9 @@ class Evaluator:
     def __init__(self):
         self.save_results = write_results
 
-    def generate_results(self,samples,file,iteration):
+    def generate_results(self,samples,file,iteration,verify):
         self.iteration = iteration
-        response = self.evaluate(samples)
+        response = self.evaluate(samples,verify)
         self.save_results(file,samples,response)
 
 class EvaluatorBenchmark(Evaluator):
@@ -52,7 +52,7 @@ class EvaluatorBenchmark(Evaluator):
         
         return range_in, dim_in, dim_out, n_constr
 
-    def evaluate(self,samples):
+    def evaluate(self,samples,verify):
         # Evaluate
         response_all = self.problem.evaluate(samples,return_values_of=self.results,return_as_dictionary=True) # return values doesn't work - pymoo implementatino problem
         response = np.concatenate([response_all[column] for column in response_all if column in self.results], axis=1)
@@ -76,7 +76,7 @@ class EvaluatorData(Evaluator):
 
         self.source_file = os.path.join(path,matching_files[0])
 
-    def evaluate(self,samples):
+    def evaluate(self,samples,verify):
         """
         Dosctring
         """
@@ -128,15 +128,34 @@ class EvaluatorANSYS(Evaluator):
 
         return range_in, dim_in, dim_out, n_constr
 
-    def evaluate(self,samples):
+    def evaluate(self,samples,verify):
+        """
+        trick with iterations
+        """
+        if verify:
+            self.iteration += 1
+            
         self.update_journal(samples)
         while not self.can_run_ansys():
             waiting_time = 10
             print(f"Waiting for {waiting_time}s before checking licenses again")
             sleep(10)   # Wait before checking again
-        self.call_ansys()
+
+        # Try to perform the analysis indefinitely
+        while True:
+            try:
+                self.call_ansys()
+            except:
+                print("Analysis failed, retrying")
+                continue
+            break        
+
+        results = self.get_results(verify)
+
+        if verify:
+            self.iteration -= 1
         
-        return self.get_results()
+        return results
 
     def update_journal(self,samples):
         # Make journal file
@@ -215,17 +234,24 @@ class EvaluatorANSYS(Evaluator):
 
         return status
 
-    def get_results(self):
+    def get_results(self,verify):
+        outputs = settings["data"]["output_names"]
+        
         # read  results
         file = os.path.join(self.ansys_project_folder,"results",f"iteration_{self.iteration}.csv")
-
+        # obtain all data
         names = list(np.loadtxt(file,skiprows=1,max_rows=1,dtype=str,delimiter=",")[1:])
         nodim = len(names)
-        columns = [names.index(name) for name in names if not name in settings["data"]["input_names"]]
-        breakpoint()
         data = np.loadtxt(file,skiprows=7,delimiter=",",usecols=range(1,nodim+1))
+        data = np.atleast_2d(data)
 
-        response = data[:,columns]
+        # select only relevant outputs
+        columns_output = [names.index(name) for name in names if name in outputs]
+        response = data[:,columns_output]
+
+        # undo verification trick
+        if verify:
+            os.rename(file,file.replace("iteration_","verification_"))
 
         return response
 
