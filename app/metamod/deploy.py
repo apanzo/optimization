@@ -6,28 +6,38 @@ preprocessing stuff
 # Import pypi packages
 import numpy as np
 
-from datamod.sampling import complete_grid, partial_grid
+from datamod.sampling import response_grid
 
 # Functions
-def get_input_coordinates(density,requested_dims,dim_in,norm_fact,constants=None):
+def get_plotting_coordinates(density,requested_dims,dim_in,normalization_factors,range_norm,constants):
+    
+    all_samples = get_input_coordinates(density,requested_dims,range_norm)
     
     if len(requested_dims) == dim_in:
         if constants is not None:
-            print("Performing full grid, ignoring constants")
+            print("Returning full grid, ignoring constants")
             
-        return complete_grid(density,dim_in)
+        return all_samples
     else:
-        if constants is None or not len(constants) + len(requested_dims) == dim_in:
+        if constants is None or len(constants) + len(requested_dims) != dim_in:
             raise Exception(f"Incorrect amount of constants specified, required {dim_in-len(requested_dims)}")
 
-        constant_dims = [dim for dim in range(dim_in) if dim not in requested_dims]
-        div_fact = norm_fact[constant_dims]
-        constants_norm = constants/div_fact
-        
-        partial_input = partial_grid(density,dim_in,requested_dims)
+        # Obtain full response
+        sample = np.zeros((all_samples.shape[0],dim_in))
+        sample[:,requested_dims] = all_samples
+        partial_input = sample
 
+        # Obtain constant dimensions
+        constant_dims = [dim for dim in range(dim_in) if dim not in requested_dims]
+        division_factors = normalization_factors[constant_dims]
+        constants_norm = constants/division_factors
+
+        # Replace constant dimensions
         partial_input[:,constant_dims] += constants_norm
 
         return partial_input
 
+def get_input_coordinates(density,requested_dims,range_norm):
+    samples = response_grid(density,requested_dims,range_norm)
 
+    return samples

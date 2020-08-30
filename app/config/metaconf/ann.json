@@ -1,7 +1,7 @@
 {
  "type": "sparse",
- "no_layers": 6,
- "no_neurons": 13,
+ "no_layers": 3,
+ "no_neurons": 9,
  "activation": "relu",
  "init": "he_normal",
  "bias_init": "zeros",
@@ -28,5 +28,5 @@
  "max_trials": 10,
  "executions_per_trial": 1,
  "tuner_epochs": 100,
- "optimize": []
+ "optimize": ["neurons","layers"]
 }

@@ -1,6 +1,6 @@
 {
  "data": {
- "problem": "osy",
+ "problem": "matlab_peaks",
  "evaluator": "benchmark",
  "sampling": "halton",
  "default_sample_coef": 10,

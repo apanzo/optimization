@@ -10,7 +10,7 @@ from datamod import get_data, scale
 from datamod.results import make_response_files, append_verification_to_database
 from datamod.sampling import determine_samples, resample_static, resample_adaptive
 from metamod import cross_validate, optimize_hyperparameters, train_surrogate
-from metamod.deploy import get_input_coordinates
+from metamod.deploy import get_plotting_coordinates
 from metamod.performance import benchmark_accuracy, check_convergence, retrieve_metric
 from visumod import compare_surrogate, correlation_heatmap, plot_raw, sample_size_convergence, surrogate_response
 
@@ -108,6 +108,8 @@ class Surrogate:
             self.data = get_data(self.file)
             # Plot the input data
             plot_raw(self.data,self.sampling_iterations)
+            # Set normalized range
+            self.range_norm = (self.model.range_in.T/self.data.norm_in).T
 
     def optimize_hyperparameters(self):
         """
@@ -170,7 +172,12 @@ class Surrogate:
             if settings["data"]["evaluator"] == "benchmark":
                 self.accuracy = benchmark_accuracy(self)
             
-    def plot_response(self,inputs,output,density=30,**kwargs):
+    def plot_response(self,inputs,output,density=30,constants=None):
+        """
+
+        Notes:
+            - Add check that constants are in valid range
+        """
         # Convert to 0 based indexing
         inputs = np.array(inputs) - 1
         output = output - 1
@@ -195,21 +202,13 @@ class Surrogate:
         if len(inputs) > self.model.dim_in:
             raise Exception("Too many dimensions specified")
 
-        # Add check that constants are in valid range
-
         # Get response
-        input_norm = get_input_coordinates(density,inputs,self.model.dim_in,self.data.norm_in,**kwargs)
+        input_norm = get_plotting_coordinates(density,inputs,self.model.dim_in,self.data.norm_in,self.range_norm,constants)
         output_norm = self.surrogate.predict_values(input_norm)
 
         # Unormalize
-        input_vec_full = scale(input_norm,self.data.norm_in)
-        output_vec_full = scale(output_norm,self.data.norm_out)
-
-        # Filter only valid output
-        aaa = np.all(input_vec_full>=self.model.range_in[inputs,0],1)
-        bbb = np.all(input_vec_full<=self.model.range_in[inputs,1],1)
-        input_vec = input_vec_full[aaa*bbb]
-        output_vec = output_vec_full[aaa*bbb]
+        input_vec = scale(input_norm,self.data.norm_in)
+        output_vec = scale(output_norm,self.data.norm_out)
 
         # Make plot
         surrogate_response(input_vec[:,inputs],output_vec[:,[output]],inputs)

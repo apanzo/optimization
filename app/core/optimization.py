@@ -9,7 +9,7 @@ from core.settings import settings
 from datamod.problems import Custom
 from metamod.performance import verify_results
 from optimod import calculate_hypervolume, set_optimization, solve_problem
-from visumod import vis_design_space, vis_objective_space, vis_objective_space_pcp
+from visumod import compare_pareto_fronts, vis_design_space, vis_objective_space, vis_objective_space_pcp
 
 class Optimization:
     """
@@ -45,6 +45,7 @@ class Optimization:
         Notes: direct optimization does not normalize
         """
         print("###### Optimization #######")
+        self.iterations += 1
 
         if self.direct:
             # Specify range
@@ -99,6 +100,8 @@ class Optimization:
                 self.optimization_stats["hv_calc"] = calculate_hypervolume(pf_calc,self.ref_point)
                 self.optimization_stats["hv_true"] = calculate_hypervolume(pf_true,self.ref_point)
                 self.optimization_stats["pf_error"] = 100*(self.optimization_stats["hv_true"]-self.optimization_stats["hv_calc"])/self.optimization_stats["hv_true"]
+                if self.model.n_obj == 2:
+                    compare_pareto_fronts(pf_true,pf_calc)
 
         # Output
         if bool(self.optimization_stats):
@@ -126,9 +129,13 @@ class Optimization:
             # Evaluate selected measure
             measure = settings["optimization"]["error"]
             if measure == "max":
-                self.error_measure = np.max(self.error)
+                measured_error = self.error
             elif measure == "mean":
-                self.error_measure = np.max(np.mean(self.error,0))
+                measured_error = np.mean(self.error,0)
+            elif measure == "percentile":
+                measured_error = np.percentile(self.error,60,0,interpolation="lower")
+
+            self.error_measure = np.max(measured_error)
 
             print(f"Optimization {measure} percent error: {self.error_measure:.2f}")
 
@@ -142,7 +149,6 @@ class Optimization:
             print(f"Total number of samples: {self.surrogate.no_samples:.0f}")
         else:
             self.surrogate.trained = False
-            self.iterations += 1
             if settings["surrogate"]["append_verification"]:
                     self.surrogate.append_verification()
 
@@ -164,4 +170,4 @@ class Optimization:
             
         ##len([step["delta_f"] for step in model.res.algorithm.display.term.metrics])
 
-ref_points = {"tnk":[1.2,1.2],"dtlz7":[1,1,7],"osy":[-50,100]}
+ref_points = {"tnk":[1.2,1.2],"dtlz7":[1,1,7],"osy":[-50,100],"bnh":[150,70]}

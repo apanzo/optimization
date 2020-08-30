@@ -9,6 +9,7 @@ import os
 
 # Import pypi packages
 import numpy as np
+from sklearn.preprocessing import minmax_scale
 from smt.sampling_methods import FullFactorial, LHS, Random
 from smt.sampling_methods.sampling_method import SamplingMethod
 
@@ -134,18 +135,13 @@ def sample_adaptive(data,samples,predictions,no_points_new):
 
     return candidates
 
-def complete_grid(density,n_dim):
+def response_grid(density,inputs,ranges):
+    n_dim = len(inputs)
     no_points = density**n_dim
+    sample_unit = sample("grid",no_points,n_dim)
+    sample_desired = minmax_scale(sample_unit)*np.ptp(ranges[inputs,:],1)+np.min(ranges[inputs,:],1)
 
-    return sample("grid",no_points,n_dim)
-
-def partial_grid(density,tot_dim,dims):
-    partial_sample = complete_grid(density,len(dims))
-
-    sample = np.zeros((partial_sample.shape[0],tot_dim))
-    sample[:,dims] = partial_sample
-
-    return sample
+    return sample_desired
 
 class Halton(SamplingMethod):
     """

@@ -9,7 +9,7 @@ import numpy as np
 
 # Import custom packages
 from datamod.sampling import sample
-from visumod.plots import scatter,scatter_pymoo,curve,heatmap,pcp,surface_pymoo,learning_curves
+from visumod.plots import scatter,scatter_pymoo,curve,heatmap,pcp,surface_pymoo,learning_curves,pareto_fronts
 
 def plot_raw(data,iteration,normalized=False):
     """
@@ -77,9 +77,6 @@ def compare_surrogate(inputs,outputs,predict,iteration):
     Plot the comparison of raw data and surrogate response.
     """
     data_all = np.stack((outputs.flatten(),predict(inputs).flatten()),1)
-##    plt.plot([-1,1],[-1,1])
-##    plt.xlabel("Training data")
-##    plt.ylabel("Surrogate prediction")
     scatter(data_all,f"iteration_{iteration}_surrogate",compare=True)
 
 def sample_size_convergence(metrics):
@@ -90,7 +87,7 @@ def sample_size_convergence(metrics):
         model: model object
         
     """
-    curve(metrics["values"],f"ssd_metric_{metrics['name']}")
+    curve(metrics["values"],f"ssd_metric_{metrics['name']}",labels=["Iteration",metrics["name"].upper()],units=["-","-"])
 
 def correlation_heatmap(predict,dim_in):
     x = sample("grid",1000,dim_in)
@@ -115,3 +112,6 @@ def plot_training_history(history,train_in,train_out,test_in,test_out,predict,pr
         
     """
     learning_curves(history.history['loss'],history.history['val_loss'],train_out,predict(train_in),test_out,predict(test_in),progress,trial_id)
+
+def compare_pareto_fronts(pf_true,pf_calc):
+    pareto_fronts(pf_true,pf_calc)

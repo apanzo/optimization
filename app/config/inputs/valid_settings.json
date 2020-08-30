@@ -4,7 +4,7 @@
  "sampling": ["random","halton","lhs","grid"],
  "resampling": ["linear","geometric"],
  "adaptive": [null,"eason"],
- "convergence": ["mae","mse","rmse","medae","max_error","r2","max_iterations"],
+ "convergence": ["mae","mse","rmse","medae","max_error","max_iterations"],
  "convergence_relative": [true,false]
  },
 
@@ -18,6 +18,6 @@
  "algorithm": ["default","nsga2","nsga3",null],
  "termination": ["default","f_tol","n_gen"],
  "constrained": [true,false],
- "error": ["max","mean"]
+ "error": ["max","mean","percentile"]
  }
 }

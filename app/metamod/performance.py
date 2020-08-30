@@ -20,6 +20,7 @@ from sklearn.metrics import r2_score as R2
 from core.settings import settings
 from datamod import load_problem, scale
 from datamod.sampling import sample
+from metamod.deploy import get_input_coordinates
 
 # Functions
 def retrieve_metric(surrogates):
@@ -107,17 +108,20 @@ def convergence_operator():
     return op
 
 def benchmark_accuracy(surrogate):
-    density = 100
-    grid_normalized = sample("grid",density*surrogate.model.dim_in,surrogate.model.dim_in)
+    no_points = 100*surrogate.model.dim_in
+    density = ceil(no_points**(1/surrogate.model.dim_in))
+    inputs = [num for num in range(surrogate.model.dim_in)]
+    grid_normalized = get_input_coordinates(density,inputs,surrogate.range_norm)
+
     response_surrogate_normalized = surrogate.surrogate.predict_values(grid_normalized)
     response_surrogate = scale(response_surrogate_normalized,surrogate.data.norm_out)
 
     problem = load_problem(settings["data"]["problem"])[0]
     grid = scale(grid_normalized,surrogate.data.norm_in)
-    response_original = surrogate.model.evaluator.evaluate(grid)
-
-    diff = response_original-response_surrogate
-
+    response_original = surrogate.model.evaluator.evaluate(grid,False)
+    
+    diff = 100*(response_original-response_surrogate)/np.ptp(response_original,0)
+    print(len(diff))
     diffs = {}
     diffs["mean"] = np.mean(diff,0)
     diffs["std"] = np.std(diff,0)

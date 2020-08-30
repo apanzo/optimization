@@ -63,11 +63,13 @@ def scatter(data,name,lower_bound=None,compare=False):
         plt.ylabel('Prediction')
     save_figure(name)
 
-def curve(data,name,lower_bound=None):
+def curve(data,name,labels,units,lower_bound=None):
     fig = plt.figure()
     plt.plot(data,"k")
     if lower_bound:
         plt.ylim(ymin=0)
+    plt.xlabel(f"{labels[0]} [{units[0]}]")
+    plt.ylabel(f"{labels[1]} [{units[1]}]")
     save_figure(name)
 
 def heatmap(correlation):
@@ -84,6 +86,7 @@ def heatmap(correlation):
 
 def pcp(data,name):
     plot = get_visualization("pcp", labels="f")
+    plot.set_axis_style(color="C0")
     plot.add(data,color="k")
     plot.do()
 
@@ -141,6 +144,15 @@ def learning_curves(training_loss,validation_loss,data_train,prediction_train,da
         name = os.path.join("ann",f"model_{trial_id[:8]}_{progress[0]}_{progress[1]}_{progress[3]}")
     save_figure(name)
 
+def pareto_fronts(pf_true,pf_calc):
+    fig = plt.figure()
+    plt.scatter(pf_true[:,0],pf_true[:,1],color="C0",label="True")
+    plt.scatter(pf_calc[:,0],pf_calc[:,1],color="k",label="Prediction")
+    plt.legend()
+    plt.xlabel('$f_1$')
+    plt.ylabel('$f_2$')
+    save_figure("benchmark_pareto_fronts")
+    
 def get_plot_args(data,label):
     n_dim = data.shape[1]
     plot_args = {}

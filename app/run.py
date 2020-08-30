@@ -47,7 +47,7 @@ def optimize(surrogate):
     optimization.report()
         
 # Choose problem to solve
-problem_id = 61
+problem_id = 90
 
 # Initialize the settings
 update_settings(problem_id)
@@ -103,10 +103,11 @@ if settings["data"]["evaluator"] == "benchmark":
     if perform_optimization:
         optimization.benchmark()
 
-if build_surrogate:
-    surrogate.plot_response(inputs=[1,2],output=1)
-    ##    surrogate.plot_response(inputs=[1,2],output=1,constants=[1])
-    ##    surrogate.plot_response(inputs=[3],output=1,constants=[1,1])
+##if build_surrogate:
+##        surrogate.plot_response(inputs=[1,2],output=1)
+##        surrogate.plot_response(inputs=[1,2],output=1,constants=[1])
+##        surrogate.plot_response(inputs=[3],output=1,constants=[1,1])
+##        surrogate.plot_response(inputs=[1,2],output=1,constants=[1,2,3,4,5])
 
 # Save trained surrogate
 if build_surrogate and not load_surrogate:
