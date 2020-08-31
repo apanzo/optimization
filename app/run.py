@@ -48,7 +48,7 @@ def optimize(surrogate):
 
 
 # Choose problem to solve
-problem_ids = [81]
+problem_ids = [0]
 
 for problem_id in problem_ids:
 

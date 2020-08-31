@@ -7,8 +7,8 @@ import numpy as np
 # Import custom packages
 from core.settings import settings
 from datamod.problems import Custom
-from metamod.performance import verify_results
-from optimod import calculate_hypervolume, set_optimization, solve_problem
+from optimod import set_optimization, solve_problem
+from optimod.performance import calculate_hypervolume, verify_results
 from visumod import compare_pareto_fronts, vis_design_space, vis_objective_space, vis_objective_space_pcp
 
 class Optimization:
