@@ -303,19 +303,6 @@ class ANN(SurrogateModel):
             entry["score"] = scores[idx]
         self.write_stats(hps,"ann_tuner_stats")
 
-##        # Get metrics of the best model
-##        best_trial = tuner.oracle.get_best_trials()[0]
-##        metrics = best_trial.metrics.get_config()["metrics"]
-##        self.metrics = {metric:metrics[metric]["observations"][0]["value"][0] for metric in metrics.keys()}
-##
-##        self.evaluation(self.metrics)
-##
-##        # Delete unnecessary learning curves
-##        figures = os.listdir(os.path.join(settings["folder"],"figures","ann"))
-##        to_delete = [i for i in figures if i[6:14]==best_trial.trial_id[:8] and int(i[15]) == iteration]
-##        for i in to_delete:
-##            os.remove(os.path.join(settings["folder"],"figures","ann",i))
-
     def _train(self):
         """
         Train the ANN.
@@ -342,27 +329,6 @@ class ANN(SurrogateModel):
 
         self._is_trained = True
         self.early_stop = histor.epoch[-1]+1
-
-        # Evaluate the model
-##        self.validation_metric = self.evaluation(histor.history)
-       
-##    def evaluation(self,history):
-##        """
-##        Evaluate the generalization error.
-##
-##        Returns:
-##            mse: mean squared error
-##        """
-##        breakpoint()
-##        mse = history["val_mse"]
-##        rmse = history["val_root_mean_squared_error"]
-##        mae = history['val_mae']
-##        print(f'MSE: {mse:.3f}, RMSE: {rmse:.3f}')
-##        print(f"MAE: {mae:.3f}")
-##        stats = [{"MSE":mse,"RMSE":rmse,"MAE":mae}]
-##        self.write_stats(stats,"ann_training_stats")
-##        
-##        return mse
 
     def _predict_values(self, x):
         """

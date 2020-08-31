@@ -139,16 +139,9 @@ class EvaluatorANSYS(Evaluator):
         while not self.can_run_ansys():
             waiting_time = 10
             print(f"Waiting for {waiting_time}s before checking licenses again")
-            sleep(10)   # Wait before checking again
+            sleep(waiting_time)
 
-        # Try to perform the analysis indefinitely
-        while True:
-            try:
-                self.call_ansys()
-            except:
-                print("Analysis failed, retrying")
-                continue
-            break        
+        self.call_ansys()
 
         results = self.get_results(verify)
 
@@ -202,10 +195,12 @@ class EvaluatorANSYS(Evaluator):
         file = "runwb2"
         arguments = ["-B","-R"]
 
-        call = subprocess.run([file]+arguments+[self.output],cwd=directory,shell=True,capture_output=True,text=True)
-
-        if call.returncode:
-            raise Exception("Analysis failed")
+        while True:
+            call = subprocess.run([file]+arguments+[self.output],cwd=directory,shell=True,capture_output=True,text=True)
+            if call.returncode:
+                print("Analysis failed, retrying")
+            else:
+                break
 
     def can_run_ansys(self,minimal_amount = 2):
         """
@@ -221,7 +216,10 @@ class EvaluatorANSYS(Evaluator):
 
         now = datetime.datetime.now()
 
-        if all(can_run) and not (now.hour in range(8,15)):
+        if not all(free_licenses):
+            print("No licences available")
+            status = False
+        elif all(can_run) and not (now.hour in range(8,15)):
             print("Can run")
             status = True
         elif all(can_run_peak):
@@ -230,7 +228,7 @@ class EvaluatorANSYS(Evaluator):
         else:
             print("Not enough licences available: " + str(free_licenses))
             status = False
-            status = True
+            status = True ##########
 
         return status
 
