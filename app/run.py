@@ -45,72 +45,76 @@ def optimize(surrogate):
 
     # Write
     optimization.report()
-        
+
+
 # Choose problem to solve
-problem_id = 90
+problem_ids = [90,91]
 
-# Initialize the settings
-update_settings(problem_id)
+for problem_id in problem_ids:
 
-# Initialize the model
-model = Model() 
+    print(f"######### Solving problem {problem_id} #########")
+    # Initialize the settings
+    update_settings(problem_id)
 
-# Check computation setup
-build_surrogate = bool(settings["surrogate"]["surrogate"])
-load_surrogate = settings["surrogate"]["surrogate"] == "load"
-train_from_data = settings["data"]["evaluator"] == "data"
-perform_optimization = bool(settings["optimization"]["algorithm"])
+    # Initialize the model
+    model = Model() 
 
-# Initialize
-if build_surrogate:
-    surrogate = Surrogate(model)
-if perform_optimization:
-    optimization = Optimization(model)
+    # Check computation setup
+    build_surrogate = bool(settings["surrogate"]["surrogate"])
+    load_surrogate = settings["surrogate"]["surrogate"] == "load"
+    train_from_data = settings["data"]["evaluator"] == "data"
+    perform_optimization = bool(settings["optimization"]["algorithm"])
 
-
-# Perform computation
-# Surrogate only
-if build_surrogate and not perform_optimization:
-    train_surrogate()
-
-# Direct optimization
-elif perform_optimization and not build_surrogate:
-    optimize(None)
-
-# Surrogate based optimization
-elif build_surrogate and perform_optimization:
-
-    # Using trained surrogate
-    if load_surrogate:
-        reload_surrogate()
-
-    # Make surrogate and then optimize
-    else:
-        train_surrogate()        
-
-    # Optimize
-    while not optimization.converged:
-        if not surrogate.trained:
-            train_surrogate()
-        optimize(surrogate)    
-
-# Otherwise
-else:
-    print("There is nothing to perform within this model")
-
-# Evaluate benchmark
-if settings["data"]["evaluator"] == "benchmark":
+    # Initialize
+    if build_surrogate:
+        surrogate = Surrogate(model)
     if perform_optimization:
-        optimization.benchmark()
+        optimization = Optimization(model)
 
-##if build_surrogate:
-##        surrogate.plot_response(inputs=[1,2],output=1)
-##        surrogate.plot_response(inputs=[1,2],output=1,constants=[1])
-##        surrogate.plot_response(inputs=[3],output=1,constants=[1,1])
-##        surrogate.plot_response(inputs=[1,2],output=1,constants=[1,2,3,4,5])
 
-# Save trained surrogate
-if build_surrogate and not load_surrogate:
-    surrogate.save()
+    # Perform computation
+    # Surrogate only
+    if build_surrogate and not perform_optimization:
+        train_surrogate()
 
-input("Ended")
+    # Direct optimization
+    elif perform_optimization and not build_surrogate:
+        optimize(None)
+
+    # Surrogate based optimization
+    elif build_surrogate and perform_optimization:
+
+        # Using trained surrogate
+        if load_surrogate:
+            reload_surrogate()
+
+        # Make surrogate and then optimize
+        else:
+            train_surrogate()        
+
+        # Optimize
+        while not optimization.converged:
+            if not surrogate.trained:
+                train_surrogate()
+            optimize(surrogate)    
+
+    # Otherwise
+    else:
+        print("There is nothing to perform within this model")
+
+    # Evaluate benchmark
+    if settings["data"]["evaluator"] == "benchmark":
+        if perform_optimization:
+            optimization.benchmark()
+
+    ##if build_surrogate:
+    ##        surrogate.plot_response(inputs=[1,2],output=1)
+    ##        surrogate.plot_response(inputs=[1,2],output=1,constants=[1])
+    ##        surrogate.plot_response(inputs=[3],output=1,constants=[1,1])
+    ##        surrogate.plot_response(inputs=[1,2],output=1,constants=[1,2,3,4,5])
+
+    # Save trained surrogate
+    if build_surrogate and not load_surrogate:
+        surrogate.save()
+
+##    input("Ended")

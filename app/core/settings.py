@@ -26,8 +26,7 @@ def get_input_from_id(problem_id,problem_folder):
     """
     Get filename from problem ID.
     """
-    matching_ids = [name for name in os.listdir(problem_folder) if name.startswith(str(problem_id).zfill(2))]
-
+    matching_ids = [name for name in os.listdir(problem_folder) if name.startswith(str(problem_id).zfill(3))]
     if len(matching_ids) == 1:
         file_name = matching_ids[0].replace(".json","")
     elif len(matching_ids) == 0:
@@ -35,8 +34,8 @@ def get_input_from_id(problem_id,problem_folder):
     else:
         raise Exception(f"ID {problem_id} input multiple defined")
 
-    if not (file_name[:2].isdigit() and file_name[2] is "-"):
-        raise Exception('Invalid input file name, should start with "XX-" where XX is the problem ID')
+    if not (file_name[:3].isdigit() and file_name[3] is "-"):
+        raise Exception('Invalid input file name, should start with "XXX-" where XXX is the problem ID')
 
     file = os.path.join(problem_folder,file_name)
 
@@ -55,7 +54,9 @@ def check_valid_settings():
 
 def update_settings(problem_id):
     if not len(settings.keys()) == 1:
-        raise Exception("Should only apply method on empty settings")
+        keep = settings["root"]
+        settings.clear()
+        settings["root"] = keep
 
     # Get filename
     problem_folder = os.path.join(settings["root"],"app","inputs")
@@ -84,7 +85,7 @@ def restart_check(id_current,file):
     # List defined problems
     data_folder, all_result_folders = get_results_folders()
 
-    matching_folders = [folder for folder in all_result_folders if folder.startswith(str(id_current).zfill(2))]
+    matching_folders = [folder for folder in all_result_folders if folder.startswith(str(id_current).zfill(3))]
 
     # If ID has already results, decide whether to overwrite
     if len(matching_folders) > 0:
@@ -138,7 +139,7 @@ def make_workfolder(file,fresh):
 
     """
     # Setup the folder path
-    folder_name = str(settings["id"]).zfill(2) + "-" +  settings["data"]["problem"]
+    folder_name = str(settings["id"]).zfill(3) + "-" +  settings["data"]["problem"]
     folder_path = os.path.join(settings["root"],"data",folder_name)
     figures_path = os.path.join(folder_path,"figures")
     logs_path = os.path.join(folder_path,"logs")
@@ -173,7 +174,8 @@ def load_object(name):
 def ask_to_overwrite(path,id_current,text):
     # Ask what to do
     while True:
-        response = input(f"ID {id_current} has already results and {text}. Do you want to overwrite results? [y/n]")
+##        response = input(f"ID {id_current} has already results and {text}. Do you want to overwrite results? [y/n]")
+        response = "y"
         if response in ["y","n"]:
             overwrite = True if response=="y" else False
             break

@@ -217,7 +217,8 @@ class Surrogate:
         if self.surrogate.name == 'ANN':
             self.surrogate.model.save(os.path.join(settings["folder"],"logs","ann"))
         else:
-            dump_object("meta",self.surrogate)
+            pass
+##            dump_object("meta",self.surrogate)
 
         status = load_json(os.path.join(settings["folder"],"status"))
         to_update = {"surrogate_trained":True,"range_out":self.surrogate.range_out.tolist()}

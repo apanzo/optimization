@@ -25,7 +25,7 @@
  "termination": "default",
  "constrained": true,
  "error_limit": 5,
- "error": "mean",
+ "error": "percentile",
  "verification_ratio": 0.2
  }
 }
