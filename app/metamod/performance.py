@@ -73,23 +73,6 @@ def check_convergence(metrics):
 
     return trained
 
-def verify_results(results,surrogate):
-    # Set the optimal solutions as new sample
-    results = np.atleast_2d(results)
-    no_results = results.shape[0]
-    verification_ratio = settings["optimization"]["verification_ratio"]
-    no_verifications = ceil(no_results*verification_ratio)
-
-    # Randomly select a verification sample
-    idx =  np.random.default_rng().choice(no_results,size=(no_verifications),replace=False)
-    surrogate.samples = results[idx]
-    
-    # Evaluate the samples and load the results
-    surrogate.evaluate_samples(verify=True) 
-    surrogate.load_results(verify=True)
-
-    return idx
-
 def evaluate_metrics(inputs,outputs,predict):
     metrics = {}
     for measure in defined_metrics.keys():

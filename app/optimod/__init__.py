@@ -9,7 +9,6 @@ import os
 # Import pypi packages
 import numpy as np
 from pymoo.factory import get_algorithm
-from pymoo.factory import get_performance_indicator
 from pymoo.factory import get_reference_directions
 from pymoo.factory import get_sampling, get_crossover, get_mutation
 from pymoo.factory import get_termination
@@ -148,9 +147,3 @@ def set_algorithm(name,no_obj,setup):
     algorithm = get_algorithm(name,eliminate_duplicates=True,**algorithm_args)
 
     return algorithm
-
-def calculate_hypervolume(data,ref_point):
-    hv = get_performance_indicator("hv", ref_point=ref_point)
-    hv = hv.calc(data)
-    
-    return hv
