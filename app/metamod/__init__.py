@@ -118,7 +118,7 @@ def set_surrogate(name,dim_in,dim_out):
 
     # If the ANN surrogate is used, add it to available options
     if name=="ann":
-        from metamod.ANN import ANN         ### import only when actually used, its slow due to tensorflow
+        from metamod.ANN_tf import ANN         ### import only when actually used, its slow due to tensorflow
         available.update({"ann": ANN})
         setup.update({"dims":(dim_in,dim_out)})
 
