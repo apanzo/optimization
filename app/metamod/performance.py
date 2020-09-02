@@ -104,7 +104,7 @@ def benchmark_accuracy(surrogate):
     response_original = surrogate.model.evaluator.evaluate(grid,False)
     
     diff = 100*(response_original-response_surrogate)/np.ptp(response_original,0)
-    print(len(diff))
+
     diffs = {}
     diffs["mean"] = np.mean(diff,0)
     diffs["std"] = np.std(diff,0)
@@ -125,6 +125,11 @@ def benchmark_accuracy(surrogate):
 
 def RMSE(*args,**kwargs):
     return MSE(*args,squared=False,**kwargs)
+
+def report_divergence():
+    path = os.path.join(settings["root"],"data","diverging.txt")
+    with open(path,"a") as file:
+        file.write(f"{settings['id']}\n")
 
 defined_metrics = {
     "r2": R2,

@@ -8,6 +8,8 @@ import os
 
 # Import pypi packages
 ##from matplotlib import cm
+import numpy as np
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 from pymoo.factory import get_visualization
 
@@ -73,12 +75,7 @@ def curve(data,name,labels,units,lower_bound=None):
     save_figure(name)
 
 def heatmap(correlation):
-    import numpy as np
-    import matplotlib.colors as mcolors
-    cmp1 = plt.cm.Greys_r(np.linspace(0., 1, 128))
-    cmp2 = plt.cm.Blues(np.linspace(0, 0.9, 128))
-    colors = np.vstack((cmp1, cmp2))
-    newmap = mcolors.LinearSegmentedColormap.from_list('my_colormap', colors)
+    newmap = get_blackblue_cmap()
     
     plot = get_visualization("heatmap",labels="x",cmap=newmap,reverse=False)
     plot.add(correlation,vmin=-1, vmax=1)
@@ -92,26 +89,28 @@ def pcp(data,name):
 
     save_figure(name,plot)
 
-def surface_pymoo(data):
+def surface_pymoo(data,iteration):
     """
     Docstring
     """
     # Add data to plot
     plot_args = get_plot_args(data,"x")
 
-    angles = 1 if data.shape[1] == 3 else 1 ###
+    angles = 4 if data.shape[1] == 3 and iteration else 1
 
     for angle in range(angles):
         plot_args["angle"] = (30,-135+angle*90)
             
         plot = get_visualization("scatter",**plot_args)
-        kwargs = {"cmap":"gist_gray"} if data.shape[1] == 3 else {"color":"k"}
+        kwargs = {"cmap":get_blackblue_cmap()} if data.shape[1] == 3 else {"color":"k"}
         plot.add(data,plot_type="surface",**kwargs)
         plot.do()
 
         # Save figure
-##        save_figure(name+f"_{angle+1}",plot)
-        plot.show()
+        if iteration:
+            save_figure(f"iteration_{iteration}_response_{angle}",plot)
+        else:
+            plot.show()
 
 def learning_curves(training_loss,validation_loss,data_train,prediction_train,data_test,prediction_test,progress,trial_id):
     plt.figure()
@@ -179,3 +178,11 @@ def save_figure(name,plot=None,iteration=None):
 
     # Close the plot
     plt.close()
+
+def get_blackblue_cmap():
+    cmp1 = plt.cm.Greys_r(np.linspace(0., 1, 128))
+    cmp2 = plt.cm.Blues(np.linspace(0, 0.9, 128))
+    colors = np.vstack((cmp1, cmp2))
+    newmap = mcolors.LinearSegmentedColormap.from_list('my_colormap', colors)
+
+    return newmap

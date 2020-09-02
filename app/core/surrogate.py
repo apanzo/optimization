@@ -11,7 +11,7 @@ from datamod.results import make_response_files, append_verification_to_database
 from datamod.sampling import determine_samples, resample_static, resample_adaptive
 from metamod import cross_validate, optimize_hyperparameters, train_surrogate
 from metamod.deploy import get_plotting_coordinates
-from metamod.performance import benchmark_accuracy, check_convergence, retrieve_metric
+from metamod.performance import benchmark_accuracy, check_convergence, retrieve_metric, report_divergence
 from visumod import compare_surrogate, correlation_heatmap, plot_raw, sample_size_convergence, surrogate_response
 
 class Surrogate:
@@ -24,6 +24,7 @@ class Surrogate:
         # Training status
         self.name = settings["surrogate"]["surrogate"]
         self.trained = False
+        self.diverging = False
         self.hp_optimized = False
         self.optimized_to_samples = 1     #Initialized with 1 to avoid division by zero
         self.reoptimization_ratio = settings["surrogate"]["reoptimization_ratio"]
@@ -157,22 +158,30 @@ class Surrogate:
         # Check convergence
         self.trained = check_convergence(self.convergence_metric["values"])
 
+        # Check divergence
+        if self.no_samples > max_samples:
+            print("Surrogate diverged")
+            self.diverging = True
+            report_divergence()
+            self.trained = True
+
     def report(self):
         # Plot convergence
         sample_size_convergence(self.convergence_metric)
 
         # Save training stats
         dump_object("stats",self.convergence_metric["values"],self.sampling_iterations)
-
         if self.trained:
             print("Surrogate converged")
             # Plot the sample size convergence
             correlation_heatmap(self.surrogate.predict_values,self.model.dim_in)
+            if self.model.dim_in == 2 and self.model.dim_out == 1:
+                self.plot_response(inputs=[1,2],output=1,iteration=self.sampling_iterations)
 
             if settings["data"]["evaluator"] == "benchmark":
                 self.accuracy = benchmark_accuracy(self)
             
-    def plot_response(self,inputs,output,density=30,constants=None):
+    def plot_response(self,inputs,output,density=30,constants=None,iteration=None):
         """
 
         Notes:
@@ -211,7 +220,7 @@ class Surrogate:
         output_vec = scale(output_norm,self.data.norm_out)
 
         # Make plot
-        surrogate_response(input_vec[:,inputs],output_vec[:,[output]],inputs)
+        surrogate_response(input_vec[:,inputs],output_vec[:,[output]],inputs,iteration)
 
     def save(self):
         if self.surrogate.name == 'ANN':
@@ -241,3 +250,5 @@ class Surrogate:
             self.surrogate = interp
         else:
             self.surrogate = load_object("meta")[0]
+
+max_samples = 5000

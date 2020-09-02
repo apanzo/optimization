@@ -48,7 +48,7 @@ def optimize(surrogate):
 
 
 # Choose problem to solve
-problem_ids = [0]
+problem_ids = range(40,180)
 
 for problem_id in problem_ids:
 
@@ -94,6 +94,8 @@ for problem_id in problem_ids:
 
         # Optimize
         while not optimization.converged:
+            if surrogate.diverging:
+                break
             if not surrogate.trained:
                 train_surrogate()
             optimize(surrogate)    
@@ -103,7 +105,7 @@ for problem_id in problem_ids:
         print("There is nothing to perform within this model")
 
     # Evaluate benchmark
-    if settings["data"]["evaluator"] == "benchmark":
+    if settings["data"]["evaluator"] == "benchmark" and not surrogate.diverging:
         if perform_optimization:
             optimization.benchmark()
 
@@ -114,7 +116,7 @@ for problem_id in problem_ids:
     ##        surrogate.plot_response(inputs=[1,2],output=1,constants=[1,2,3,4,5])
 
     # Save trained surrogate
-    if build_surrogate and not load_surrogate:
+    if build_surrogate and not load_surrogate and not surrogate.diverging:
         surrogate.save()
 
 ##    input("Ended")

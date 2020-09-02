@@ -96,9 +96,9 @@ def correlation_heatmap(predict,dim_in):
     cor = np.corrcoef(data,rowvar=False)
     heatmap(cor)
 
-def surrogate_response(inputs,outputs,dimensions):
+def surrogate_response(inputs,outputs,dimensions,iteration):
     data_all = np.concatenate((inputs,outputs),1)
-    surface_pymoo(data_all)
+    surface_pymoo(data_all,iteration)
 
 def plot_training_history(history,train_in,train_out,test_in,test_out,predict,progress,trial_id=None):
     """
