@@ -5,7 +5,7 @@
  "sampling": "halton",
  "default_sample_coef": 10,
  "resampling": "geometric",
- "resampling_param": 1.2,
+ "resampling_param": 1.1,
  "adaptive": "eason",
  "convergence": "rmse",
  "convergence_relative": false,
@@ -13,7 +13,7 @@
  },
 
  "surrogate": {
- "surrogate": "ann",
+ "surrogate": "ann_pt",
  "reoptimization_ratio": 1.5,
  "validation": "kfold",
  "validation_param": 5,
