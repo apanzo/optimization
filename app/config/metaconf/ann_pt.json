@@ -1,7 +1,8 @@
 {
- "no_layers": 8,
- "no_neurons": 40,
- "activation": "swish",
+ "type": "sparse",
+ "no_layers": 3,
+ "no_neurons": 9,
+ "activation": "relu",
  "init": "he_normal",
  "bias_init": "zeros",
  "kernel_regularizer": "l1",
@@ -13,12 +14,12 @@
 
  "optimizer": "adam",
  "learning_rate": 0.01,
- "no_epochs": 1000,
+ "no_epochs": 3000,
 
  "loss": "mse",
 
  "stopping": true,
- "stopping_delta": 0.0001,
+ "stopping_delta": 0.000001,
  "stopping_patience": 50,
 
  "tensorboard": false,
@@ -26,6 +27,6 @@
  "tuner": "bayesian",
  "max_trials": 10,
  "executions_per_trial": 1,
- "tuner_epochs": 20,
- "optimize": []
+ "tuner_epochs": 100,
+ "optimize": ["neurons","layers"]
 }

@@ -1,8 +1,9 @@
-from . import multi_execution_tuner_cv
 from kerastuner.tuners.bayesian import BayesianOptimizationOracle
+from .multi_execution_tuner_pytorch_cv import MultiExecutionTunerPyTorchCV
 
-class BayesianOptimizationCV(multi_execution_tuner_cv.MultiExecutionTunerCV):
+class BayesianPyTorchCV(MultiExecutionTunerPyTorchCV):
     """BayesianOptimization tuning with Gaussian process.
+
     """
 
     def __init__(self,
@@ -23,6 +24,5 @@ class BayesianOptimizationCV(multi_execution_tuner_cv.MultiExecutionTunerCV):
             hyperparameters=hyperparameters,
             tune_new_entries=tune_new_entries,
             allow_new_entries=allow_new_entries)
-        super(BayesianOptimizationCV, self, ).__init__(oracle=oracle,
-                                                     hypermodel=hypermodel,
-                                                     **kwargs)
+        self.executions_per_trial = kwargs.pop("executions_per_trial") ########
+        super().__init__(oracle=oracle,hypermodel=hypermodel,**kwargs)

@@ -228,8 +228,6 @@ class ANN(ANN_base):
         # Retrieve and save best model
         best_hp = tuner.get_best_hyperparameters()[0]
         self.write_stats([best_hp.values],"ann_best_models")
-        untrained_model = tuner.hypermodel.build(best_hp)
-        untrained_model.save(self.log_dir+"_untrained")
 
         # Make a table of tuner stats
         scores = [tuner.oracle.trials[trial].score for trial in tuner.oracle.trials]
@@ -238,6 +236,8 @@ class ANN(ANN_base):
             entry["score"] = scores[idx]
         self.write_stats(hps,"ann_tuner_stats")
 
+        return best_hp
+
     def _train(self):
         """
         Train the ANN.
@@ -245,7 +245,7 @@ class ANN(ANN_base):
         API function: train the neural net
         """
         # Load untrained optimized model
-        self.model = keras.models.load_model(self.log_dir+"_untrained")
+        self.model = self.build_hypermodel(self.best_hp)
         
         # Load data and callbacks
         train_in, train_out = self.training_points[None][0]
@@ -256,14 +256,15 @@ class ANN(ANN_base):
             test_in, test_out = self.validation_points[None][0]
             histor = self.model.fit(train_in, train_out, batch_size = train_in.shape[0],
                 epochs=self["no_epochs"], validation_data = (test_in, test_out), verbose=0, shuffle=True, callbacks=callbacks)
+
             plot_training_history(histor,train_in,train_out,test_in,test_out,self.model.predict,self.progress)
+            self.early_stop = histor.epoch[-1]+1
         else:
             callbacks = [call for call in callbacks if not isinstance(call,keras.callbacks.EarlyStopping)]
             histor = self.model.fit(train_in, train_out, batch_size = train_in.shape[0],
                 epochs=settings["surrogate"]["early_stop"], verbose=0, shuffle=True, callbacks=callbacks)
 
         self._is_trained = True
-        self.early_stop = histor.epoch[-1]+1
 
     def _predict_values(self, x):
         """
@@ -273,6 +274,9 @@ class ANN(ANN_base):
         :return y: np.ndarray[n, ny] -- Output values at the prediction points
         """
         return self.model.predict(x)
+
+    def save(self):
+        self.model.save(os.path.join(settings["folder"],"logs","ann"))
 
 # Turn off warnings
 if version.parse(tf.__version__) >= version.parse("2.2"):

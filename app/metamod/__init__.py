@@ -18,10 +18,6 @@ from core.settings import load_json, settings
 # ANN is imported in set_surrogate only if it is need
 from metamod.ANN_pt import ANN_pt
 
-##import ctypes
-##hllDll = ctypes.WinDLL("C:\\Users\\antonin.panzo\\Downloads\\cudart64\\cudart64_100.dll")
-
-
 def optimize_hyperparameters(data,iteration):
     """
     Train the defined surrogate on the provided data.
@@ -30,9 +26,11 @@ def optimize_hyperparameters(data,iteration):
 
     model = set_surrogate(name,data.dim_in,data.dim_out)
     model.progress = [iteration,1]
-    model.pretrain(data.input,data.output,iteration)
+    best_hp = model.pretrain(data.input,data.output,iteration)
 
-def cross_validate(data,iteration):
+    return best_hp
+
+def cross_validate(data,iteration,best_hp):
     """
     Train the defined surrogate on the provided data.
 
@@ -67,27 +65,30 @@ def cross_validate(data,iteration):
         model.train_in, model.train_out = data.input[train], data.output[train]
         model.test_in, model.test_out = data.input[test], data.output[test]
         model.set_training_values(model.train_in,model.train_out)
-        if name == "ann" or name == "ann_pt":
+        if name.startswith("ann"):
             model.set_validation_values(model.test_in,model.test_out)
             model.progress = [iteration,idx+1,no_splits]
             model.CV = True
+            model.best_hp = best_hp
         model.train()
         model.metric = evaluate_metrics(model.test_in,model.test_out,model.predict_values)
         model.metric["max_iterations"] = iteration
         surrogates.append(model)
 
-    if name == "ann" or name == "ann_pt":
+    if name.startswith("ann"):
         settings["surrogate"]["early_stop"] = int(np.mean([ann.early_stop for ann in surrogates]))
 
     return surrogates
 
-def train_surrogate(data):
+def train_surrogate(data,best_hp):
+    print(f"### Training final model ###")
     name = settings["surrogate"]["surrogate"]
 
     model = set_surrogate(name,data.dim_in,data.dim_out)
     model.set_training_values(data.input,data.output)
-    if name == "ann" or name == "ann_pt":
+    if name.startswith("ann"):
         model.CV = False
+        model.best_hp = best_hp
     model.train()
     model.range_out = data.range_out
 
@@ -145,6 +146,3 @@ available = {
     "rbf": RBF,
     "kriging": KRG,
     "ann_pt": ANN_pt}
-
-
-

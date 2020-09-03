@@ -125,10 +125,11 @@ class Surrogate:
             
         # Optimize hyperparameters
         if not self.hp_optimized:
-            if self.name == "ann":
-                optimize_hyperparameters(self.data,self.sampling_iterations)
+            if self.name.startswith("ann"):
+                self.best_hp = optimize_hyperparameters(self.data,self.sampling_iterations)
                 self.optimized_to_samples = self.no_samples
             else:
+                self.best_hp = None
                 print("No hyperparameter optimization implemented, using default hyperparameters")
 
             self.hp_optimized = True
@@ -139,11 +140,11 @@ class Surrogate:
 
         STUFF
         """
-        # Train the surrogates
-        self.surrogates = cross_validate(self.data,self.sampling_iterations)
+        # Cross-validate
+        self.surrogates = cross_validate(self.data,self.sampling_iterations,self.best_hp)
 
-        # Select the best model
-        self.surrogate = train_surrogate(self.data)
+        # Train the surrogate
+        self.surrogate = train_surrogate(self.data,self.best_hp)
 
         # Plot the surrogate response
         compare_surrogate(self.data.input,self.data.output,self.surrogate.predict_values,self.sampling_iterations)
@@ -223,8 +224,8 @@ class Surrogate:
         surrogate_response(input_vec[:,inputs],output_vec[:,[output]],inputs,iteration)
 
     def save(self):
-        if self.surrogate.name == 'ANN':
-            self.surrogate.model.save(os.path.join(settings["folder"],"logs","ann"))
+        if self.name.startswith("ann"):
+            self.surrogate.save()
         else:
             pass
 ##            dump_object("meta",self.surrogate)

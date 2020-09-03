@@ -1,16 +1,17 @@
-"Tuner that runs multiple executions per Trial."
-
-from kerastuner.engine.multi_execution_tuner import MultiExecutionTuner
-from kerastuner.engine import tuner_utils
-
 import collections
 import copy
+
+from kerastuner.engine import base_tuner
 import numpy as np
+import torch
 
 from core.settings import settings
 from metamod.validation import set_validation
 
-class MultiExecutionTunerCV(MultiExecutionTuner):
+class MultiExecutionTunerPyTorchCV(base_tuner.BaseTuner):
+    """BayesianOptimization tuning with Gaussian process.
+
+    """
 
     def run_trial(self,
                   trial,
@@ -28,23 +29,17 @@ class MultiExecutionTunerCV(MultiExecutionTuner):
         iteration = fit_kwargs.pop("iteration_no")
 
         for idx, (train_indices, test_indices) in enumerate(cv_split.split(X)):
-            X_train = X[train_indices]
-            y_train = y[train_indices]
-            X_test = X[test_indices]
-            y_test = y[test_indices]
+            X_train = torch.Tensor(X[train_indices])
+            y_train = torch.Tensor(y[train_indices])
+            X_test = torch.Tensor(X[test_indices])
+            y_test = torch.Tensor(y[test_indices])
 
             metrics_avg = collections.defaultdict(list)
             for execution in range(self.executions_per_trial):
                 copied_fit_kwargs = copy.copy(fit_kwargs)
-                callbacks = self._deepcopy_callbacks(original_callbacks)
-                self._configure_tensorboard_dir(callbacks, trial.trial_id, execution)
-                callbacks.append(tuner_utils.TunerCallback(self, trial))
-
-                copied_fit_kwargs['callbacks'] = callbacks
 
                 model = self.hypermodel.build(trial.hyperparameters)
-                history = model.fit(X_train,y_train,*fit_args,validation_data = (X_test, y_test),
-                                    batch_size = X_train.shape[0],**copied_fit_kwargs)
+                history = model.fit(fit_kwargs["epochs"],X_train,y_train,X_test,y_test,optimizing=True)
 
                 for metric, epoch_values in history.history.items():
                     if self.oracle.objective.direction == 'min':
@@ -59,4 +54,3 @@ class MultiExecutionTunerCV(MultiExecutionTuner):
 
         trial_metrics = {name: np.mean(values) for name, values in metrics.items()}
         self.oracle.update_trial(trial.trial_id, trial_metrics)
-

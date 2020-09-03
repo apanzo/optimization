@@ -149,7 +149,7 @@ def make_workfolder(file,fresh):
         Path(folder_path).mkdir(parents=True,exist_ok=True) # parents in fact not needed   
         Path(figures_path).mkdir(parents=True,exist_ok=True) # parents in fact not needed  
         Path(logs_path).mkdir(parents=True,exist_ok=True) # parents in fact not needed
-        if settings["surrogate"]["surrogate"] == "ann":
+        if settings["surrogate"]["surrogate"].startswith("ann"):
               Path(os.path.join(figures_path,"ann")).mkdir(parents=True,exist_ok=True) # parents in fact not needed  
 
         # Copy the inputs file

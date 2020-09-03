@@ -5,91 +5,218 @@ This module contains the definition of an ANN comptable
 with the SMT Toolbox
 """
 # Import native packages
-from collections import defaultdict
-from tabulate import tabulate
+from datetime import datetime
 import os
 
 # Import pypi packages
-import matplotlib.pyplot as plt
+from kerastuner.engine.hyperparameters import HyperParameters
 import numpy as np
-##import torch
-##import torch.nn as nn
-from smt.surrogate_models.surrogate_model import SurrogateModel
-from smt.utils.checks import check_2d_array
+import torch
+import torch.nn as nn
 
 # Import custom packages
-from core.settings import load_json, settings
-from .kerastuner.bayesian_cv import BayesianOptimizationCV
-from .kerastuner.randomsearch_cv import RandomSearchCV
+from core.settings import settings
+from .kerastuner.bayesian_pytorch_cv import BayesianPyTorchCV
+from .kerastuner.randomsearch_pytorch_cv import RandomSearchPyTorchCV
+from metamod.ANN import ANN_base
 from visumod import plot_training_history
+
+class TrainHistory:
+    def __init__(self):
+        self.history = {"loss":[],"val_loss":[]}
+
+    def store(self,loss,loss_eval=None):
+        self.history["loss"].append(loss.item())
+        if loss_eval is not None:
+            self.history["val_loss"].append(loss_eval.item())
+
+class SparseModel(nn.Module):
+    def __init__(self,neurons_hyp,activation_hyp,kernel_regularizer,in_dim,layers_hyp,out_dim,init,bias_init):
+        super().__init__()
         
-class ANN_pt(SurrogateModel):
+        self.activation = activations[activation_hyp]
+        subnetworks = []
+        for i in range(out_dim):
+            layers = [nn.Linear(in_dim,neurons_hyp)]
+            for _ in range(layers_hyp-1):
+                layers.append(nn.Linear(neurons_hyp,neurons_hyp))
+            for layer in layers:
+                initializers[init](layer.weight,nonlinearity=activation_hyp)
+                initializers[bias_init](layer.bias)
+            layers.append(nn.Linear(neurons_hyp,1))
+            subnetworks.append(nn.ModuleList(layers))
+
+        self.subnetworks = nn.ModuleList(subnetworks)
+        
+    def forward(self,x):
+        outputs = []
+        for subnet in self.subnetworks:
+            xx = x
+            for layer in subnet[:-1]:
+                xx = self.activation(layer(xx))
+            xx = subnet[-1](xx)
+            outputs.append(xx)
+
+        out = torch.cat(outputs,1)
+        return out
+    
+    def fit(self,epochs,train_in,train_out,test_in=None,test_out=None,optimizing=False):
+        loss_fn = torch.nn.MSELoss()
+        optimizer = torch.optim.Adam(self.parameters(),lr=self.learning_rate,eps=1e-8)
+
+        history = TrainHistory()
+        
+        for epochs_actual in range(epochs):
+            self.eval()
+            y_pred = self(train_in)
+            loss = loss_fn(y_pred,train_out)
+            self.train()
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            
+            if test_in is not None:
+                y_eval = self(test_in)
+                loss_eval = loss_fn(y_eval,test_out)
+##                print(t, loss.item(), loss_eval.item())
+                history.store(loss,loss_eval)
+                if not optimizing:
+                    stop = self.early_stopping(history.history,"val_loss",self.tolerance,self.patience)
+                    if stop:
+                        print(f"Early stopping after {epochs_actual} epochs")
+                        self.load_state_dict(self.best_state)
+                        break
+            else:
+                history.store(loss)
+
+        return history
+
+    def early_stopping(self,history,metric,tolerance,patience):
+        values = np.array(history[metric])[-patience:]
+##        diffs = np.diff(history[metric])
+##        improved = diffs[-patience:] < -tolerance
+
+        if len(values) < patience:
+            self.es_best_val_stored = np.min(values)
+            self.es_best_iter_stored = np.argmin(values)
+            self.best_state = self.state_dict()
+            stop = False
+        else:
+            new_best = np.min(values)
+            if new_best < self.es_best_val_stored:
+                self.es_best_val_stored = np.min(values)
+                self.es_best_iter_stored = np.argmin(values)
+                self.best_state = self.state_dict()
+                stop = False
+            else:
+                diffs = values - self.es_best_val_stored
+                if np.all(diffs > tolerance):
+                    stop = True
+                else:
+                    stop = False
+        
+        return stop
+
+    
+class ANN_pt(ANN_base):
     """
     ANN class.
 
-    See also:
-        Tensorflow documentation
-        
-    To do:
-        * check if pretraining
-        * if pretrainning:
-            * select hyperparameters to optimize, keep rest default
-            * take defaults from settings
-            * select optimization method
-            * perform pretraining
-            * select best model
-            * save best model
-        * else:
-            * load hyperparameters from optimization
     """
-
-    def __getitem__(self,a):
-        return self.options[a]
-
     def __init__(self,**kwargs):
-        # To be declared
-        self.tbd = kwargs.keys()
         super().__init__(**kwargs)
-
-        # Initialize model
         self.name = "ANN_pt"
-        self.log_dir = os.path.join(settings["folder"],"logs","ann")
 
-        self.validation_points = defaultdict(dict)
-        
-        self.optimized = False
-        self._is_trained = False
-        
-    def _initialize(self):
-        """
-        Initialize the default hyperparameter settings.
+    def build_hypermodel(self,hp):
+        model_type = self["type"]
+        in_dim, out_dim = self["dims"]
 
-        Parameters:
-            no_layers: number of layers
-            no_neurons: number of neurons per layer
-            activation: activation functoin
-            batch_size: batch size
-            no_epochs: nu,ber of training epochs
-            init: weight initialization strategy
-            bias_init:  bias initialization strategy
-            optimizer: optiimzer type
-            loss: loss function
-            kernel_regularizer: regularization paremeres
-            dims: number of input and output dimension
-            no_points: number of sample points
-            prune: whether to use pruning
-            sparsity: target network sparsity (fraction of zero weights)
-            pruning_frequency: frequency of pruning
-            tensorboard: whether to make tensorboard output
-            stopping: use early stopping
-            stopping_delta: required error delta threshold to stop training
-            stopping_patience: number of iterations to wait before stopping
-            plot_history: whether to plot the training history
+        # Initialize hyperparameters as fixed    
+        neurons_hyp = hp.Fixed("no_neurons",self["no_neurons"])
+        layers_hyp = hp.Fixed("no_hid_layers",self["no_layers"])
+        lr_hyp = hp.Fixed("learning_rate",self["learning_rate"])
+        activation_hyp = hp.Fixed("activation_function", self["activation"])
+        regularization_hyp = hp.Fixed("regularization",self["kernel_regularizer_param"])
+        sparsity_hyp = hp.Fixed("sparsity",self["sparsity"])
+
+        kernel_regularizer = None
+
+        if model_type == "dense":
+            raise Exception("Dense model not supported for PyTorch")
+        elif model_type == "sparse":
+            model = SparseModel(neurons_hyp,activation_hyp,kernel_regularizer,in_dim,layers_hyp,out_dim,self["init"],self["bias_init"])
+        else:
+            raise Exception("Invalid model type")
+
+        model.learning_rate = self["learning_rate"]
+        model.tolerance = self["stopping_delta"]
+        model.patience = self["stopping_patience"]
+        
+        return model
+        
+    def pretrain(self,inputs,outputs,iteration):
         """
-        # Set default values
-        declare = self.options.declare
-        for param in self.tbd:
-            declare(param, None)
+        Notes:
+            - optimization objective val_loss
+        """
+        print("### Performing Keras Tuner optimization of the ANN ###")
+        # Select hyperparameters to tune
+
+        hp = HyperParameters()
+        valid_entries = ["activation","neurons","layers","learning_rate","regularization","sparsity"]
+        if not all([entry in valid_entries for entry in self["optimize"]]):
+            raise Exception("Invalid hyperparameters specified for optimization")
+        
+        if "activation" in self["optimize"]:
+            hp.Choice("activation_function",["sigmoid","relu","swish","tanh"],default=self["activation"])
+        if "neurons" in self["optimize"]:
+            hp.Int("no_neurons",3,20,sampling="log",default=self["no_neurons"])
+        if "layers" in self["optimize"]:
+            hp.Int("no_hid_layers",1,6,default=self["no_layers"])
+        if "learning_rate" in self["optimize"]:
+            hp.Float("learning_rate",0.001,0.1,sampling="log",default=self["learning_rate"])
+        if "regularization" in self["optimize"]:
+            hp.Float("regularization",0.0001,0.01,sampling="log",default=self["kernel_regularizer"])
+        if "sparsity" in self["optimize"]:
+            hp.Float("sparsity",0.3,0.9,default=self["sparsity"])
+
+        no_hps = len(hp._space)
+
+        # In case none are chosen, only 1 run for fixed setting
+        if no_hps == 0:
+            hp.Fixed("no_neurons",self["no_neurons"])
+        
+        # Load tuner
+        max_trials = self["max_trials"]*no_hps
+        path_tf_format = "logs"
+
+        time = datetime.now().strftime("%Y%m%d_%H%M")
+
+        tuner_args = {"objective":"val_loss","hyperparameters":hp,"max_trials":max_trials,
+                      "executions_per_trial":self["executions_per_trial"],"directory":path_tf_format,
+                      "overwrite":True,"tune_new_entries":False,"project_name":f"opt"}
+##                      "overwrite":True,"tune_new_entries":False,"project_name":f"opt_{time}"}
+
+        if self["tuner"] == "random" or no_hps==0:
+            tuner = RandomSearchPyTorchCV(self.build_hypermodel,**tuner_args)          
+        elif self["tuner"] == "bayesian":
+            tuner = BayesianPyTorchCV(self.build_hypermodel,num_initial_points=3*no_hps,**tuner_args)
+        # Optimize
+        tuner.search(inputs,outputs,epochs=self["tuner_epochs"],verbose=0,shuffle=True,
+                     iteration_no=iteration)
+
+        # Retrieve and save best model
+        best_hp = tuner.get_best_hyperparameters()[0]
+        self.write_stats([best_hp.values],"ann_best_models")
+
+        # Make a table of tuner stats
+        scores = [tuner.oracle.trials[trial].score for trial in tuner.oracle.trials]
+        hps = [tuner.oracle.trials[trial].hyperparameters.values for trial in tuner.oracle.trials]
+        for idx,entry in enumerate(hps):
+            entry["score"] = scores[idx]
+        self.write_stats(hps,"ann_tuner_stats")
+
+        return best_hp
 
     def _train(self):
         """
@@ -97,65 +224,24 @@ class ANN_pt(SurrogateModel):
 
         API function: train the neural net
         """
-        # Load untrained optimized model
-        in_dim, out_dim = self["dims"]
+        self.model = self.build_hypermodel(self.best_hp)
 
-        layers = []
-        layers.append(nn.Linear(in_dim,self["no_neurons"]))
-        layers.append(nn.ReLU())
-        for _ in range(self["no_neurons"]-1):
-            layers.append(nn.Linear(self["no_neurons"],self["no_neurons"]))
-            layers.append(nn.ReLU())
-        layers.append(nn.Linear(self["no_neurons"],out_dim))
-
-        self.model = nn.Sequential(*layers)
-        
         # Load data and callbacks
         train_in, train_out = self.training_points[None][0]
-        test_in, test_out = self.validation_points[None][0]
-
         train_in = torch.Tensor(train_in)
         train_out = torch.Tensor(train_out)
-        test_in = torch.Tensor(test_in)
-        test_out = torch.Tensor(test_out)
 
-        loss_fn = torch.nn.MSELoss()
-        optimizer = torch.optim.Adam(self.model.parameters(), lr=self["learning_rate"])
-
-        epochs = self["no_epochs"]
-
-        for t in range(epochs):
-            self.model.eval()
-            y_pred = self.model(train_in)
-            loss = loss_fn(y_pred,train_out)
-            y_eval = self.model(test_in)
-            loss_eval = loss_fn(y_eval,test_out)
-##            print(t, loss.item(), loss_eval.item())
-
-            self.model.train()
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+        if self.CV:
+            test_in, test_out = self.validation_points[None][0]
+            test_in = torch.Tensor(test_in)
+            test_out = torch.Tensor(test_out)
+            histor = self.model.fit(self["no_epochs"],train_in,train_out,test_in,test_out)
+            plot_training_history(histor,train_in,train_out,test_in,test_out,self._predict_values,self.progress)
+            self.early_stop = len(histor.history["loss"])
+        else:
+            histor = self.model.fit(settings["surrogate"]["early_stop"],train_in,train_out)
 
         self._is_trained = True
-       
-    def evaluation(self,history):
-        """
-        Evaluate the generalization error.
-
-        Returns:
-            mse: mean squared error
-        """
-        breakpoint()
-        mse = history["val_mse"]
-        rmse = history["val_root_mean_squared_error"]
-        mae = history['val_mae']
-        print(f'MSE: {mse:.3f}, RMSE: {rmse:.3f}')
-        print(f"MAE: {mae:.3f}")
-        stats = [{"MSE":mse,"RMSE":rmse,"MAE":mae}]
-        self.write_stats(stats,"ann_training_stats")
-        
-        return mse
 
     def _predict_values(self, x):
         """
@@ -164,54 +250,10 @@ class ANN_pt(SurrogateModel):
         :param  x: np.ndarray[n, nx] -- Input values for the prediction points
         :return y: np.ndarray[n, ny] -- Output values at the prediction points
         """
-        return self.model.predict(x)
+        return self.model(torch.Tensor(x)).detach().numpy()
 
-    def write_stats(self,dictionary_as_list,name):
-        path = os.path.join(settings["folder"],"logs",name+".txt")
-        kwargs = {"headers":"keys"}
-        if name == "ann_training_stats":
-            kwargs.update({"floatfmt":".3f"})
-##            if self.progress[1] != 1:
-##                del kwargs["headers"]
+    def save(self):
+        torch.save(self.model.state_dict(),os.path.join(settings["folder"],"logs","ann"))
 
-        table = tabulate(dictionary_as_list,tablefmt="jira",**kwargs)
-        
-        if self.progress[1] == 1:
-            with open(path, "a") as file:
-                file.write("-------------------------")
-                file.write("\n")
-                file.write(f"       Iteration {self.progress[0]}      ")
-                file.write("\n")
-                file.write("-------------------------")
-                file.write("\n")
-        with open(path, "a") as file:
-            file.write(table)
-            file.write("\n")
-
-    def set_validation_values(self, xt, yt, name=None):
-        """
-        Set validation data (values).
-
-        Parameters
-        ----------
-        xt : np.ndarray[nt, nx] or np.ndarray[nt]
-            The input values for the nt training points.
-        yt : np.ndarray[nt, ny] or np.ndarray[nt]
-            The output values for the nt training points.
-        name : str or None
-            An optional label for the group of training points being set.
-            This is only used in special situations (e.g., multi-fidelity applications).
-        """
-        xt = check_2d_array(xt, "xt")
-        yt = check_2d_array(yt, "yt")
-
-        if xt.shape[0] != yt.shape[0]:
-            raise ValueError(
-                "the first dimension of xt and yt must have the same length"
-            )
-
-        self.nt = xt.shape[0]
-        self.nx = xt.shape[1]
-        self.ny = yt.shape[1]
-        kx = 0
-        self.validation_points[name][kx] = [np.array(xt), np.array(yt)]
+activations = {"relu":nn.functional.relu}
+initializers = {"he_normal":nn.init.kaiming_normal_,"zeros":nn.init.zeros_}
