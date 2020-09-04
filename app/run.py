@@ -47,7 +47,7 @@ def optimize(surrogate):
 
 
 # Choose problem to solve
-problem_ids = range(400,401)
+problem_ids = range(100,180)
 
 for problem_id in problem_ids:
 

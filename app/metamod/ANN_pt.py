@@ -61,6 +61,9 @@ class SparseModel(nn.Module):
         return out
     
     def fit(self,epochs,train_in,train_out,test_in=None,test_out=None,optimizing=False):
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.to(device)
+        
         loss_fn = torch.nn.MSELoss()
         optimizer = torch.optim.Adam(self.parameters(),lr=self.learning_rate,eps=1e-8)
 

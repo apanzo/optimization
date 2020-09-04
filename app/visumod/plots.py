@@ -11,7 +11,9 @@ import os
 import numpy as np
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 from pymoo.factory import get_visualization
+from scipy.interpolate import griddata
 
 # Import custom packages
 from core.settings import settings
@@ -151,6 +153,39 @@ def pareto_fronts(pf_true,pf_calc):
     plt.xlabel('$f_1$')
     plt.ylabel('$f_2$')
     save_figure("benchmark_pareto_fronts")
+
+def adaptive_candidates(candidates,data,iteration):
+    if candidates.shape[1] != 2:
+        raise Warning("Can't plot for other than 2D")
+        return
+    else:
+        x = candidates[:,0]
+        y = candidates[:,1]
+        ax = plt.figure().gca()
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+        if len(data.shape) != 1:
+            xx = data[:,0]
+            yy = data[:,1]
+            plt.scatter(xx,yy,10,c="k",label="Current")
+            plt.scatter(x,y,25,c="C0",label="New")
+            plt.legend(bbox_to_anchor=(1, 1.15), loc='upper right')
+            name = f"adaptive_samples_{iteration}"
+        else:
+            density = 100
+            xx = np.linspace(-1,1,density)
+            yy = np.linspace(-1,1,density)
+            zz = griddata((x, y), data, (xx[None,:], yy[:,None]), method='cubic')
+            newmap = get_blackblue_cmap()
+            bounds=np.linspace(0,2,11)
+            qqq = plt.contourf(xx,yy,zz,cmap=newmap,levels=bounds,extend="neither")
+            plt.colorbar(qqq)
+            name = f"adaptive_contour_{iteration}"
+        plt.xlim([-1,1])
+        plt.ylim([-1,1])
+        plt.xlabel('$x_1$')
+        plt.ylabel('$x_2$')
+        save_figure(name)
     
 def get_plot_args(data,label):
     n_dim = data.shape[1]

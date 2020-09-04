@@ -8,8 +8,7 @@ visual - scatter 2D/3D, curve, surface tri (not quad)
 import numpy as np
 
 # Import custom packages
-from datamod.sampling import sample
-from visumod.plots import scatter,scatter_pymoo,curve,heatmap,pcp,surface_pymoo,learning_curves,pareto_fronts
+from visumod.plots import scatter,scatter_pymoo,curve,heatmap,pcp,surface_pymoo,learning_curves,pareto_fronts,adaptive_candidates
 
 def plot_raw(data,iteration,normalized=False):
     """
@@ -90,6 +89,7 @@ def sample_size_convergence(metrics):
     curve(metrics["values"],f"ssd_metric_{metrics['name']}",labels=["Iteration",metrics["name"].upper()],units=["-","-"])
 
 def correlation_heatmap(predict,dim_in):
+    from datamod.sampling import sample
     x = sample("grid",1000,dim_in)
     y = predict(x)
     data = np.concatenate((x,y),1)
@@ -115,3 +115,6 @@ def plot_training_history(history,train_in,train_out,test_in,test_out,predict,pr
 
 def compare_pareto_fronts(pf_true,pf_calc):
     pareto_fronts(pf_true,pf_calc)
+
+def plot_adaptive_candidates(candidates,data,iteration):
+    adaptive_candidates(candidates,data,iteration)

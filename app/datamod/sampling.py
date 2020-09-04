@@ -18,6 +18,7 @@ from .external.halton import halton
 
 # Import custom packages
 from core.settings import load_json, settings
+from visumod import plot_adaptive_candidates
 
 def determine_samples(no_samples,dim_in):
     if no_samples == 0:
@@ -30,7 +31,7 @@ def determine_samples(no_samples,dim_in):
         else:
             raise Exception("Error should have been caught on initialization")
 
-    return no_new_samples
+    return np.max((1,no_new_samples))
 
 def resample_static(points_new,points_now,range_in):
     """
@@ -52,29 +53,36 @@ def resample_static(points_new,points_now,range_in):
     full_sample = sample(settings["data"]["sampling"],points_now+points_new,dim_in) # unit coordinates
     new_sample = full_sample[points_now:,:] # only picked those that are new
 
+    coordinates = scale_samples(range_in,new_sample)
+    
+    return coordinates
+
+def resample_adaptive(points_new,surrogates,data,range_in,iteration):
+    """
+    STUFF
+
+    """
+
+    multiplier_proposed = 100
+    no_proposed_points = multiplier_proposed*data.input.shape[1]
+    
+    proposed_samples = sample("random",no_proposed_points,data.dim_in)
+    predictions_list = [sur.predict_values(proposed_samples) for sur in surrogates]
+    predictions = np.array(predictions_list)
+
+    coordinates_norm = sample_adaptive(data,proposed_samples,predictions,points_new,iteration)
+    coordinates = scale_samples(range_in,coordinates_norm)
+    
+    plot_adaptive_candidates(coordinates_norm,data.input,iteration)
+
+    return coordinates
+
+def scale_samples(range_in,samples):
     range_samples = 2 # because {-1,1}
     range_target = np.ptp(range_in,1)
     mean = np.mean(range_in,1)
 
-    coordinates = new_sample*range_target/range_samples+mean # full coordinates
-
-    return coordinates
-
-def resample_adaptive(points_new,surrogates,data):
-    """
-    STUFF
-
-    not working for multiple dimensions
-    """
-
-    multiplier_proposed = 100
-    np_proposed_points = data.input.shape[0]*multiplier_proposed
-    
-    proposed_samples = sample("random",np_proposed_points,data.dim_in)
-    predictions_list = [sur.predict_values(proposed_samples) for sur in surrogates]
-    predictions = np.array(predictions_list)
-
-    coordinates = sample_adaptive(data,proposed_samples,predictions,points_new)
+    coordinates = samples*range_target/range_samples+mean # full coordinates
 
     return coordinates
 
@@ -103,12 +111,10 @@ def sample(name,points,n_dim):
 
     return sampling(points)
 
-def sample_adaptive(data,samples,predictions,no_points_new):
+def sample_adaptive(data,samples,predictions,no_points_new,iteration):
     """
     Sampling using an adaptive DOE
 
-    Notes:
-        * Make a unit test to check that worst_new is 2D
     """
     adaptive_method = settings["data"]["adaptive"]
 
@@ -132,6 +138,8 @@ def sample_adaptive(data,samples,predictions,no_points_new):
     reordered_metrics = np.argpartition(overall_metric, -no_points_new,axis=0)
     candidate_indices = reordered_metrics[-no_points_new:]
     candidates = samples[candidate_indices]
+
+    plot_adaptive_candidates(samples,overall_metric,iteration)
 
     return candidates
 

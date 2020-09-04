@@ -67,7 +67,7 @@ class Surrogate:
         elif self.no_samples == 0 or not settings["data"]["adaptive"]:
             self.samples = resample_static(no_new_samples,self.no_samples,self.model.range_in)
         else:
-            self.samples = resample_adaptive(no_new_samples,self.surrogates,self.data)
+            self.samples = resample_adaptive(no_new_samples,self.surrogates,self.data,self.model.range_in,self.sampling_iterations)
 
         # Update sample count
         self.no_samples += no_new_samples
@@ -139,7 +139,7 @@ class Surrogate:
         Wrapper function to (re)train the surrogate.
 
         STUFF
-        """
+        """ 
         # Cross-validate
         self.surrogates = cross_validate(self.data,self.sampling_iterations,self.best_hp)
 
