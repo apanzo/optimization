@@ -37,16 +37,20 @@ def solve_problem(problem,algorithm,termination,direct):
         * optional seed not implemented
     """
 
-    res_norm = minimize(problem,algorithm,termination,verbose=True)
-
-    # Unnormalize the results
-    if direct:
-        res = res_norm
+    try:
+        res_norm = minimize(problem,algorithm,termination,verbose=True)
+    except:
+        print("Optimization failed")
+        res = None
     else:
-        if res_norm.F is not None:
-            res = unnormalize_res(res_norm,problem.norm_in,problem.norm_out)
+        # Unnormalize the results
+        if direct:
+            res = res_norm
         else:
-            res = None
+            if res_norm.F is not None:
+                res = unnormalize_res(res_norm,problem.norm_in,problem.norm_out)
+            else:
+                res = None
 
     return res
 

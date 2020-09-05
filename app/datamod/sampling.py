@@ -66,7 +66,7 @@ def resample_adaptive(points_new,surrogates,data,range_in,iteration):
     multiplier_proposed = 100
     points_proposed = multiplier_proposed*data.input.shape[1]
     max_ratio = 0.05
-    points_minimal = int(data.input.shape[0]*max_ratio)
+    points_minimal = int(points_new/max_ratio)
     no_proposed_points = np.max((points_proposed,points_minimal))
     
     proposed_samples_0 = sample("random",no_proposed_points,data.dim_in)

@@ -72,9 +72,6 @@ class Optimization:
         if self.res is not None:
             self.plot_results()
 
-##        if self.model.n_obj > 1:
-##            self.hv = calculate_hypervolume(self.res.F)
-
     def plot_results(self):
         # Plot the optimization result in design space
         vis_design_space(self.res.X,self.iterations)
@@ -155,18 +152,21 @@ class Optimization:
     def report(self):
         path = os.path.join(settings["folder"],"logs",f"optimizatoin_iteration_{self.iterations}.txt")
 
-        with open(path, "a") as file:
-            file.write("======= F ========\n")
-            np.savetxt(file,self.res.F,fmt='%.6g')
-            file.write("\n======= X ========\n")
-            np.savetxt(file,self.res.X,fmt='%.6g')
-            if not self.direct:
-                file.write("\n======= VERIFICATION ========\n")
-                stats = np.concatenate((self.optimum_model,self.optimum_surrogate),1)
-                np.savetxt(file,stats,fmt='%.6g')
-                file.write("\n======= ERROR ========\n")
-                np.savetxt(file,self.error,fmt='%.6g')
-            file.write("\n")
+        if self.res is not None:
+            with open(path, "a") as file:
+                file.write("======= F ========\n")
+                np.savetxt(file,self.res.F,fmt='%.6g')
+                file.write("\n======= X ========\n")
+                np.savetxt(file,self.res.X,fmt='%.6g')
+                if not self.direct:
+                    file.write("\n======= VERIFICATION ========\n")
+                    stats = np.concatenate((self.optimum_model,self.optimum_surrogate),1)
+                    np.savetxt(file,stats,fmt='%.6g')
+                    file.write("\n======= ERROR ========\n")
+                    np.savetxt(file,self.error,fmt='%.6g')
+                file.write("\n")
+
+
             
         ##len([step["delta_f"] for step in model.res.algorithm.display.term.metrics])
 

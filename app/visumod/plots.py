@@ -156,7 +156,7 @@ def pareto_fronts(pf_true,pf_calc):
 
 def adaptive_candidates(candidates,data,iteration):
     if candidates.shape[1] != 2:
-        raise Warning("Can't plot for other than 2D")
+        print("Can't plot adaptive for other than 2D")
         return
     else:
         x = candidates[:,0]
@@ -173,16 +173,16 @@ def adaptive_candidates(candidates,data,iteration):
             name = f"adaptive_samples_{iteration}"
         else:
             density = 100
-            xx = np.linspace(-1,1,density)
-            yy = np.linspace(-1,1,density)
+            xx = np.linspace(np.min(candidates,0)[0],np.max(candidates,0)[0],density)
+            yy = np.linspace(np.min(candidates,0)[1],np.max(candidates,0)[1],density)
             zz = griddata((x, y), data, (xx[None,:], yy[:,None]), method='cubic')
             newmap = get_blackblue_cmap()
             bounds=np.linspace(0,2,11)
             qqq = plt.contourf(xx,yy,zz,cmap=newmap,levels=bounds,extend="neither")
             plt.colorbar(qqq)
             name = f"adaptive_contour_{iteration}"
-        plt.xlim([-1,1])
-        plt.ylim([-1,1])
+##        plt.xlim([-1,1])
+##        plt.ylim([-1,1])
         plt.xlabel('$x_1$')
         plt.ylabel('$x_2$')
         save_figure(name)
