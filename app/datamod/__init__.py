@@ -7,7 +7,7 @@ The aim of the datamod package is to handle the data
 # Import pypi packages
 import numpy as np
 from pymoo.factory import get_problem
-from sklearn.preprocessing import normalize
+from sklearn.preprocessing import normalize as sk_normalize
 
 # Import custom packages
 from datamod.problems import problems
@@ -49,8 +49,8 @@ class get_data:
         self.response = data[:,self.dim_in:]
 
         # Normalize data
-        self.input, self.norm_in = normalize(self.coordinates, norm='max',axis=0,return_norm=True)
-        self.output, self.norm_out = normalize(self.response, norm='max',axis=0,return_norm=True)
+        self.input, self.norm_in = normalize(self.coordinates)
+        self.output, self.norm_out = normalize(self.response)
         self.range_in = get_range(self.input)
         self.range_out = get_range(self.output)
 
@@ -99,6 +99,9 @@ def scale(data,ranges):
     data_scale = data*ranges
     
     return data_scale
+
+def normalize(data):
+    return sk_normalize(data, norm='max',axis=0,return_norm=True)
 
 def get_range(data):
     lower = np.amin(data,0)

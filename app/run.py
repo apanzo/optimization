@@ -4,6 +4,9 @@ This is the main module
 Notes:
     * keras tuner logs are not stored in data due to max path length issues in kerastuner
 """
+
+from itertools import chain
+
 # Import custom packages
 from core import Model, Surrogate, Optimization
 from core.settings import settings, update_settings
@@ -47,7 +50,8 @@ def optimize(surrogate):
 
 
 # Choose problem to solve
-problem_ids = range(100,180)
+problem_ids = range(400,401)
+##problem_ids = chain(range(40), range(190, 192))
 
 for problem_id in problem_ids:
 
