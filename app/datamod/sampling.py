@@ -9,7 +9,7 @@ import os
 
 # Import pypi packages
 import numpy as np
-from sklearn.preprocessing import minmax_scale
+from sklearn.preprocessing import minmax_scale, normalize #normalize is temp
 from smt.sampling_methods import FullFactorial, LHS, Random
 from smt.sampling_methods.sampling_method import SamplingMethod
 
@@ -18,6 +18,7 @@ from .external.halton import halton
 
 # Import custom packages
 from core.settings import load_json, settings
+from datamod import scale #temp
 from visumod import plot_adaptive_candidates
 
 def determine_samples(no_samples,dim_in):
@@ -63,17 +64,22 @@ def resample_adaptive(points_new,surrogates,data,range_in,iteration):
 
     """
 
-    multiplier_proposed = 100
+    multiplier_proposed = 1000
     no_proposed_points = multiplier_proposed*data.input.shape[1]
     
-    proposed_samples = sample("random",no_proposed_points,data.dim_in)
+    proposed_samples_0 = sample("random",no_proposed_points,data.dim_in)
+    proposed_samples_1 = scale_samples(range_in,proposed_samples_0)
+    proposed_samples, _ = normalize(proposed_samples_1, norm='max',axis=0,return_norm=True)
+
     predictions_list = [sur.predict_values(proposed_samples) for sur in surrogates]
     predictions = np.array(predictions_list)
 
     coordinates_norm = sample_adaptive(data,proposed_samples,predictions,points_new,iteration)
-    coordinates = scale_samples(range_in,coordinates_norm)
+##    coordinates = scale_samples(range_in,coordinates_norm)
+    coordinates = scale(coordinates_norm,data.norm_in)    
     
     plot_adaptive_candidates(coordinates_norm,data.input,iteration)
+##    plot_adaptive_candidates(proposed_samples,data.input,iteration)
 
     return coordinates
 
