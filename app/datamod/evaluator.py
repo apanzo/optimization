@@ -111,9 +111,6 @@ class EvaluatorANSYS(Evaluator):
         super().__init__()
         
         self.ansys_project_folder = settings["data"]["project_folder"]
-        self.workbench_project = settings["data"]["problem"]+".wbpj"
-        self.template = os.path.join(settings["root"],"app","config","dataconf","ansys_journal_template.wbjn")
-        self.output = os.path.join(settings["folder"],"journal.wbjn")
         self.input_param_name = settings["data"]["input_names"]
 
         self.setup = load_json(os.path.join(settings["root"],"app","config","dataconf","ansys"))
@@ -129,13 +126,7 @@ class EvaluatorANSYS(Evaluator):
         return range_in, dim_in, dim_out, n_constr
 
     def evaluate(self,samples,verify):
-        """
-        trick with iterations
-        """
-        if verify:
-            self.iteration += 1
-            
-        self.update_journal(samples)
+        self.update_input(samples)
         while not self.can_run_ansys():
             waiting_time = 10
             print(f"Waiting for {waiting_time}s before checking licenses again")
@@ -144,31 +135,8 @@ class EvaluatorANSYS(Evaluator):
         self.call_ansys()
 
         results = self.get_results(verify)
-
-        if verify:
-            self.iteration -= 1
         
         return results
-
-    def update_journal(self,samples):
-        # Make journal file
-        points = str([list(point) for point in samples])
-
-        # Open template
-        with open(self.template, "r") as file:
-            text = file.readlines()
-
-        # Modify template
-        temp_str = "project_folder = '" + self.ansys_project_folder + "\\" + "'\n"
-        text[8] = temp_str.replace("\\","\\\\")
-        text[9] = "workbench_project = '" + self.workbench_project + "'\n"
-        text[10] = "points = " + str(points) + "\n"
-        text[11] = "input_param_name = " + str(self.input_param_name) + "\n"
-        text[12] = "iteration = " + str(self.iteration) + "\n"
-
-        # Write modified template
-        with open(self.output, "w") as file:
-            file.write("".join(text))
             
     def scrape_license_info(self,line):
         license_name = line.split()[2][:-1]
@@ -189,18 +157,6 @@ class EvaluatorANSYS(Evaluator):
         license_status = dict([self.scrape_license_info(line) for line in output if  line.startswith("Users of")])
 
         return license_status
-
-    def call_ansys(self):
-        directory = self.setup["ansys_directory"]
-        file = "runwb2"
-        arguments = ["-B","-R"]
-
-        while True:
-            call = subprocess.run([file]+arguments+[self.output],cwd=directory,shell=True,capture_output=True,text=True)
-            if call.returncode:
-                print("Analysis failed, retrying")
-            else:
-                break
 
     def can_run_ansys(self,minimal_amount = 2):
         """
@@ -232,6 +188,120 @@ class EvaluatorANSYS(Evaluator):
 
         return status
 
+class EvaluatorANSYSAPDL(EvaluatorANSYS):
+    """
+    Docstring
+    """
+
+    def __init__(self):
+        super().__init__()
+
+        self.templates = [i for i in os.listdir(self.ansys_project_folder) if "_template" in i]
+
+        self.program = "C:\\Program Files\\ANSYS Inc\\v194\\ansys\\bin\\winx64\\MAPDL.exe"
+        self.input_file_x = os.path.join(self.ansys_project_folder,"ana_x.dat")
+        self.input_file_y = os.path.join(self.ansys_project_folder,"ana_y.dat")
+        self.out_directory = "C:\\Users\\antonin.panzo\\Downloads\\ANSYS\\APDL Work"
+        self.output_file_x = os.path.join(self.out_directory,"file_x.out")
+        self.output_file_y = os.path.join(self.out_directory,"file_y.out")
+
+        self.command_x = f'"{self.program}"  -p ansys -dis -mpi INTELMPI -np 1 -lch -dir "{self.out_directory}" -j "input" -s read -l en-us -b nolist -i "{self.input_file_x}" -o "{self.output_file_x}"   '
+        self.command_y = f'"{self.program}"  -p ansys -dis -mpi INTELMPI -np 1 -lch -dir "{self.out_directory}" -j "input" -s read -l en-us -b nolist -i "{self.input_file_y}" -o "{self.output_file_y}"   '
+
+    def evaluate(self,samples,verify):
+        results = []
+        progress = 1
+        for sample in samples:
+            print(f"Solving {progress}/{samples.shape[0]}")
+            result = super().evaluate(sample,verify)
+            results.append(result)
+            progress += 1
+            
+        return np.array(results)
+
+    def update_input(self,samples):
+        replace = [f"*SET,T{i+1},{samples[i]:.6f}\n" for i in range(len(samples))]
+
+        for file in self.templates:
+            path = os.path.join(self.ansys_project_folder,file)
+            with open(path,"r") as file:
+                lines = file.readlines()
+            ind = lines.index('/com,*********** Send Beam Properties ***********\n')
+            lines[ind+2:ind+5] = replace
+            with open(path.replace("_template",""),"w") as file:
+                file.writelines(lines)
+
+    def call_ansys(self):
+        subprocess.run(self.command_x)
+        subprocess.run(self.command_y)
+
+    def get_results(self,verify):
+        out = []
+        for i in range(3):
+            path = os.path.join(self.out_directory,f"out{i+1}.txt")
+            out.append(np.loadtxt(path))
+        response = np.array(out)
+
+        return response
+
+class EvaluatorANSYSWB(EvaluatorANSYS):
+    """
+    Docstring
+    """
+
+    def __init__(self):
+        super().__init__()
+        
+        self.workbench_project = settings["data"]["problem"]+".wbpj"
+        self.template = os.path.join(settings["root"],"app","config","dataconf","ansys_journal_template.wbjn")
+        self.output = os.path.join(settings["folder"],"journal.wbjn")
+
+    def evaluate(self,samples,verify):
+        """
+        trick with iterations
+        """
+        if verify:
+            self.iteration += 1
+
+        results = super().evaluate(samples,verify)
+            
+        if verify:
+            self.iteration -= 1
+        
+        return results
+
+    def update_input(self,samples):
+        # Make journal file
+        points = str([list(point) for point in samples])
+
+        # Open template
+        with open(self.template, "r") as file:
+            text = file.readlines()
+
+        # Modify template
+        temp_str = "project_folder = '" + self.ansys_project_folder + "\\" + "'\n"
+        text[8] = temp_str.replace("\\","\\\\")
+        text[9] = "workbench_project = '" + self.workbench_project + "'\n"
+        text[10] = "points = " + str(points) + "\n"
+        text[11] = "input_param_name = " + str(self.input_param_name) + "\n"
+        text[12] = "iteration = " + str(self.iteration) + "\n"
+
+        # Write modified template
+        with open(self.output, "w") as file:
+            file.write("".join(text))
+
+    def call_ansys(self):
+        directory = self.setup["ansys_directory"]
+        file = "runwb2"
+        arguments = ["-B","-R"]
+
+        while True:
+            call = subprocess.run([file]+arguments+[self.output],cwd=directory,shell=True,capture_output=True,text=True)
+            if call.returncode:
+                print("Analysis failed, retrying")
+            else:
+                break
+
     def get_results(self,verify):
         outputs = settings["data"]["output_names"]
         
@@ -252,7 +322,6 @@ class EvaluatorANSYS(Evaluator):
             os.rename(file,file.replace("iteration_","verification_"))
 
         return response
-
 
 class RealoadNotAnEvaluator(Evaluator):
     """
