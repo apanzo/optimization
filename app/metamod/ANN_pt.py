@@ -33,6 +33,8 @@ class TrainHistory:
 class SparseModel(nn.Module):
     def __init__(self,neurons_hyp,activation_hyp,kernel_regularizer,in_dim,layers_hyp,out_dim,init,bias_init):
         super().__init__()
+
+        nonlinearity = "relu" if activation_hyp == "swish" else activation_hyp
         
         self.activation = activations[activation_hyp]
         subnetworks = []
@@ -41,7 +43,7 @@ class SparseModel(nn.Module):
             for _ in range(layers_hyp-1):
                 layers.append(nn.Linear(neurons_hyp,neurons_hyp))
             for layer in layers:
-                initializers[init](layer.weight,nonlinearity=activation_hyp)
+                initializers[init](layer.weight,nonlinearity=nonlinearity)
                 initializers[bias_init](layer.bias)
             layers.append(nn.Linear(neurons_hyp,1))
             subnetworks.append(nn.ModuleList(layers))
@@ -258,5 +260,8 @@ class ANN_pt(ANN_base):
     def save(self):
         torch.save(self.model.state_dict(),os.path.join(settings["folder"],"logs","ann"))
 
-activations = {"relu":nn.functional.relu}
-initializers = {"he_normal":nn.init.kaiming_normal_,"zeros":nn.init.zeros_}
+def swish(x):
+    return x*torch.sigmoid(x)
+
+activations = {"relu":nn.functional.relu,"swish":swish}
+initializers = {"he_normal":nn.init.kaiming_normal_,"zeros":nn.init.zeros_,"ones":nn.init.ones_}
