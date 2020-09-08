@@ -84,7 +84,7 @@ def resample_adaptive(points_new,surrogates,data,range_in,iteration):
     return coordinates
 
 def scale_samples(range_in,samples):
-    range_samples = 2 # because {-1,1}
+    range_samples = np.ptp(sample_bounds)
     range_target = np.ptp(range_in,1)
     mean = np.mean(range_in,1)
 
@@ -109,7 +109,7 @@ def sample(name,points,n_dim):
         Grid actually doesnt make full grid
     """
 
-    xlimits = np.tile((-1,1),(n_dim,1))
+    xlimits = np.tile(sample_bounds,(n_dim,1))
     if name in samplings.keys():
         sampling = samplings[name](xlimits=xlimits)
     else:
@@ -196,6 +196,8 @@ class Halton(SamplingMethod):
         return x
 
 adaptive_methods = load_json(os.path.join(settings["root"],"app","config","dataconf","adaptive"))
+
+sample_bounds = (-1,1)
 
 samplings = {
     "halton": Halton,
