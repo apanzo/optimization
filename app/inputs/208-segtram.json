@@ -1,8 +1,8 @@
 {
  "data": {
  "problem": "SegTram",
- "evaluator": "ansys",
-  "project_folder": "C:\\Users\\antonin.panzo\\Downloads\\ANSYS\\111 - SE",
+ "evaluator": "ansys_apdl",
+  "project_folder": "C:\\Users\\antonin.panzo\\Downloads\\ANSYS\\202 - SE APDL",
  "input_names": ["P1","P8","P9"],
  "output_names": ["P2","P13","P14"],
  "dims": [3,3,0],
@@ -11,7 +11,7 @@
  "sampling": "halton",
  "default_sample_coef": 10,
  "resampling": "geometric",
- "resampling_param": 1.2,
+ "resampling_param": 1.1,
  "adaptive": "eason",
  "convergence": "rmse",
  "convergence_relative": false,
@@ -19,7 +19,7 @@
  },
 
  "surrogate": {
- "surrogate": "ann",
+ "surrogate": "ann_pt",
  "reoptimization_ratio": 1.5,
  "validation": "kfold",
  "validation_param": 5,
@@ -31,7 +31,7 @@
  "termination": "default",
  "constrained": true,
  "error_limit": 5,
- "error": "mean",
+ "error": "percentile",
  "verification_ratio": 0.2
  }
 }
