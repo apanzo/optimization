@@ -6,11 +6,11 @@ import os
 SetScriptVersion(Version="19.4.159")
 
 # inputs
-project_folder = "C:\\Users\\antonin.panzo\\Downloads\\ANSYS\\Test models\\14 - batch multi\\"
-workbench_project = "Project.wbpj"
-points = [[7,20],[8,40]]
-input_param_name = ["P2","P3"] # so that I can define them independednt of ANSYS definitoin order
-iteration = 7
+project_folder = # Path to the current ANSYS project folder
+workbench_project = # Name pf the .wbpj project file
+points = # Design points as a list, e.g. - [[7,20],[8,40]]
+input_param_name = # Input parameter names as a list, e.g. - ["P2","P3"]
+iteration = # Iteration number
 
 # open project
 Open(FilePath=project_folder+workbench_project)
@@ -24,12 +24,6 @@ for dp in Parameters.GetAllDesignPoints():
 
 # define new points
 no_dp = len(points)
-
-## create dp obejcts
-#for _ in range(no_dp-1):
-#   Parameters.CreateDesignPoint()
-
-# [i for i in Parameters.GetAllParameters() if i.Usage =='Input'] # all input parameters
 
 input_param = [Parameters.GetParameter(Name=param) for param in input_param_name]
 
