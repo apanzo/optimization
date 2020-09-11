@@ -2,6 +2,6 @@ keras-tuner>=1.0.1
 numpy>=1.19.2
 pymoo>=0.4.2
 smt>=0.5.3
-tensorflow=2.0.0
+tensorflow==2.0.0
 tensorflow-model-optimization>=0.3.0
 torch==1.5.1
