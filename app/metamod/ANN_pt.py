@@ -1,8 +1,17 @@
 """
 Custom ANN definition using TensorFlow.
 
-This module contains the definition of an ANN comptable
-with the SMT Toolbox
+This module contains the definition of an ANN comptable with the SMT Toolbox.
+
+Attributes:
+    activations (dict): Available activation functions.
+    initializers (dict): Available kernel initializers.
+
+Notes:
+    Keras tuner logs are not stored in data due to max path length issues in kerastuner.
+
+See also:
+    PyTorch documentation - https://pytorch.org/docs/stable/index.html
 """
 # Import native packages
 from datetime import datetime
@@ -22,16 +31,43 @@ from metamod.ANN import ANN_base
 from visumod import plot_training_history
 
 class TrainHistory:
+    """
+    This class stored the metrics history.
+
+    Attributes:
+        history (dict): Stores training and validation losses.
+    """
     def __init__(self):
         self.history = {"loss":[],"val_loss":[]}
 
     def store(self,loss,loss_eval=None):
+        """
+
+        """
         self.history["loss"].append(loss.item())
         if loss_eval is not None:
             self.history["val_loss"].append(loss_eval.item())
 
 class SparseModel(nn.Module):
+    """
+    Defines an ANN with a subnetwork for each output.
+
+    Attributes:
+        activation (function): Activation function.
+        subnetworks (): Neural network.
+    """
     def __init__(self,neurons_hyp,activation_hyp,kernel_regularizer,in_dim,layers_hyp,out_dim,init,bias_init):
+        """
+        Args:
+            neurons_hyp (int): Number of neurons per layer.
+            activation_hyp (str): Activation function name.
+            kernel_regularizer ():
+            in_dim (int): Number of input dimensions.
+            layers_hyp (int): Number of hidden layers.
+            out_dim (int): Number of output dimensions.
+            init (str): Kernel initialization strategy.
+            bias_init (str): Bias initialization strategy.
+        """
         super().__init__()
 
         nonlinearity = "relu" if activation_hyp == "swish" else activation_hyp
@@ -51,6 +87,15 @@ class SparseModel(nn.Module):
         self.subnetworks = nn.ModuleList(subnetworks)
         
     def forward(self,x):
+        """
+        Forward-pass throught the network.
+
+        Args:
+            x (torch.Tensor): Input tensor.
+
+        Returns:
+            out (torch.Tensor): Output tensor.
+        """
         outputs = []
         for subnet in self.subnetworks:
             xx = x
@@ -63,6 +108,20 @@ class SparseModel(nn.Module):
         return out
     
     def fit(self,epochs,train_in,train_out,test_in=None,test_out=None,optimizing=False):
+        """
+        Train the ANN.
+
+        Args:
+            epochs (int):
+            train_in (torch.Tensor): Train input data.
+            train_out (torch.Tensor): Train output data.
+            test_in (torch.Tensor): Test input data.
+            test_out (torch.Tensor): Test output data.
+            optimizing (bool): Whether this is an optimization run.
+
+        Returns:
+            history (metamod.ANN_pt.TrainHistory): Metrics history during the training.
+        """
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.to(device)
         
@@ -97,6 +156,18 @@ class SparseModel(nn.Module):
         return history
 
     def early_stopping(self,history,metric,tolerance,patience):
+        """
+        Check whether the early stopping condition has been met.
+
+        Args:
+            history (metamod.ANN_pt.TrainHistory): Metrics history during the training.
+            metric (str): Early stopping decision metric.
+            tolerance (float): Early stopping tolerance.
+            patience (int): Early stopping patience.
+
+        Returns:
+            stop (bool): Whether to early stop the training.
+        """
         values = np.array(history[metric])[-patience:]
 ##        diffs = np.diff(history[metric])
 ##        improved = diffs[-patience:] < -tolerance
@@ -121,18 +192,36 @@ class SparseModel(nn.Module):
                     stop = False
         
         return stop
-
     
 class ANN_pt(ANN_base):
     """
     ANN class.
 
+    Attributes:
+        name (str): Name of the surrogate model.
+        model (): The model of the ANN.
+        early_stop (int): Number of training epchs before early stopping.
     """
     def __init__(self,**kwargs):
         super().__init__(**kwargs)
         self.name = "ANN_pt"
 
     def build_hypermodel(self,hp):
+        """
+        Build the hypermodel of the ANN with Keras Tuner hyperparameters.
+
+        Args:
+            hp (kerastuner.engine.hyperparameters.HyperParameters): Hyperparameters.
+
+        Returns:
+            model (): The model of the ANN.
+
+        Notes:
+            No kernel regularizers implemented so far.
+
+        See also:
+            Keras Tuner documentation: https://keras-team.github.io/keras-tuner/
+        """
         model_type = self["type"]
         in_dim, out_dim = self["dims"]
 
@@ -161,8 +250,18 @@ class ANN_pt(ANN_base):
         
     def pretrain(self,inputs,outputs,iteration):
         """
+        Optimize the hyperparameters of the ANN.
+
+        Args:
+            inputs (np.array): All input data.
+            outputs (np.array): All output data.
+            iteration (int): Iteration number.
+
+        Returns:
+            best_hp (kerastuner.engine.hyperparameters.HyperParameters): Optimal hyperparameters.
+        
         Notes:
-            - optimization objective val_loss
+            Optimization objective fixed on val_loss.
         """
         print("### Performing Keras Tuner optimization of the ANN ###")
         # Select hyperparameters to tune
@@ -227,7 +326,7 @@ class ANN_pt(ANN_base):
         """
         Train the ANN.
 
-        API function: train the neural net
+        API function: train the neural net.
         """
         self.model = self.build_hypermodel(self.best_hp)
 
@@ -258,10 +357,24 @@ class ANN_pt(ANN_base):
         return self.model(torch.Tensor(x)).detach().numpy()
 
     def save(self):
+        """
+        Save the ANN into an external file.
+        """
         torch.save(self.model.state_dict(),os.path.join(settings["folder"],"logs","ann"))
 
 def swish(x):
-    return x*torch.sigmoid(x)
+    """
+    Swish activation function.
+
+    Args:
+        x (torch.Tensor): Weighted inputs.
+
+    Returns:
+        activation (torch.Tensor): Neuron's activations.
+    """
+    activation = x*torch.sigmoid(x)
+    
+    return activation
 
 activations = {"relu":nn.functional.relu,"swish":swish}
 initializers = {"he_normal":nn.init.kaiming_normal_,"zeros":nn.init.zeros_,"ones":nn.init.ones_}

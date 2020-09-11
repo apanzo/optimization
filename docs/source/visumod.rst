@@ -1,4 +1,4 @@
-metamod package
+visumod package
 ===============
 
 Submodules
@@ -7,17 +7,12 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
-   metamod.ANN
-   metamod.ANN_pt
-   metamod.ANN_tf
-   metamod.deploy
-   metamod.performance
-   metamod.validation
+   visumod.plots
 
 Module contents
 ---------------
 
-.. automodule:: metamod
+.. automodule:: visumod
    :members:
    :undoc-members:
    :show-inheritance:

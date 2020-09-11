@@ -1,3 +1,10 @@
+"""
+This module provides auxiliary functions to handle settings and files writing and loading.
+
+Attributes:
+    settings (dict): A shared dictionary of settings accross the framework.
+"""
+
 # Import native packages
 from collections import Counter
 import json
@@ -9,6 +16,12 @@ from shutil import rmtree, copyfile
 def load_json(file):
     """
     Read a JSON file.
+
+    Args:
+        file (str): Path and name of the file to be loaded.
+
+    Returns:
+        data (dict): The loaded data.
     """
     with open(file+".json","r") as f:
          data = json.load(f)
@@ -18,6 +31,10 @@ def load_json(file):
 def dump_json(file,data):
     """
     Writes a JSON file.
+
+    Args:
+        file (str): Path and name of the file to be written.
+        data (dict): The data to be saved.
     """
     with open(file+".json","w") as f:
           json.dump(data, f)
@@ -25,6 +42,13 @@ def dump_json(file,data):
 def get_input_from_id(problem_id,problem_folder):
     """
     Get filename from problem ID.
+
+    Args:
+        problem_id (int): ID of the problem to be solved.
+        problem_folder (str): Directory which contains the input files.
+
+    Returns:
+        file (str): Path to the input file of the requested ID.
     """
     matching_ids = [name for name in os.listdir(problem_folder) if name.startswith(str(problem_id).zfill(3))]
     if len(matching_ids) == 1:
@@ -43,7 +67,7 @@ def get_input_from_id(problem_id,problem_folder):
 
 def check_valid_settings():
     """
-    Check if valid setting are used.
+    Check if valid settings are used.
     """
     path = os.path.join(settings["root"],"app","config","inputs","valid_settings")
     valid = load_json(path)
@@ -53,6 +77,12 @@ def check_valid_settings():
                 raise Exception(f"Invalid setting for {j}, valid keys are: [{', '.join(valid[i][j])}]")
 
 def update_settings(problem_id):
+    """
+    Updates the shared settings dictionary with the settings specified in the input file.
+
+    Args:
+        problem_id (int): ID of the problem to be solved.
+    """
     if not len(settings.keys()) == 1:
         keep = settings["root"]
         settings.clear()
@@ -76,8 +106,12 @@ def update_settings(problem_id):
 
 def restart_check(id_current,file):
     """
+    Args:
+        id_current (int): ID of the problem to be solved.    
+        file (str): Path and name of the current input file.
+
     Notes:
-        For load surrogate, only checking that the problem name is the same
+        For load_surrogate, only checking that the problem name is the same.
     """
     # Overwrite by default
     fresh = True
@@ -126,7 +160,11 @@ def restart_check(id_current,file):
 
 def get_results_folders():
     """
-    Docstring
+    Retrieves all current results folders.
+
+    Returns:
+        data_folder (str): Path to the directory with result folders.
+        all_result_folder (list): List of all results folders.
     """
     data_folder = os.path.join(settings["root"],"data")
     all_result_folders = [name for name in next(os.walk(os.path.join(settings["root"],"data")))[1]]
@@ -137,6 +175,12 @@ def make_workfolder(file,fresh):
     """
     Initialize the workdirectory.
 
+    Args:
+        file (str): Path and name of the current input file.
+        fresh (bool): Whether this is a new problem to be solved.
+
+    Returns:
+        folder_path (str): Path to the current results data folder.
     """
     # Setup the folder path
     folder_name = str(settings["id"]).zfill(3) + "-" +  settings["data"]["problem"]
@@ -158,12 +202,28 @@ def make_workfolder(file,fresh):
     return folder_path
 
 def dump_object(name,*args):
+    """
+    Pickle dumps the given objects.
+
+    Args:
+        name (str): Path and name of the target file.
+        args (any): Any object to be pickle dumped.
+    """
     file = os.path.join(settings["folder"],"logs",f"{name}_dump.pkl")
     # Saving the objects:
     with open(file, "wb") as f: 
         pickle.dump(args, f)
 
 def load_object(name):
+    """
+    Loads the pickled object.
+
+    Args:
+        name (str): Path and name of the file to load.
+
+    Returns:
+        obj (any): The loaded object.
+    """
     file = os.path.join(settings["folder"],"logs",f"{name}_dump.pkl")
     # Getting back the objects:
     with open(file, "rb") as f:
@@ -172,6 +232,13 @@ def load_object(name):
     return obj
 
 def ask_to_overwrite(path,id_current,text):
+    """
+
+    Args:
+        path (str): Path to the already defined results folder.
+        id_current (int): ID of the problem to be solved.    
+        text (str): Reason for everwriting.
+    """
     # Ask what to do
     while True:
 ##        response = input(f"ID {id_current} has already results and {text}. Do you want to overwrite results? [y/n]")

@@ -1,7 +1,7 @@
 """
 Data handling module.
 
-The aim of the datamod package is to handle the data
+The aim of the datamod package is to handle the data.
 """
 
 # Import pypi packages
@@ -17,22 +17,24 @@ class get_data:
     """
     Import data from an external file.
 
+    Attributes:
+        dim_in (int): Number of input dimensions.
+        col_names (list): Names of columns.
+        dim_out (int): Number of output dimensions.
+        coordinates (np.array): Samples coordinates.
+        response (np.array): Sample response.
+        input (np.array): Normalized input samples.
+        output (np.array): Normalized output samples.
+        norm_in (np.array): Input normalization factors.
+        norm_out (np.array): Output normalization factors.
+        range_in (np.array): Range of the input data.
+        range_out (np.array): Range of the output data.
     """
     
     def __init__(self,file):
         """
-        Constructor method.
-
-        Arguments:
-            file: string of the resilts file path
-
-        Attibutes:
-            dim_in: number of input dimensions
-            col_names: names of columns
-            dim_out: number of output dimensions
-            coordinates: samples coordinates
-            response: sample response
-            
+        Args:
+            file (str): Path and name of the database file.
         """
         # Load results
         self.dim_in, self.col_names, data = load_results(file)
@@ -59,15 +61,14 @@ def load_problem(name):
     Load a pre-defined benchmark problem.
 
     Arguments:
-        name: problem name
+        name (str): Name of the desired problem.
 
     Returns:
-        problem: problem object
-        range_in: range of the input
-        dim_in: number of output dimensions
-        dim_out: number of output dimensions
-        n_constr: number of constrains
-        
+        problem (): Benchmark problem.
+        range_in (np.array): Input parameter allowable ranges.
+        dim_in (int): Number of input dimensions.
+        dim_out (int): Number of output dimensions.
+        n_constr (int): Number of constraints.        
     """
 
     # Own defined functions
@@ -90,20 +91,39 @@ def scale(data,ranges):
     Scale data from [-1,1] range to original range.
 
     Arguments:
-        data: data to scale
-        ranges: normalization ranges
+        data (np.array): Data to scale.
+        ranges (np.array): Normalization ranges.
 
-    Returns:
-        data_scale: scaled data
+    Returns (np.array):
+        data_scale: Scaled data.
     """
     data_scale = data*ranges
     
     return data_scale
 
 def normalize(data):
+    """
+    Normalize the data to the [-1,1] range.
+
+    Arguments:
+        data (np.array): Data to normalize.
+    
+    Todo:
+        Revise the outputs.
+    """
+    
     return sk_normalize(data, norm='max',axis=0,return_norm=True)
 
 def get_range(data):
+    """
+    Determine the range of the data.
+    
+    Arguments:
+        data (np.array): Data to analyze.
+    
+    Returns:
+        ranges (np.array): Ranges of the given data.
+    """
     lower = np.amin(data,0)
     upper = np.amax(data,0)
     ranges = np.stack((lower,upper),1)

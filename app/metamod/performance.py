@@ -1,7 +1,8 @@
 """
-This module provides surrogate pre-processing.
+Module to access the performance of the surrogate.
 
-preprocessing stuff
+Attributes:
+    defined_metrics (dict): Available metrics.
 """
 # Import native packages
 import operator
@@ -24,6 +25,15 @@ from metamod.deploy import get_input_coordinates
 
 # Functions
 def retrieve_metric(surrogates):
+    """
+    Calculates the mean and variance of the assessed metric.
+
+    Args:
+        surrogates (list): List of cross validation surrogates.
+
+    Returns:
+        output_metrics (dict): Mean and variance of the assessed metric.
+    """
     criterion = settings["data"]["convergence"]
     metrics = np.array([model.metric[criterion] for model in surrogates])
 
@@ -40,15 +50,24 @@ def retrieve_metric(surrogates):
         file.write("mean")
         file.write("\t")
         file.write("%.5f"%mean)
-        file.write("\n")    
+        file.write("\n")
 
-    return {"mean":mean,"variance":variance}
+    output_metrics = {"mean":mean,"variance":variance}
+
+    return output_metrics
     
 def check_convergence(metrics):
     """
+    Checks whether the metric meets the convergence criterion.
 
+    Args:
+        metrics (list): List of the convergence metrics for each iteration.
+
+    Returns:
+        trained (bool): Convergence status.
+    
     Notes:
-    - Need to add convergence if data is loaded and there is no more data to load
+        Need to add convergence if data is loaded and there is no more data to load
     """
     print("###### Evaluating sample size convergence ######")
     trained = False
@@ -74,6 +93,17 @@ def check_convergence(metrics):
     return trained
 
 def evaluate_metrics(inputs,outputs,predict):
+    """
+    Evaluates surrogate accuracy metrics based on test samples.
+
+    Args:
+        inputs (np.array): Test samples.
+        outputs (np.array): Test response.
+        predict (SurrogateModel.predict_values): Surrogate's prediction method.
+
+    Returns:
+        metrics (dict): Surrogate accuracy metrics.
+    """
     metrics = {}
     for measure in defined_metrics.keys():
         metrics[measure] = defined_metrics[measure](outputs,predict(inputs))
@@ -81,6 +111,12 @@ def evaluate_metrics(inputs,outputs,predict):
     return metrics
 
 def convergence_operator():
+    """
+    Obtain either greater than or lower than operator based on the convergence metric type.
+
+    Returns:
+        op (function): Direction logical operator.
+    """
     if settings["data"]["convergence"] in ["mae","mse","rmse","medae","max_error"]:
         op = operator.lt
     elif settings["data"]["convergence"] in ["max_iterations"]:
@@ -91,6 +127,12 @@ def convergence_operator():
     return op
 
 def benchmark_accuracy(surrogate):
+    """
+    Args:
+        surrogate (core.Surrogate): Trained surrogate.
+    Returns:
+        diffs (dict): Benchmark accuracy statistics.
+    """
     no_points = 100*surrogate.model.dim_in
     density = ceil(no_points**(1/surrogate.model.dim_in))
     inputs = [num for num in range(surrogate.model.dim_in)]
@@ -124,9 +166,15 @@ def benchmark_accuracy(surrogate):
     return diffs
 
 def RMSE(*args,**kwargs):
+    """
+    Returns the root mean squared error.
+    """
     return MSE(*args,squared=False,**kwargs)
 
 def report_divergence():
+    """
+    Report the problem ID if the surrogate training fails to converge with the maximal amount of training samples.
+    """
     path = os.path.join(settings["root"],"data","diverging.txt")
     with open(path,"a") as file:
         file.write(f"{settings['id']}\n")

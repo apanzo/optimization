@@ -1,7 +1,12 @@
 """
 This is the sampling module.
 
-This module provides sampling methods
+This module provides sampling methods.
+
+Attributes:
+    adaptive_methods (dict): Exploration and exploitation criteria for adaptive sampling methods.
+    sample_bounds (tuple): Sampling range.
+    samplings (dict): Defined sampling classes.
 """
 # Import native packages
 from math import ceil
@@ -22,6 +27,16 @@ from datamod import normalize, scale
 from visumod import plot_adaptive_candidates
 
 def determine_samples(no_samples,dim_in):
+    """
+    Determine the number of new samples.
+    
+    Args:
+        dim_in (int): Number of input dimensions.
+        no_samples (int): number of current samples.
+
+    Returns:
+        new_samples (int): Number of new samples.
+    """
     if no_samples == 0:
         no_new_samples = settings["data"]["default_sample_coef"]*dim_in
     else:
@@ -32,22 +47,21 @@ def determine_samples(no_samples,dim_in):
         else:
             raise Exception("Error should have been caught on initialization")
 
-    return np.max((1,no_new_samples))
+    new_samples = int(np.max((1,no_new_samples)))
+            
+    return new_samples
 
 def resample_static(points_new,points_now,range_in):
     """
-    Determine the coordinates of the new sample.
+    Determine the coordinates of the new samples using a static DoE.
 
     Arguments:
-        points_new: number of new samples
-        points_now: number of current samples
-        sampling: sampling strategy
-        dim_in: number of input dimensions
-        range_in: range of inputs
+        points_new (int): Number of new samples.
+        points_now (int): number of current samples.
+        range_in (np.array): Range of input variables.
 
     Returns:
-        coordinates: coordinates of the new samples
-    
+        coordinates (np.array): Coordinates of the new samples.
     """
     dim_in = range_in.shape[0]
     # Sample
@@ -60,8 +74,18 @@ def resample_static(points_new,points_now,range_in):
 
 def resample_adaptive(points_new,surrogates,data,range_in,iteration):
     """
-    STUFF
+    Determine the coordinates of the new samples using an adaptive DoE.
 
+    Args:
+        points_new (int): Number of new samples.
+        range_in (np.array): Range of input variables.
+        surrogates (list): Surrogates from cross-validation.
+        data (datamod.get_data): Training samples.
+        range_in (np.array): Range of input variables.
+        iteration (int): Iteration number.
+
+    Returns:
+        coordinates (np.array): Coordinates of the new samples.
     """
     multiplier_proposed = 100
     points_proposed = multiplier_proposed*data.input.shape[1]
@@ -84,6 +108,16 @@ def resample_adaptive(points_new,surrogates,data,range_in,iteration):
     return coordinates
 
 def scale_samples(range_in,samples):
+    """
+    Scales the samples to the desired range.
+
+    Args:
+        range_in (np.array): Range of input variables.
+        samples (np.array): Samples to be scaled.
+
+    Returns:
+        coordinates (np.array): Coordinates of the new samples.
+    """
     range_samples = np.ptp(sample_bounds)
     range_target = np.ptp(range_in,1)
     mean = np.mean(range_in,1)
@@ -95,18 +129,21 @@ def scale_samples(range_in,samples):
 
 def sample(name,points,n_dim):
     """
-    Sampling on a unit hypercube [-1,1] using a selected DOE.
+    Sampling on a unit hypercube - typically [-1,1], using a selected DoE.
 
     Arguments:
-        name: sampling strategy
-        points: number of requested samples
-        n_dim: number of input dimensions
+        name (str): Sampling strategy.
+        points (int): Number of requested samples.
+        n_dim (int): Number of input dimensions.
+
+    Returns:
+        samples (np.array): New samples.
 
     Raises:
-        NameError: if the sampling is not defined
+        NameError: if the sampling is not defined.
 
     Notes:
-        Grid actually doesnt make full grid
+        Grid actually doesn't make full grid.
     """
 
     xlimits = np.tile(sample_bounds,(n_dim,1))
@@ -115,12 +152,23 @@ def sample(name,points,n_dim):
     else:
         raise NameError('Sampling not defined')
 
-    return sampling(points)
+    samples = sampling(points)
+
+    return samples
 
 def sample_adaptive(data,samples,predictions,no_points_new,iteration):
     """
-    Sampling using an adaptive DOE
+    Sampling using an adaptive DoE.
 
+    Args:
+        data (datamod.get_data): Training samples.
+        samples (np.array): Proposed samples.
+        predictions (np.array): Predictions of the surrogates from cross-validation.
+        no_points_new (int): Number of new samples.
+        iteration (int): Iteration number.
+        
+    Returns:
+        candidates (np.array): Normalized coordinates of the new samples.
     """
     adaptive_method = settings["data"]["adaptive"]
 
@@ -150,6 +198,17 @@ def sample_adaptive(data,samples,predictions,no_points_new,iteration):
     return candidates
 
 def response_grid(density,inputs,ranges):
+    """
+    Returns a grid of samples with the desired ranges.
+
+    Args:
+        density (int): Density of the samples plot.    
+        inputs (list): Input dimensions to plot.
+        ranges (np.array): Range of input variables.
+
+    Returns:
+        sample_desired (np.array): Grid samples.    
+    """
     n_dim = len(inputs)
     no_points = density**n_dim
     sample_unit = sample("grid",no_points,n_dim)

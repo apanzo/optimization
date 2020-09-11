@@ -1,7 +1,8 @@
 """
-This module provides surrogate pre-processing.
+This module provides cross-validation splitting techniques.
 
-preprocessing stuff
+Attributes:
+    split_methods (dict): CV validation techniques.
 """
 # Import pypi packages
 from sklearn.model_selection import KFold, ShuffleSplit
@@ -12,14 +13,12 @@ def set_validation(validation,param):
     Select the desired validation technique model.
 
     Arguments:
-        validation: validation technique
-        param: validation technique parameter
+        validation (str): Validation technique name.
+        param (float/int): Validation technique parameter.
 
     Returns:
-        split: indices for the split
+        split (np.array): Indices for the split.
 
-    Raises:
-        NameError: if the validation technique is not defined
     """
     split = split_methods[validation](param)
     
@@ -30,14 +29,10 @@ def split_holdout(param):
     Select the desired validation technique model.
 
     Arguments:
-        validation: validation technique
-        param: validation technique parameter
+        param (float): Holdout ratio.
 
     Returns:
-        split: indices for the split
-
-    Raises:
-        NameError: if the validation technique is not defined
+        split (np.array): Indices for the split.
     """
     if 0 < param < 1:
         split_ratio = param
@@ -52,14 +47,10 @@ def split_rlt(param):
     Select the desired validation technique model.
 
     Arguments:
-        validation: validation technique
-        param: validation technique parameter
+        param (float): Holdout ratio.
 
     Returns:
-        split: indices for the split
-
-    Raises:
-        NameError: if the validation technique is not defined
+        split (np.array): Indices for the split.
     """
     if isinstance(param[0], int) and param[0] != 0 and 0 < param[1] < 1:
         no_repeats = param[0]
@@ -75,14 +66,10 @@ def split_kfold(param):
     Select the desired validation technique model.
 
     Arguments:
-        validation: validation technique
-        param: validation technique parameter
+        param (int): Number of splits.
 
     Returns:
-        split: indices for the split
-
-    Raises:
-        NameError: if the validation technique is not defined
+        split (np.array): Indices for the split.
     """
     if isinstance(param, int) and param != 0:
         no_folds = param
@@ -94,10 +81,10 @@ def split_kfold(param):
 
 def invalid_param():
     """
-    Raise error if validation parameter is invalid
+    Raise error if validation parameter is invalid.
 
-    Notes:
-
+    Raises:
+        NameError: if validation parameter is invalid.
     """
     raise ValueError('Invalid validation parameter')
 

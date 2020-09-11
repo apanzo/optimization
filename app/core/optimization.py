@@ -1,3 +1,9 @@
+"""
+Module containing the optimization surrogate.
+
+Attributes:
+    ref_points (dict): Reference points for benchmark problems.
+"""
 # Import native packages
 import os
 
@@ -13,10 +19,33 @@ from visumod import compare_pareto_fronts, vis_design_space, vis_objective_space
 
 class Optimization:
     """
-    Docstring
+    The class to define the optimization problem.
+    
+    Attributes:
+        model (core.Model): The model object.
+        iterations (int): Number of optimization iterations.
+        converged (bool): Convergence status.
+        algorithm (): Optization algorithm object.
+        termination (): Termination object.
+        n_const (int): NUmber of constraints.
+        ref_point (np.array): Reference point for hypervolume calculation.
+        direct (bool): Whether a direct optimization is performed.
+        range_in (np.array): Input parameter allowable ranges.
+        function (): Function used to evaluate the candidates.
+        problem (datamod.problems.Custom): Problem object.
+        surrogate (core.Surrogate): Surrogate object.
+        res (pymoo.model.result.Result): Results object.
+        optimization_stats (dict): Optimization benchmark statistics.
+        optimum_model (np.array): Candidates evaluated by the original model.
+        optimum_surrogate (np.array): Candidates evaluated by the surrogate.
+        error_measure  (float): Maximum of the error metrics.
+        error (np.array): Benchmark percent error.
     """
     def __init__(self,model):
-
+        """
+        Args:
+            model (core.Model): The model object.
+        """
         self.model = model
 
         self.iterations = 0
@@ -42,7 +71,11 @@ class Optimization:
         """
         Wrapper function to set the problem.
 
-        Notes: direct optimization does not normalize
+        Args:
+            surrogate (core.Surrogate): Surrogate object.
+
+        Notes:
+            Direct optimization does not normalize.
         """
         print("###### Optimization #######")
         self.iterations += 1
@@ -73,6 +106,9 @@ class Optimization:
             self.plot_results()
 
     def plot_results(self):
+        """
+        Plot the optimized candidates.
+        """
         # Plot the optimization result in design space
         vis_design_space(self.res.X,self.iterations)
             
@@ -82,6 +118,9 @@ class Optimization:
             vis_objective_space_pcp(self.res.F,self.iterations)
 
     def benchmark(self):
+        """
+        Determine the benchmark optimization accuracy.
+        """
         ps_calc = self.res.X
         pf_calc = self.res.F
         ps_true = self.model.evaluator.problem.pareto_set()
@@ -150,6 +189,9 @@ class Optimization:
                     self.surrogate.append_verification()
 
     def report(self):
+        """
+        Report the optimal solutions and their verification accuracy.
+        """
         path = os.path.join(settings["folder"],"logs",f"optimizatoin_iteration_{self.iterations}.txt")
 
         if self.res is not None:

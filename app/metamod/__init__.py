@@ -1,7 +1,7 @@
 """
 Surrogate package.
 
-The aim of the metamod package is to produce and run a surrogate modul
+The aim of the metamod package is to produce and run a surrogate model.
 """
 # Import native packages
 import numpy as np
@@ -21,6 +21,13 @@ from metamod.ANN_pt import ANN_pt
 def optimize_hyperparameters(data,iteration):
     """
     Train the defined surrogate on the provided data.
+
+    Args:
+        data (datamod.get_data): Training samples.
+        iteration (int): Iteration number.
+        
+    Returns:
+        best_hp (kerastuner.engine.hyperparameters.HyperParameters): Optimal hyperparameters.
     """
     name = settings["surrogate"]["surrogate"]
 
@@ -34,17 +41,13 @@ def cross_validate(data,iteration,best_hp):
     """
     Train the defined surrogate on the provided data.
 
-    Arguments:
-        data: data object
-        setting: settings object
-        template: surrogate template
+    Args:
+        data (datamod.get_data): Training samples.
+        iteration (int): Iteration number.
+        best_hp (kerastuner.engine.hyperparameters.HyperParameters): Optimal hyperparameters.
 
     Returns:
-        best: best model according to selected metrics
-        variance: metrics of surrogate variances for sample size determination
-
-    Note:
-        the indices are shuffled    
+        surrogates (list): List of cross validation surrogates.
     """
     # Unpack settings
     name = settings["surrogate"]["surrogate"]
@@ -81,6 +84,15 @@ def cross_validate(data,iteration,best_hp):
     return surrogates
 
 def train_surrogate(data,best_hp):
+    """
+
+    Args:
+        data (datamod.get_data): Training samples.
+        best_hp (kerastuner.engine.hyperparameters.HyperParameters): Optimal hyperparameters.
+
+    Returns:
+        model (object): Surroggate trained on all training samples.
+    """
     print(f"### Training final model ###")
     name = settings["surrogate"]["surrogate"]
 
@@ -99,16 +111,15 @@ def set_surrogate(name,dim_in,dim_out):
     Select the desired surrogate model.
 
     Arguments:
-        name: surrogate type
-        dim_in: number of input dimensions
-        dim_out: number of output dimension
-        no_points: number of sample points
+        name (str): Name of the surrogate.
+        dim_in (int): Number of input dimensions.
+        dim_out (int): Number of output dimensions.
 
     Returns:
-        surrogate: surrogate object
+        surrogate (object): Initialized surrogate model.
 
     Raises:
-        NameError: if the surrogate is not defined
+        NameError: If the surrogate is not defined-
     """
     # Obtain default settings
     setup = load_json(os.path.join(settings["root"],"app","config","metaconf",name))
@@ -135,12 +146,23 @@ def set_surrogate(name,dim_in,dim_out):
     return surrogate
 
 def reload_info():
+    """
+    Get information about the problem.
+
+    Returns:
+        range_in (np.array): Input parameter allowable ranges.
+        dim_in (int): Number of input dimensions.
+        dim_out (int): Number of output dimensions.
+        n_constr (int): Number of constraints.
+    """
     status = load_json(os.path.join(settings["folder"],"status"))
     if status["surrogate_trained"]:
         range_in, dim_in, dim_out, n_const = np.array(status["range_in"]), status["dim_in"], status["dim_out"], status["n_const"]
-        return range_in, dim_in, dim_out, n_const
     else:
         raise Exception("There is no surrogate to load")
+
+    return range_in, dim_in, dim_out, n_const
+
 
 available = {
     "rbf": RBF,

@@ -1,8 +1,7 @@
 """
 Custom ANN definition.
 
-This module contains the definition of an ANN comptable
-with the SMT Toolbox
+This module contains the definition of an ANN comptable with the SMT Toolbox.
 """
 # Import native packages
 from collections import defaultdict
@@ -19,26 +18,27 @@ from core.settings import settings
         
 class ANN_base(SurrogateModel):
     """
-    ANN class.
+    ANN general class.
 
-    See also:
-        Tensorflow documentation
-        
-    To do:
-        * check if pretraining
-        * if pretrainning:
-            * select hyperparameters to optimize, keep rest default
-            * take defaults from settings
-            * select optimization method
-            * perform pretraining
-            * select best model
-            * save best model
-        * else:
-            * load hyperparameters from optimization
+    Attributes:
+        tbd (dict_keys): Settings to be declared.
+        log_dir (str): Directory to store the ANN model.
+        validation_points (dict): Validation points.
+        optimized (bool): Whether the hyperparameters have been optimized.
     """
 
     def __getitem__(self,a):
-        return self.options[a]
+        """
+        Convenience method to acces the options dictionary directly.
+
+        Args:
+            a (str): List key.
+        Returns:
+            value (any): List value.
+        """
+        value = self.options[a]
+        
+        return value
 
     def __init__(self,**kwargs):
         # To be declared
@@ -56,28 +56,6 @@ class ANN_base(SurrogateModel):
     def _initialize(self):
         """
         Initialize the default hyperparameter settings.
-
-        Parameters:
-            no_layers: number of layers
-            no_neurons: number of neurons per layer
-            activation: activation functoin
-            batch_size: batch size
-            no_epochs: nu,ber of training epochs
-            init: weight initialization strategy
-            bias_init:  bias initialization strategy
-            optimizer: optiimzer type
-            loss: loss function
-            kernel_regularizer: regularization paremeres
-            dims: number of input and output dimension
-            no_points: number of sample points
-            prune: whether to use pruning
-            sparsity: target network sparsity (fraction of zero weights)
-            pruning_frequency: frequency of pruning
-            tensorboard: whether to make tensorboard output
-            stopping: use early stopping
-            stopping_delta: required error delta threshold to stop training
-            stopping_patience: number of iterations to wait before stopping
-            plot_history: whether to plot the training history
         """
         # Set default values
         declare = self.options.declare
@@ -85,6 +63,13 @@ class ANN_base(SurrogateModel):
             declare(param, None)
 
     def write_stats(self,dictionary_as_list,name):
+        """
+        Writes the statistics about the surrogate's training.
+
+        Args:
+            dictionary_as_list (list): Training statistics.
+            name (str): Name of the file to be written.
+        """
         path = os.path.join(settings["folder"],"logs",name+".txt")
         kwargs = {"headers":"keys"}
         if name == "ann_training_stats":

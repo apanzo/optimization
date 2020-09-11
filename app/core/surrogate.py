@@ -1,3 +1,10 @@
+"""
+This module handles the surrogate's training.
+
+Attributes:
+    max_samples (int): maximum number of training samples above which the training is stopped as unsuccessful
+"""
+
 # Import native packages
 import os
 
@@ -15,8 +22,37 @@ from metamod.performance import benchmark_accuracy, check_convergence, retrieve_
 from visumod import compare_surrogate, correlation_heatmap, plot_raw, sample_size_convergence, surrogate_response
 
 class Surrogate:
+    """
+    The class to define the surrogate.
+
+    Attributes:
+        model (core.Model): The model object.
+        name (str): Name of the surrogate.
+        trained (bool): Whether the surrogate is trained.
+        diverging (bool): Whether the amount of training samples has exceeded the maximal allowable.
+        hp_optimized (bool): Whether the hyperparameters of the surrogate have been optimized.
+        optimized_to_samples (int): Amount of training samples during last hyperparameter optimization.
+        reoptimization_ratio (float): Sample increase ratio for reoptimization.
+        no_samples (int): Current number of training samples.
+        sampling_iterations (int): Number of training iterations.
+        convergence_metric (dict): Dictionary of convergence metrics.
+        file (str): Path to the training database.
+        verification_file (str): Path to the verification database.
+        verification (datamod.get_data): Verfication samples.
+        data (datamod.get_data): Training samples.
+        range_norm (np.array): Range of validity in normalized coordinates.
+        surrogates (list): List of cross validation surrogates.
+        surrogate (object): Surrogate trained on all available data.
+        samples (np.array): New input samples in the current iteration.
+        best_hp (kerastuner.engine.hyperparameters.HyperParameters): Optimal hyperparameters.
+        accuracy (dict): Benchmark accuracy statistics.
+    """
     
     def __init__(self,model):
+        """
+        Args:
+            model (core.Model): The model object.
+        """
 
         # Carry over model
         self.model = model
@@ -46,11 +82,11 @@ class Surrogate:
         
     def sample(self):
         """
-        Wrapper function to obtrain the new sample points.
+        Wrapper function to obtain the new sample points.
 
-        Note:
-            - be careful with geometric, grows fast
-            - if non-adaptive sampling is used, adaptive must be set to None
+        Notes:
+            Be careful with geometric, grows fast.
+            If non-adaptive sampling is used, adaptive must be set to None.
         """
 
         # Track iteration number
@@ -76,7 +112,8 @@ class Surrogate:
         """
         Wrapper function to call the evaluted problem solver.
 
-        STUFF
+        Arguments:
+            verify (bool):  whether this is a verification run
         """
         # Select target file
         if verify:
@@ -98,9 +135,7 @@ class Surrogate:
         Wrapper function to load the results from the results file
 
         Arguments:
-            verify: whether this is a verification run
-
-        STUFFs
+            verify (bool):  whether this is a verification run
         """
         if verify:
             self.verification = get_data(self.verification_file)
@@ -114,9 +149,7 @@ class Surrogate:
 
     def optimize_hyperparameters(self):
         """
-        Wrapper function to optimize the surrogate.
-
-        STUFF
+        Wrapper function to optimize the surrogate's hyperparameters.
         """
         # Determine whether to optimize hyperparameters
         reoptimize = self.no_samples/self.optimized_to_samples >= self.reoptimization_ratio
@@ -137,8 +170,6 @@ class Surrogate:
     def train(self):
         """
         Wrapper function to (re)train the surrogate.
-
-        STUFF
         """ 
         # Cross-validate
         self.surrogates = cross_validate(self.data,self.sampling_iterations,self.best_hp)
@@ -150,6 +181,9 @@ class Surrogate:
         compare_surrogate(self.data.input,self.data.output,self.surrogate.predict_values,self.sampling_iterations)
 
     def check_convergence(self):
+        """
+        Check the convergence of the surrogate's training.
+        """
         # Determine metrics
         self.surrogate.metric = retrieve_metric(self.surrogates)
 
@@ -167,6 +201,9 @@ class Surrogate:
             self.trained = True
 
     def report(self):
+        """
+        Plot the convergence metric and report on the trained surrogate.
+        """
         # Plot convergence
         sample_size_convergence(self.convergence_metric)
 
@@ -184,9 +221,17 @@ class Surrogate:
             
     def plot_response(self,inputs,output,density=30,constants=None,iteration=None):
         """
+        Plot the model's response based on the surrogate.
 
-        Notes:
-            - Add check that constants are in valid range
+        Args:
+            inputs (list): Input dimensions to plot.
+            output (int): Output dimension to plot.
+            density (int): Sampling density of the reponse plot.
+            constants (list): Values of the fixed input dimensions.
+            iteration (int): Iteration number.
+
+        Todo:
+            Add check that constants are in valid range
         """
         # Convert to 0 based indexing
         inputs = np.array(inputs) - 1
@@ -221,9 +266,12 @@ class Surrogate:
         output_vec = scale(output_norm,self.data.norm_out)
 
         # Make plot
-        surrogate_response(input_vec[:,inputs],output_vec[:,[output]],inputs,iteration)
+        surrogate_response(input_vec[:,inputs],output_vec[:,[output]],iteration)
 
     def save(self):
+        """
+        Saves the surrogate.
+        """
         if self.name.startswith("ann"):
             self.surrogate.save()
         else:
@@ -236,6 +284,9 @@ class Surrogate:
         dump_json(os.path.join(settings["folder"],"status"),status)
 
     def reload(self):
+        """
+        Reloads the surrogate.
+        """
         status = load_json(os.path.join(settings["folder"],"status"))
 
         if "ann" in os.listdir(os.path.join(settings["folder"],"logs")):

@@ -1,7 +1,10 @@
 """
 Function definitions.
 
-This module contains function definitions
+This module contains function definitions.
+
+Attributes:
+    problems (dict): Classes of the custom defined problems.
 """
 # Import pypi packages
 import numpy as np
@@ -10,19 +13,18 @@ from pymoo.model.problem import Problem
 class Custom(Problem):
     """
     Class for custom built problems using a surrogate.
+
+    Attributes:
+        function (): The response function.    
     """
     def __init__(self, function, xl, xu, n_obj, n_constr):
-        """Constructor.
-
-        Arguments:
-            surrogate:
-            xl:
-            xu:
-            n_constr:
-
-        Raises:
-            ValueError:
-
+        """
+        Args:
+            function (): The response function.
+            xl (np.array): Lower bounds of input coordinates.
+            xu (np.array): Upper bounds of input coordinates.
+            n_const (int): Number of constraints.
+            n_obj (int): Number of objectives.
         """
         if len(xl) != len(xu):
             raise ValueError('Incorrent bounds')

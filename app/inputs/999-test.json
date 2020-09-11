@@ -1,0 +1,31 @@
+{
+ "data": {
+ "problem": "bnh",
+ "evaluator": "benchmark",
+ "sampling": "halton",
+ "default_sample_coef": 10,
+ "resampling": "geometric",
+ "resampling_param": 1.1,
+ "adaptive": "eason",
+ "convergence": "rmse",
+ "convergence_relative": false,
+ "convergence_limit": 500.05
+ },
+
+ "surrogate": {
+ "surrogate": "ann_pt",
+ "reoptimization_ratio": 1.5,
+ "validation": "holdout",
+ "validation_param": 0.2,
+ "append_verification": false
+ },
+
+ "optimization": {
+ "algorithm": "default",
+ "termination": "default",
+ "constrained": true,
+ "error_limit": 500,
+ "error": "percentile",
+ "verification_ratio": 0.2
+ }
+}

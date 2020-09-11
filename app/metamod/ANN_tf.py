@@ -3,6 +3,12 @@ Custom ANN definition using TensorFlow.
 
 This module contains the definition of an ANN comptable
 with the SMT Toolbox
+
+Notes:
+    Keras tuner logs are not stored in data due to max path length issues in kerastuner.
+    
+See also:
+    Tensorflow Keras documentation - https://www.tensorflow.org/api_docs/python/tf/keras
 """
 # Import native packages
 from datetime import datetime
@@ -26,6 +32,10 @@ class ANN(ANN_base):
     """
     ANN class.
 
+    Attributes:
+        name (str): Name of the surrogate model.
+        model (): The model of the ANN.
+        early_stop (int): Number of training epchs before early stopping.
     """
     def __init__(self,**kwargs):
         super().__init__(**kwargs)
@@ -33,8 +43,18 @@ class ANN(ANN_base):
 
     def build_sparse_model(self,neurons_hyp,activation_hyp,kernel_regularizer,in_dim,layers_hyp,out_dim):
         """
-        Learn outpus one by one.
+        Defines an ANN with a subnetwork for each output.
 
+        Args:
+            neurons_hyp (int): Number of neurons per layer.
+            activation_hyp (str): Activation function name.
+            kernel_regularizer ():
+            in_dim (int): Number of input dimensions.
+            layers_hyp (int): Number of hidden layers.
+            out_dim (int): Number of output dimensions.
+
+        Returns:
+            model (): The model of the ANN.
         """
         # Initialize input layer
         inputs = keras.Input(shape=(in_dim,))
@@ -68,8 +88,18 @@ class ANN(ANN_base):
 
     def build_dense_model(self,neurons_hyp,activation_hyp,kernel_regularizer,in_dim,layers_hyp,out_dim):
         """
-        A fully connected model.
+        Defines an fully connected ANN.
 
+        Args:
+            neurons_hyp (int): Number of neurons per layer.
+            activation_hyp (str): Activation function name.
+            kernel_regularizer ():
+            in_dim (int): Number of input dimensions.
+            layers_hyp (int): Number of hidden layers.
+            out_dim (int): Number of output dimensions.
+
+        Returns:
+            model (): The model of the ANN.
         """
         model = keras.Sequential()
         # Add layers        
@@ -89,11 +119,16 @@ class ANN(ANN_base):
 
     def build_hypermodel(self,hp):
         """
-        General claass to build the ANN using tensorflow with autokeras hyperparameters defined
+        General claass to build the ANN using TensorFlow with Keras Tuner hyperparameters defined.
+
+        Args:
+            hp (kerastuner.engine.hyperparameters.HyperParameters): Hyperparameters.
+
+        Returns:
+            model (): The model of the ANN.
 
         Notes:
-            * hyperparameters initialized using default values in config file
-            * bias deactivated in output layer as it is centered around 0
+            Hyperparameters initialized using default values in config file.
         """
 
         model_type = self["type"]
@@ -138,8 +173,17 @@ class ANN(ANN_base):
 
     def prune_model(self,model,target_sparsity):
         """
+        Extends the ANN's model with priuning layers. 
+
+        Args:
+            model (): The model of the ANN.
+            target_sparsity (float): Target constant sparsity of the network.
+
+        Returns:
+            model (): The model of the ANN.
+
         Notes:
-        * Only constant sparsity active
+            Only constant sparsity active.
         """
         if True:
             model = sparsity.prune_low_magnitude(model,sparsity.ConstantSparsity(target_sparsity,0,frequency=10))
@@ -150,10 +194,13 @@ class ANN(ANN_base):
 
     def get_callbacks(self):
         """
-        Docstring
+        Set-up the requiested callbacks to be entered into the model.
+
+        Returns:
+            callbacks (list): A list of callbacks.
 
         Notes:
-            * MyStopping never used
+            MyStopping is never used.
         """
         callbacks = []
 
@@ -172,8 +219,18 @@ class ANN(ANN_base):
 
     def pretrain(self,inputs,outputs,iteration):
         """
+        Optimize the hyperparameters of the ANN.
+
+        Args:
+            inputs (np.array): All input data.
+            outputs (np.array): All output data.
+            iteration (int): Iteration number.
+
+        Returns:
+            best_hp (kerastuner.engine.hyperparameters.HyperParameters): Optimal hyperparameters.
+        
         Notes:
-            - optimization objective val_loss
+            Optimization objective fixed on val_loss.
         """
         print("### Performing Keras Tuner optimization of the ANN###")
         # Select hyperparameters to tune
@@ -242,7 +299,7 @@ class ANN(ANN_base):
         """
         Train the ANN.
 
-        API function: train the neural net
+        API function: train the neural net.
         """
         # Load untrained optimized model
         self.model = self.build_hypermodel(self.best_hp)
@@ -276,6 +333,9 @@ class ANN(ANN_base):
         return self.model.predict(x)
 
     def save(self):
+        """
+        Save the ANN into an external file.
+        """
         self.model.save(os.path.join(settings["folder"],"logs","ann"))
 
 # Turn off warnings

@@ -1,8 +1,18 @@
 """
-This is the main module
+This is the main module of the framework.
 
-Notes:
-    * keras tuner logs are not stored in data due to max path length issues in kerastuner
+Attributes:
+    problem_ids (list): List of problem IDs to solve.
+    model (core.Model): Model object.
+    build_surrogate (bool): Whether to build a surrogate.
+    load_surrogate (bool): Whether to load a surrogate.
+    train_from_data (bool): Whether to train from data.
+    perform_optimization (bool): Whether to perform optimization.
+    surrogate (core.Surrogate): Surrogate object.
+    optimization (core.Optimization): Optimization object.
+
+Todo:
+    Revise unittests.
 """
 
 from itertools import chain
@@ -13,7 +23,7 @@ from core.settings import settings, update_settings
 
 def train_surrogate():
     """
-    Docstring.
+    Training of the surrogate model.
     """    
     # Train surrogate
     while not surrogate.trained:
@@ -27,13 +37,16 @@ def train_surrogate():
 
 def reload_surrogate():
     """
-    Docstring
+    Reloads a saved surrogate model.
     """
     surrogate.reload()
 
 def optimize(surrogate):
     """
-    Docstring.
+    Optimization.
+
+    Args:
+        surrogate (core.Surrogate/None): The surrogate object
     """
     # Solve the optimiaztion problem
     optimization.set_problem(surrogate)
@@ -50,7 +63,8 @@ def optimize(surrogate):
 
 
 # Choose problem to solve
-problem_ids = range(400,401)
+problem_ids = []
+##problem_ids = range(406,408)
 ##problem_ids = chain(range(200,203), range(191, 193))
 
 for problem_id in problem_ids:

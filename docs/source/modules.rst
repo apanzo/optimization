@@ -7,5 +7,6 @@ app
    core
    datamod
    metamod
-   model_class
    optimod
+   run
+   visumod

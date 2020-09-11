@@ -1,7 +1,7 @@
 """
 Optimization package.
 
-The aim of the optimod package is to perform optimization
+The aim of the optimod package is to perform optimization.
 """
 # Import native packages
 import os
@@ -24,17 +24,17 @@ def solve_problem(problem,algorithm,termination,direct):
     Solve the defined problem.
 
     Arguments:
-        problem: problem to solve
-        algorithm: optimization algorithm
-        termination: termination method
-        setting: settings object
+        problem (datamod.problems.Custom): Problem to solve.
+        algorithm (): Optimization algorithm.
+        termination (): Termination method.
+        direct (bool): Whether this is a direct optimization run.
 
     Returns:
-        res: results object
+        res (pymoo.model.result.Result): Results object.
 
     Notes:
-        * save_history will work with ANN surrogate from Tensorflow only if line 290 in site-packages\pymoo\model\algorithm is changed from deepcopy to copy
-        * optional seed not implemented
+        Save_history will work with ANN surrogate from Tensorflow only if line 290 in site-packages\pymoo\model\algorithm is changed from deepcopy to copy.
+        Optional seed not implemented.
     """
 
     try:
@@ -58,10 +58,12 @@ def set_optimization(no_obj):
     """
     Set the selected optimization technique.
 
-    Raises:
-        alg: optimization algorithm
-        term: termination method
+    Args:
+        n_obj (int): Number of objectives.
 
+    Returns:
+        algorithm (): Optization algorithm object.
+        termination (): Termination object.
     """
     setup = settings["optimization"]
 
@@ -85,13 +87,15 @@ def unnormalize_res(res,norm_in,norm_out):
     Unnormliazes results.
 
     Arguments:
-        res: results object (unnormalized)
-        ranges: normalization ranges
+        res (pymoo.model.result.Result): Results object (unnormalized).
+        norm_in (np.array): Input normalization factors.
+        norm_out (np.array): Output normalization factors.
 
     Returns:
-        res: results object (normalized)
+        res (pymoo.model.result.Result): Results object (normalized).
 
-    Implemented for: F,X
+    Notes:
+        Implemented for: F,X.
     """
 
     res.X_norm = res.X
@@ -104,9 +108,15 @@ def unnormalize_res(res,norm_in,norm_out):
 
 def get_operator(name,setup):
     """
-    docstring
+    Text.
+
+    Args:
+        name (str): Operator name to retrieve.
+        setup (dict): Optimization setup parameters.
+       
+    Returns:
+        operator (): Retrieved operator.
     """
-    
     if name == "mutation":
         operator = get_mutation(**setup["operators"][name])
     elif name == "crossover":
@@ -118,7 +128,15 @@ def get_operator(name,setup):
 
 def set_algorithm(name,no_obj,setup):
     """
-    docstring
+    Text.
+
+    Args:
+        name (str): Name of the optimization algorithm.
+        n_obj (int): Number of objectives.
+        setup (dict): Optimization setup parameters.
+
+    Returns:
+        algorithm (): Optization algorithm object.
     """
     if name == "default":
         if no_obj == 1:
