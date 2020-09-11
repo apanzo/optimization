@@ -1,9 +1,11 @@
+"""
+Bayesian Optimization tuning for TensorFlow with Gaussian process.
+"""
+
 from . import multi_execution_tuner_cv
 from kerastuner.tuners.bayesian import BayesianOptimizationOracle
 
 class BayesianOptimizationCV(multi_execution_tuner_cv.MultiExecutionTunerCV):
-    """BayesianOptimization tuning with Gaussian process.
-    """
 
     def __init__(self,
                  hypermodel,

@@ -1,10 +1,11 @@
+"""
+Random search tuning for PyTorch.
+"""
+
 from kerastuner.tuners.randomsearch import RandomSearchOracle
 from .multi_execution_tuner_pytorch_cv import MultiExecutionTunerPyTorchCV
 
 class RandomSearchPyTorchCV(MultiExecutionTunerPyTorchCV):
-    """Random search tuner.
-
-    """
 
     def __init__(self,
                  hypermodel,

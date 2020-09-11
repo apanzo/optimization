@@ -1,10 +1,11 @@
+"""
+Random search tuning for TensorFlow.
+"""
+
 from . import multi_execution_tuner_cv
 from kerastuner.tuners.randomsearch import RandomSearchOracle
 
 class RandomSearchCV(multi_execution_tuner_cv.MultiExecutionTunerCV):
-    """Random search tuner.
-
-    """
 
     def __init__(self,
                  hypermodel,

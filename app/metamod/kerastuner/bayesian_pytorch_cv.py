@@ -1,10 +1,13 @@
+"""
+Bayesian Optimization tuning for PyTorch with Gaussian process.
+
+Notes:
+    Executions_per_trial not implemented.
+"""
 from kerastuner.tuners.bayesian import BayesianOptimizationOracle
 from .multi_execution_tuner_pytorch_cv import MultiExecutionTunerPyTorchCV
 
 class BayesianPyTorchCV(MultiExecutionTunerPyTorchCV):
-    """BayesianOptimization tuning with Gaussian process.
-
-    """
 
     def __init__(self,
                  hypermodel,

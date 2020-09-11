@@ -1,3 +1,9 @@
+"""
+Tuner for PyTorch that runs multiple executions per trial.
+
+Notes:
+    In fact, it does not.
+""""
 import collections
 import copy
 
@@ -9,9 +15,6 @@ from core.settings import settings
 from metamod.validation import set_validation
 
 class MultiExecutionTunerPyTorchCV(base_tuner.BaseTuner):
-    """BayesianOptimization tuning with Gaussian process.
-
-    """
 
     def run_trial(self,
                   trial,

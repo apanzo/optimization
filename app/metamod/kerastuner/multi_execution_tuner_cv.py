@@ -1,4 +1,6 @@
-"Tuner that runs multiple executions per Trial."
+"""
+Tuner for TensorFlow that runs multiple executions per trial.
+""""
 
 from kerastuner.engine.multi_execution_tuner import MultiExecutionTuner
 from kerastuner.engine import tuner_utils
