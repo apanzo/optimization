@@ -1,13 +1,7 @@
 {
  "data": {
- "problem": "SegTram",
- "evaluator": "ansys_apdl",
-  "project_folder": "C:\\Users\\antonin.panzo\\Downloads\\ANSYS\\201 - SE APDL",
- "input_names": ["P1","P8","P9"],
- "output_names": ["P2","P13","P14"],
- "dims": [3,3,0],
- "lower_limits": [1,1,1],
- "upper_limits": [5,5,5],
+ "problem": "bnh",
+ "evaluator": "benchmark",
  "sampling": "halton",
  "default_sample_coef": 10,
  "resampling": "geometric",

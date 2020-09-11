@@ -1,6 +1,6 @@
 {
  "data": {
- "problem": "matlab_peaks",
+ "problem": "tnk",
  "evaluator": "benchmark",
  "sampling": "halton",
  "default_sample_coef": 10,

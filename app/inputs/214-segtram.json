@@ -1,22 +1,28 @@
 {
  "data": {
- "problem": "bnh",
- "evaluator": "benchmark",
+ "problem": "SegTram",
+ "evaluator": "ansys_apdl",
+  "project_folder": "C:\\Users\\antonin.panzo\\Downloads\\ANSYS\\202 - SE APDL",
+ "input_names": ["P1","P8","P9"],
+ "output_names": ["P2","P13","P14"],
+ "dims": [3,3,0],
+ "lower_limits": [1,1,1],
+ "upper_limits": [5,5,5],
  "sampling": "halton",
  "default_sample_coef": 10,
  "resampling": "geometric",
  "resampling_param": 1.1,
- "adaptive": "eason",
+ "adaptive": null,
  "convergence": "rmse",
  "convergence_relative": false,
- "convergence_limit": 500.05
+ "convergence_limit": 0.05
  },
 
  "surrogate": {
  "surrogate": "ann_pt",
  "reoptimization_ratio": 1.5,
- "validation": "holdout",
- "validation_param": 0.2,
+ "validation": "kfold",
+ "validation_param": 5,
  "append_verification": false
  },
 
@@ -24,7 +30,7 @@
  "algorithm": "default",
  "termination": "default",
  "constrained": true,
- "error_limit": 500,
+ "error_limit": 5,
  "error": "percentile",
  "verification_ratio": 0.2
  }

@@ -12,7 +12,7 @@
  "default_sample_coef": 10,
  "resampling": "geometric",
  "resampling_param": 1.1,
- "adaptive": "eason",
+ "adaptive": null,
  "convergence": "rmse",
  "convergence_relative": false,
  "convergence_limit": 0.05

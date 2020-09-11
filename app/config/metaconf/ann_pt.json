@@ -4,7 +4,7 @@
  "no_neurons": 9,
  "activation": "swish",
  "init": "he_normal",
- "bias_init": "ones",
+ "bias_init": "zeros",
  "kernel_regularizer": "l1",
  "kernel_regularizer_param": 0.000,
 
