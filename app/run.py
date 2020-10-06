@@ -63,7 +63,7 @@ def optimize(surrogate):
 
 
 # Choose problem to solve
-##problem_ids = [999]
+problem_ids = []
 ##problem_ids = range(0,230)
 ##problem_ids = chain(range(200,203), range(191, 193))
 
