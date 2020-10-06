@@ -21,6 +21,4 @@ formats:
 python:
   version: 3.7
   install:
-    - method: pip
-      path: numpy
-    - requirements: docs/requirements.txt
+    - requirements: requirements.txt
