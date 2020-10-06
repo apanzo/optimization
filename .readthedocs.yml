@@ -21,4 +21,5 @@ formats:
 python:
   version: 3.7
   install:
+    - requirements: rtd_requirements.txt
     - requirements: requirements.txt
